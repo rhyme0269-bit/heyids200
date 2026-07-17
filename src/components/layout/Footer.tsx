@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { defaultSiteSettings } from "@/lib/default-data";
+import { getSettings } from "@/lib/db";
 
 const quickLinks = [
   { label: "首頁", href: "/" },
@@ -12,7 +12,7 @@ const quickLinks = [
 ];
 
 export default function Footer() {
-  const settings = defaultSiteSettings;
+  const settings = getSettings();
 
   return (
     <footer className="bg-stone-900 text-stone-300">
@@ -109,7 +109,7 @@ export default function Footer() {
                   />
                 </svg>
                 <a
-                  href={settings.googleMapUrl}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-amber-200 transition-colors"

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { defaultAbout } from "@/lib/default-data";
+import { getAbout } from "@/lib/db";
 
 export default function AboutPreview() {
-  const about = defaultAbout;
+  const about = getAbout();
 
   return (
     <section className="py-16 md:py-20 bg-stone-50">

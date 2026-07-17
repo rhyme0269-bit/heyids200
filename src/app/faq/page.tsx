@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { unstable_noStore as noStore } from "next/cache";
 import FaqAccordion from "@/components/common/FaqAccordion";
 import StructuredData from "@/components/common/StructuredData";
 import { generateFaqSchema } from "@/lib/structured-data";
-import { defaultFaqs } from "@/lib/default-data";
+import { getFaqs } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "常見問題",
@@ -11,9 +14,11 @@ export const metadata: Metadata = {
 };
 
 export default function FaqPage() {
+  noStore();
+  const faqs = getFaqs();
   return (
     <>
-      <StructuredData data={generateFaqSchema(defaultFaqs)} />
+      <StructuredData data={generateFaqSchema(faqs)} />
 
       {/* 頁面標題 */}
       <section className="bg-gradient-to-br from-stone-50 to-amber-50 py-16">
@@ -28,7 +33,7 @@ export default function FaqPage() {
       {/* FAQ 列表 */}
       <section className="py-16 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FaqAccordion faqs={defaultFaqs} />
+          <FaqAccordion faqs={faqs} />
         </div>
       </section>
 

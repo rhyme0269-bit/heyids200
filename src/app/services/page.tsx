@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
-import {
-  defaultServices,
-  defaultServiceFlow,
-  defaultFeeSchedule,
-  defaultFeeNotes,
-} from "@/lib/default-data";
+import { unstable_noStore as noStore } from "next/cache";
+import { getServices, getServiceFlow, getFees, getFeeNotes } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "服務項目與收費標準",
@@ -12,9 +8,14 @@ export const metadata: Metadata = {
     "合一地政士事務所提供不動產買賣過戶、繼承登記、贈與登記、抵押權設定、房地合一稅、信託登記、節稅規劃等專業服務。完整收費標準一覽。",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function ServicesPage() {
-  const services = defaultServices;
-  const flow = defaultServiceFlow;
+  noStore();
+  const services = getServices();
+  const flow = getServiceFlow();
+  const feeSchedule = getFees();
+  const feeNotes = getFeeNotes();
 
   return (
     <>
@@ -86,7 +87,7 @@ export default function ServicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {defaultFeeSchedule.map((item, index) => (
+                {feeSchedule.map((item, index) => (
                   <tr
                     key={item.id}
                     className={
@@ -114,7 +115,7 @@ export default function ServicesPage() {
           <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <h3 className="font-semibold text-stone-800 mb-2">注意事項</h3>
             <ol className="list-decimal list-inside space-y-1 text-stone-600 text-sm">
-              {defaultFeeNotes.map((note, index) => (
+              {feeNotes.map((note, index) => (
                 <li key={index}>{note}</li>
               ))}
             </ol>

@@ -10,6 +10,9 @@ out/
 .env.local
 .env*.local
 
+# database
+data/
+
 # misc
 .DS_Store
 *.tgz

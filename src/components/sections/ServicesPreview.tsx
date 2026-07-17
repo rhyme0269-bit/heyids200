@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { defaultServices } from "@/lib/default-data";
+import { getServices } from "@/lib/db";
 
 export default function ServicesPreview() {
-  const services = defaultServices;
+  const services = getServices();
 
   return (
     <section className="py-16 md:py-20 bg-white">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { defaultAbout, defaultSiteSettings } from "@/lib/default-data";
+import { unstable_noStore as noStore } from "next/cache";
+import { getAbout, getSettings } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "關於我們",
@@ -7,9 +8,12 @@ export const metadata: Metadata = {
     "合一地政士事務所由胡玉芬地政士主持，民國 87 年通過國家考試，逾 26 年執業經驗，多家知名房仲特約合作。",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function AboutPage() {
-  const about = defaultAbout;
-  const settings = defaultSiteSettings;
+  noStore();
+  const about = getAbout();
+  const settings = getSettings();
 
   return (
     <>

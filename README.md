@@ -71,30 +71,43 @@ docker --version
 ### 第二步：下載網站程式碼
 
 ```bash
-git clone https://github.com/Pin-Ying/heyids200.git
+git clone https://github.com/rhyme0269-bit/heyids200.git
 cd heyids200
 ```
 
 ### 第三步：設定環境變數
 
-在專案資料夾中找到 `.env` 檔案（如果沒有，請複製以下內容新建一個），用記事本打開編輯：
+將 `.env.example` 複製一份，改名為 `.env`：
+
+- **Windows**：在檔案總管中複製 `.env.example`，貼上後改名為 `.env`
+- **Mac / Linux**：
+
+```bash
+cp .env.example .env
+```
+
+然後用記事本（或任何文字編輯器）打開 `.env`，依需求修改：
 
 ```env
 # Docker 連接埠設定（改這裡就能換 port）
 HTTP_PORT=8081
 HTTPS_PORT=8443
+
+# 網域（本機測試填 localhost，正式上線填你的網域）
 DOMAIN=localhost
 
-# 網站網址（正式上線時改成你的網域）
+# 網站網址（正式上線改成 https://你的網域）
 NEXT_PUBLIC_SITE_URL=http://localhost:8081
 
-# Sanity CMS 設定（由工程師提供）
-NEXT_PUBLIC_SANITY_PROJECT_ID=
+# Sanity CMS 設定
+# 到 https://www.sanity.io/ 建立帳號和專案後，把 Project ID 填在這裡
+# 沒有 Sanity 帳號的話先留空也能跑，只是後台編輯功能無法使用
+NEXT_PUBLIC_SANITY_PROJECT_ID=你的_Sanity_Project_ID
 NEXT_PUBLIC_SANITY_DATASET=production
 NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
 ```
 
-> 如果還沒有網域，先用 `localhost` 在本機測試即可。
+> `.env.example` 是範本（會上傳到 Git），`.env` 是實際設定（不會上傳，含機密資訊）。
 
 ### 第四步：啟動網站
 
@@ -126,29 +139,53 @@ http://localhost:8081
 | 查看錯誤紀錄 | `docker compose logs` |
 | 改 port | 編輯 `.env` 中的 `HTTP_PORT`，然後重新啟動 |
 
+### 更新到最新版本
+
+當工程師推了新版程式碼，你只需要三個指令就能更新：
+
+```bash
+# 1. 拉取最新程式碼
+git pull origin main
+
+# 2. 重新建置並啟動
+docker compose up -d --build
+```
+
+- 更新**不會影響**你在後台修改的資料（資料存在 Docker volume 裡）
+- 如果更新後有問題，可以回到上一版：
+
+```bash
+# 查看版本紀錄
+git log --oneline -5
+
+# 回到指定版本（把 abc1234 換成你要的版本號）
+git checkout abc1234
+docker compose up -d --build
+```
+
 ---
 
 ## 網站內容修改指南
 
-### 方法一：透過 CMS 後台（推薦，適合非工程師）
+### 方法一：透過後台管理介面（推薦，適合非工程師）
 
-> 注意：CMS 後台功能尚需完成 Sanity 設定後才能使用。設定完成後：
+1. 在瀏覽器輸入 `http://你的網址/admin`
+2. 輸入帳號和密碼（在 `.env` 中設定的 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`）
+3. 登入後可編輯：
 
-1. 在瀏覽器輸入 `http://你的網址/studio`
-2. 登入 Sanity 帳號
-3. 可編輯的內容包括：
+| 分頁 | 可編輯內容 | 說明 |
+|------|-----------|------|
+| 基本資訊 | 名稱、電話、Email、LINE、地址等 | 全站共用的聯絡資訊 |
+| 關於我們 | 介紹、理念、資歷、經驗、專長 | 列表項目可新增/刪除/排序 |
+| 服務項目 | 各項服務的名稱和說明 | 可新增/刪除/排序 |
+| 收費標準 | 42 項收費項目 + 注意事項 | 可修改金額和備註 |
+| 常見問題 | 問題和答案 | 可新增/刪除/排序 |
+| 服務流程 | 五個步驟的名稱和說明 | 可新增/刪除/排序 |
+| 圖片管理 | Logo、首頁背景、代書照片 | 直接上傳圖片，建議寬度 800px 以上 |
 
-| 內容 | 在後台的位置 | 說明 |
-|------|-------------|------|
-| 事務所名稱、電話、地址 | Site Settings | 全站共用的基本資訊 |
-| 首頁標題和文字 | Hero | 首頁最上方的大標題和副標題 |
-| 關於我們 | About | 事務所介紹、服務理念、資歷、專長 |
-| 服務項目 | Services | 各項服務的名稱和說明文字 |
-| 服務流程 | Service Flow | 五個步驟的名稱和說明 |
-| 常見問題 | FAQ | 問題和答案，可新增、刪除、排序 |
-| 照片 / Logo | 各區塊的圖片欄位 | 直接上傳即可，建議寬度 800px 以上 |
+修改後按「儲存」，重新整理前台頁面即可看到更新。
 
-修改後儲存，網站會自動更新。
+> 預設帳號：`admin` / 預設密碼：`admin123`（請務必在 `.env` 中更改！）
 
 ### 方法二：直接改程式碼（適合工程師或想快速修改）
 

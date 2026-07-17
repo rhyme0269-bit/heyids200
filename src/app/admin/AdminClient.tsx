@@ -1,0 +1,1379 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+
+/* ============================================================
+   Types
+   ============================================================ */
+
+interface SettingsData {
+  name: string;
+  phone: string;
+  mobile: string;
+  email: string;
+  lineId: string;
+  lineUrl: string;
+  address: string;
+  googleMapUrl: string;
+  googleMapEmbed: string;
+  scrivenerName: string;
+  licenseNumber: string;
+}
+
+interface AboutData {
+  introduction: string;
+  philosophy: string;
+  features: string[];
+  qualifications: string[];
+  experience: string[];
+  specialties: string[];
+}
+
+interface ServiceItem {
+  title: string;
+  description: string;
+}
+
+interface FeeItem {
+  service: string;
+  fee: string;
+  payer: string;
+  note: string;
+}
+
+interface FeesData {
+  items: FeeItem[];
+  notes: string[];
+}
+
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+interface FlowItem {
+  stepName: string;
+  stepDescription: string;
+}
+
+/* ============================================================
+   Constants
+   ============================================================ */
+
+const TABS = [
+  { key: "settings", label: "基本資訊" },
+  { key: "about", label: "關於我們" },
+  { key: "services", label: "服務項目" },
+  { key: "fees", label: "收費標準" },
+  { key: "faqs", label: "常見問題" },
+  { key: "flow", label: "服務流程" },
+  { key: "images", label: "圖片管理" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+const IMAGE_SLOTS = [
+  { key: "logo", label: "Logo" },
+  { key: "hero_bg", label: "首頁背景" },
+  { key: "scrivener_photo", label: "代書照片" },
+] as const;
+
+const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
+  { key: "name", label: "名稱" },
+  { key: "phone", label: "電話" },
+  { key: "mobile", label: "手機" },
+  { key: "email", label: "電子郵件" },
+  { key: "lineId", label: "LINE ID" },
+  { key: "lineUrl", label: "LINE 連結" },
+  { key: "address", label: "地址" },
+  { key: "scrivenerName", label: "代書姓名" },
+  { key: "licenseNumber", label: "證照號碼" },
+];
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+
+function authHeaders(): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+  };
+}
+
+function authHeadersNoContentType(): HeadersInit {
+  return {};
+}
+
+/** Move an element in an array by delta (-1 = up, +1 = down) */
+function moveItem<T>(arr: T[], index: number, delta: number): T[] {
+  const next = [...arr];
+  const target = index + delta;
+  if (target < 0 || target >= next.length) return next;
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+/* ============================================================
+   Toast Component
+   ============================================================ */
+
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all ${
+        type === "success" ? "bg-green-600" : "bg-red-600"
+      }`}
+    >
+      {message}
+    </div>
+  );
+}
+
+/* ============================================================
+   Loading Spinner
+   ============================================================ */
+
+function Spinner() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-300 border-t-amber-800" />
+    </div>
+  );
+}
+
+/* ============================================================
+   Reusable List Editor (for string arrays)
+   ============================================================ */
+
+function StringListEditor({
+  label,
+  items,
+  onChange,
+}: {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-semibold text-stone-700">
+        {label}
+      </label>
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={item}
+            onChange={(e) => {
+              const next = [...items];
+              next[i] = e.target.value;
+              onChange(next);
+            }}
+            className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(moveItem(items, i, -1))}
+            disabled={i === 0}
+            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+          >
+            上移
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(moveItem(items, i, 1))}
+            disabled={i === items.length - 1}
+            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+          >
+            下移
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+          >
+            刪除
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, ""])}
+        className="mt-1 rounded bg-amber-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-900"
+      >
+        新增
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   Main Admin Client Component
+   ============================================================ */
+
+export default function AdminClient() {
+  /* ------ Auth state ------ */
+  const [authenticated, setAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  /* ------ Dashboard state ------ */
+  const [activeTab, setActiveTabState] = useState<TabKey>("settings");
+
+  // Sync tab with URL hash
+  const setActiveTab = useCallback((tab: TabKey) => {
+    setActiveTabState(tab);
+    window.location.hash = tab;
+  }, []);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "") as TabKey;
+    if (TABS.some((t) => t.key === hash)) {
+      setActiveTabState(hash);
+    }
+  }, []);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  /* ------ Data states ------ */
+  const [settings, setSettings] = useState<SettingsData>({
+    name: "",
+    phone: "",
+    mobile: "",
+    email: "",
+    lineId: "",
+    lineUrl: "",
+    address: "",
+    googleMapUrl: "",
+    googleMapEmbed: "",
+    scrivenerName: "",
+    licenseNumber: "",
+  });
+
+  const [about, setAbout] = useState<AboutData>({
+    introduction: "",
+    philosophy: "",
+    features: [],
+    qualifications: [],
+    experience: [],
+    specialties: [],
+  });
+
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [fees, setFees] = useState<FeesData>({ items: [], notes: [] });
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+  const [flow, setFlow] = useState<FlowItem[]>([]);
+  const [imageTimestamps, setImageTimestamps] = useState<
+    Record<string, number>
+  >({});
+
+  /* ------ Check existing session on mount ------ */
+  useEffect(() => {
+    fetch("/api/admin/auth")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.authenticated) {
+          setAuthenticated(true);
+          setDisplayName(data.username);
+        }
+      })
+      .finally(() => setAuthChecked(true));
+  }, []);
+
+  /* ------ Show toast helper ------ */
+  const showToast = useCallback(
+    (message: string, type: "success" | "error") => {
+      setToast({ message, type });
+    },
+    [],
+  );
+
+  /* ------ Login handler ------ */
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setAuthenticated(true);
+        setDisplayName(data.username);
+      } else {
+        setLoginError(data.error || "帳號或密碼錯誤");
+      }
+    } catch {
+      setLoginError("連線錯誤，請稍後再試");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/auth", { method: "DELETE" });
+    setAuthenticated(false);
+    setDisplayName("");
+  };
+
+  /* ------ Data fetching ------ */
+  const fetchTabData = useCallback(
+    async (tab: TabKey) => {
+      setLoading(true);
+      try {
+        let url = "";
+        switch (tab) {
+          case "settings":
+            url = "/api/admin/settings";
+            break;
+          case "about":
+            url = "/api/admin/about";
+            break;
+          case "services":
+            url = "/api/admin/services";
+            break;
+          case "fees":
+            url = "/api/admin/fees";
+            break;
+          case "faqs":
+            url = "/api/admin/faqs";
+            break;
+          case "flow":
+            url = "/api/admin/flow";
+            break;
+          case "images":
+            setLoading(false);
+            return;
+        }
+
+        const res = await fetch(url, { headers: authHeaders() });
+        if (!res.ok) {
+          if (res.status === 401) {
+            sessionStorage.removeItem("adminPassword");
+            setAuthenticated(false);
+            return;
+          }
+          throw new Error("Failed to fetch");
+        }
+
+        const data = await res.json();
+
+        switch (tab) {
+          case "settings":
+            setSettings(data);
+            break;
+          case "about":
+            setAbout(data);
+            break;
+          case "services":
+            setServices(data);
+            break;
+          case "fees":
+            setFees({ items: data.fees || [], notes: data.notes || [] });
+            break;
+          case "faqs":
+            setFaqs(data);
+            break;
+          case "flow":
+            setFlow(data);
+            break;
+        }
+      } catch {
+        showToast("載入資料失敗", "error");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [showToast],
+  );
+
+  /* Fetch on tab change */
+  useEffect(() => {
+    if (authenticated) {
+      fetchTabData(activeTab);
+    }
+  }, [authenticated, activeTab, fetchTabData]);
+
+  /* ------ Save handler ------ */
+  const handleSave = async (
+    endpoint: string,
+    body: unknown,
+    method = "PUT",
+  ) => {
+    try {
+      const res = await fetch(endpoint, {
+        method,
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          sessionStorage.removeItem("adminPassword");
+          setAuthenticated(false);
+          return;
+        }
+        throw new Error("Save failed");
+      }
+
+      showToast("儲存成功", "success");
+    } catch {
+      showToast("儲存失敗", "error");
+    }
+  };
+
+  /* ------ Image handlers ------ */
+  const handleImageUpload = async (key: string, file: File) => {
+    const formData = new FormData();
+    formData.append("key", key);
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/admin/images", {
+        method: "POST",
+        headers: authHeadersNoContentType(),
+        body: formData,
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          sessionStorage.removeItem("adminPassword");
+          setAuthenticated(false);
+          return;
+        }
+        throw new Error("Upload failed");
+      }
+
+      showToast("圖片上傳成功", "success");
+      setImageTimestamps((prev) => ({ ...prev, [key]: Date.now() }));
+    } catch {
+      showToast("圖片上傳失敗", "error");
+    }
+  };
+
+  const handleImageDelete = async (key: string) => {
+    try {
+      const res = await fetch("/api/admin/images", {
+        method: "DELETE",
+        headers: authHeaders(),
+        body: JSON.stringify({ key }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          sessionStorage.removeItem("adminPassword");
+          setAuthenticated(false);
+          return;
+        }
+        throw new Error("Delete failed");
+      }
+
+      showToast("圖片刪除成功", "success");
+      setImageTimestamps((prev) => ({ ...prev, [key]: Date.now() }));
+    } catch {
+      showToast("圖片刪除失敗", "error");
+    }
+  };
+
+  /* ============================================================
+     RENDER: Login Screen
+     ============================================================ */
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
+          <h1 className="mb-6 text-center text-2xl font-bold text-stone-800">
+            後台管理登入
+          </h1>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label
+                htmlFor="username"
+                className="mb-1 block text-sm font-medium text-stone-700"
+              >
+                帳號
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                placeholder="請輸入帳號"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1 block text-sm font-medium text-stone-700"
+              >
+                密碼
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                placeholder="請輸入密碼"
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-sm font-medium text-red-600">{loginError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loginLoading || !username || !password}
+              className="w-full rounded-lg bg-amber-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
+            >
+              {loginLoading ? "登入中..." : "登入"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  /* ============================================================
+     RENDER: Dashboard
+     ============================================================ */
+
+  return (
+    <div className="min-h-screen bg-stone-50">
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <div className="mx-auto max-w-[1200px] px-4 py-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-stone-800">後台管理</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-stone-500">
+              {displayName}，您好
+            </span>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-600 hover:bg-stone-100"
+            >
+              登出
+            </button>
+          </div>
+        </div>
+
+        {/* Tab bar */}
+        <div className="mb-6 overflow-x-auto rounded-xl bg-stone-200">
+          <div className="flex min-w-max">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-5 py-3 text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? "border-b-2 border-amber-800 text-amber-800 bg-white"
+                    : "text-stone-600 hover:text-stone-800 hover:bg-stone-100"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab content */}
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          {loading ? (
+            <Spinner />
+          ) : (
+            <>
+              {/* ============================
+                  Tab: 基本資訊
+                  ============================ */}
+              {activeTab === "settings" && (
+                <div className="space-y-4">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    基本資訊
+                  </h2>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {SETTINGS_FIELDS.map((field) => (
+                      <div key={field.key}>
+                        <label className="mb-1 block text-sm font-medium text-stone-700">
+                          {field.label}
+                        </label>
+                        {field.key === "googleMapEmbed" ? (
+                          <textarea
+                            value={settings[field.key]}
+                            onChange={(e) =>
+                              setSettings((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            rows={3}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={settings[field.key]}
+                            onChange={(e) =>
+                              setSettings((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() =>
+                        handleSave("/api/admin/settings", settings)
+                      }
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 關於我們
+                  ============================ */}
+              {activeTab === "about" && (
+                <div className="space-y-6">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    關於我們
+                  </h2>
+
+                  {/* Introduction */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-stone-700">
+                      事務所介紹
+                    </label>
+                    <textarea
+                      value={about.introduction}
+                      onChange={(e) =>
+                        setAbout((prev) => ({
+                          ...prev,
+                          introduction: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                    />
+                  </div>
+
+                  {/* Philosophy */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-stone-700">
+                      服務理念
+                    </label>
+                    <textarea
+                      value={about.philosophy}
+                      onChange={(e) =>
+                        setAbout((prev) => ({
+                          ...prev,
+                          philosophy: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                    />
+                  </div>
+
+                  {/* String list editors */}
+                  <StringListEditor
+                    label="服務特色"
+                    items={about.features}
+                    onChange={(features) =>
+                      setAbout((prev) => ({ ...prev, features }))
+                    }
+                  />
+                  <StringListEditor
+                    label="專業資格"
+                    items={about.qualifications}
+                    onChange={(qualifications) =>
+                      setAbout((prev) => ({ ...prev, qualifications }))
+                    }
+                  />
+                  <StringListEditor
+                    label="經歷"
+                    items={about.experience}
+                    onChange={(experience) =>
+                      setAbout((prev) => ({ ...prev, experience }))
+                    }
+                  />
+                  <StringListEditor
+                    label="專長領域"
+                    items={about.specialties}
+                    onChange={(specialties) =>
+                      setAbout((prev) => ({ ...prev, specialties }))
+                    }
+                  />
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() => handleSave("/api/admin/about", about)}
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 服務項目
+                  ============================ */}
+              {activeTab === "services" && (
+                <div className="space-y-4">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    服務項目
+                  </h2>
+
+                  {services.map((item, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-stone-200 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-stone-600">
+                          項目 {i + 1}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setServices(moveItem(services, i, -1))
+                            }
+                            disabled={i === 0}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            上移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setServices(moveItem(services, i, 1))
+                            }
+                            disabled={i === services.length - 1}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            下移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setServices(
+                                services.filter((_, idx) => idx !== i),
+                              )
+                            }
+                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            標題
+                          </label>
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => {
+                              const next = [...services];
+                              next[i] = { ...next[i], title: e.target.value };
+                              setServices(next);
+                            }}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            描述
+                          </label>
+                          <textarea
+                            value={item.description}
+                            onChange={(e) => {
+                              const next = [...services];
+                              next[i] = {
+                                ...next[i],
+                                description: e.target.value,
+                              };
+                              setServices(next);
+                            }}
+                            rows={2}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setServices([
+                        ...services,
+                        { title: "", description: "" },
+                      ])
+                    }
+                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
+                  >
+                    新增
+                  </button>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() =>
+                        handleSave("/api/admin/services", services)
+                      }
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 收費標準
+                  ============================ */}
+              {activeTab === "fees" && (
+                <div className="space-y-6">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    收費標準
+                  </h2>
+
+                  {/* Fee table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-stone-200 bg-stone-50">
+                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
+                            服務項目
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
+                            收費
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
+                            付費方
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
+                            備註
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
+                            操作
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fees.items.map((item, i) => (
+                          <tr key={i} className="border-b border-stone-100">
+                            <td className="px-2 py-1.5">
+                              <input
+                                type="text"
+                                value={item.service}
+                                onChange={(e) => {
+                                  const next = [...fees.items];
+                                  next[i] = {
+                                    ...next[i],
+                                    service: e.target.value,
+                                  };
+                                  setFees((prev) => ({
+                                    ...prev,
+                                    items: next,
+                                  }));
+                                }}
+                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                type="text"
+                                value={item.fee}
+                                onChange={(e) => {
+                                  const next = [...fees.items];
+                                  next[i] = {
+                                    ...next[i],
+                                    fee: e.target.value,
+                                  };
+                                  setFees((prev) => ({
+                                    ...prev,
+                                    items: next,
+                                  }));
+                                }}
+                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                type="text"
+                                value={item.payer}
+                                onChange={(e) => {
+                                  const next = [...fees.items];
+                                  next[i] = {
+                                    ...next[i],
+                                    payer: e.target.value,
+                                  };
+                                  setFees((prev) => ({
+                                    ...prev,
+                                    items: next,
+                                  }));
+                                }}
+                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <input
+                                type="text"
+                                value={item.note}
+                                onChange={(e) => {
+                                  const next = [...fees.items];
+                                  next[i] = {
+                                    ...next[i],
+                                    note: e.target.value,
+                                  };
+                                  setFees((prev) => ({
+                                    ...prev,
+                                    items: next,
+                                  }));
+                                }}
+                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFees((prev) => ({
+                                    ...prev,
+                                    items: prev.items.filter(
+                                      (_, idx) => idx !== i,
+                                    ),
+                                  }))
+                                }
+                                className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                              >
+                                刪除
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFees((prev) => ({
+                        ...prev,
+                        items: [
+                          ...prev.items,
+                          { service: "", fee: "", payer: "", note: "" },
+                        ],
+                      }))
+                    }
+                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
+                  >
+                    新增項目
+                  </button>
+
+                  {/* Fee notes */}
+                  <div className="border-t border-stone-200 pt-6">
+                    <StringListEditor
+                      label="收費備註"
+                      items={fees.notes}
+                      onChange={(notes) =>
+                        setFees((prev) => ({ ...prev, notes }))
+                      }
+                    />
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() => handleSave("/api/admin/fees", { fees: fees.items, notes: fees.notes })}
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 常見問題
+                  ============================ */}
+              {activeTab === "faqs" && (
+                <div className="space-y-4">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    常見問題
+                  </h2>
+
+                  {faqs.map((item, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-stone-200 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-stone-600">
+                          問題 {i + 1}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setFaqs(moveItem(faqs, i, -1))}
+                            disabled={i === 0}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            上移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFaqs(moveItem(faqs, i, 1))}
+                            disabled={i === faqs.length - 1}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            下移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFaqs(faqs.filter((_, idx) => idx !== i))
+                            }
+                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            問題
+                          </label>
+                          <input
+                            type="text"
+                            value={item.question}
+                            onChange={(e) => {
+                              const next = [...faqs];
+                              next[i] = {
+                                ...next[i],
+                                question: e.target.value,
+                              };
+                              setFaqs(next);
+                            }}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            答案
+                          </label>
+                          <textarea
+                            value={item.answer}
+                            onChange={(e) => {
+                              const next = [...faqs];
+                              next[i] = {
+                                ...next[i],
+                                answer: e.target.value,
+                              };
+                              setFaqs(next);
+                            }}
+                            rows={3}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFaqs([...faqs, { question: "", answer: "" }])
+                    }
+                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
+                  >
+                    新增
+                  </button>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() => handleSave("/api/admin/faqs", faqs)}
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 服務流程
+                  ============================ */}
+              {activeTab === "flow" && (
+                <div className="space-y-4">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    服務流程
+                  </h2>
+
+                  {flow.map((item, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-stone-200 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-stone-600">
+                          步驟 {i + 1}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setFlow(moveItem(flow, i, -1))}
+                            disabled={i === 0}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            上移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFlow(moveItem(flow, i, 1))}
+                            disabled={i === flow.length - 1}
+                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                          >
+                            下移
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFlow(flow.filter((_, idx) => idx !== i))
+                            }
+                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            步驟名稱
+                          </label>
+                          <input
+                            type="text"
+                            value={item.stepName}
+                            onChange={(e) => {
+                              const next = [...flow];
+                              next[i] = {
+                                ...next[i],
+                                stepName: e.target.value,
+                              };
+                              setFlow(next);
+                            }}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            步驟描述
+                          </label>
+                          <textarea
+                            value={item.stepDescription}
+                            onChange={(e) => {
+                              const next = [...flow];
+                              next[i] = {
+                                ...next[i],
+                                stepDescription: e.target.value,
+                              };
+                              setFlow(next);
+                            }}
+                            rows={2}
+                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFlow([
+                        ...flow,
+                        { stepName: "", stepDescription: "" },
+                      ])
+                    }
+                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
+                  >
+                    新增
+                  </button>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() => handleSave("/api/admin/flow", flow)}
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================
+                  Tab: 圖片管理
+                  ============================ */}
+              {activeTab === "images" && (
+                <div className="space-y-6">
+                  <h2 className="mb-4 text-lg font-bold text-stone-800">
+                    圖片管理
+                  </h2>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {IMAGE_SLOTS.map((slot) => (
+                      <div
+                        key={slot.key}
+                        className="rounded-lg border border-stone-200 p-4"
+                      >
+                        <h3 className="mb-3 text-sm font-semibold text-stone-700">
+                          {slot.label}
+                        </h3>
+
+                        {/* Image preview */}
+                        <div className="mb-3 flex h-40 items-center justify-center overflow-hidden rounded-lg bg-stone-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/api/images/${slot.key}${imageTimestamps[slot.key] ? `?t=${imageTimestamps[slot.key]}` : ""}`}
+                            alt={slot.label}
+                            className="h-full w-full object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = "none";
+                              if (target.nextElementSibling) {
+                                (
+                                  target.nextElementSibling as HTMLElement
+                                ).style.display = "flex";
+                              }
+                            }}
+                            onLoad={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = "block";
+                              if (target.nextElementSibling) {
+                                (
+                                  target.nextElementSibling as HTMLElement
+                                ).style.display = "none";
+                              }
+                            }}
+                          />
+                          <div className="flex flex-col items-center justify-center text-stone-400">
+                            <svg
+                              className="mb-1 h-8 w-8"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span className="text-xs">尚無圖片</span>
+                          </div>
+                        </div>
+
+                        {/* Upload */}
+                        <div className="flex gap-2">
+                          <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
+                            上傳圖片
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleImageUpload(slot.key, file);
+                                }
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleImageDelete(slot.key)}
+                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

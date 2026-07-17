@@ -4,13 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SANITY_PROJECT_ID: ${NEXT_PUBLIC_SANITY_PROJECT_ID}
-        NEXT_PUBLIC_SANITY_DATASET: ${NEXT_PUBLIC_SANITY_DATASET:-production}
-        NEXT_PUBLIC_SANITY_API_VERSION: ${NEXT_PUBLIC_SANITY_API_VERSION:-2024-01-01}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://example.com}
     restart: unless-stopped
     expose:
       - "3000"
+    volumes:
+      - app-data:/app/data
+    environment:
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
 
   nginx:
     image: nginx:alpine
@@ -26,3 +28,6 @@ services:
       - DOMAIN=${DOMAIN:-localhost}
     depends_on:
       - app
+
+volumes:
+  app-data:

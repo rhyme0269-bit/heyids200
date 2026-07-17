@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
-import { defaultSiteSettings } from "@/lib/default-data";
+import { getSettings } from "@/lib/db";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <StructuredData data={generateLocalBusinessSchema(defaultSiteSettings)} />
+        <StructuredData data={generateLocalBusinessSchema(getSettings())} />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

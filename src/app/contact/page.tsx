@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { unstable_noStore as noStore } from "next/cache";
 import ContactForm from "@/components/common/ContactForm";
-import { defaultSiteSettings } from "@/lib/default-data";
+import { getSettings } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "聯絡我們",
@@ -9,7 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
-  const settings = defaultSiteSettings;
+  noStore();
+  const settings = getSettings();
 
   return (
     <>
@@ -139,7 +143,7 @@ export default function ContactPage() {
                   <div>
                     <p className="font-medium text-stone-800">地址</p>
                     <a
-                      href={settings.googleMapUrl}
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-stone-600 hover:text-amber-800"
@@ -153,7 +157,7 @@ export default function ContactPage() {
               {/* Google Maps */}
               <div className="rounded-xl overflow-hidden shadow-sm">
                 <iframe
-                  src={settings.googleMapEmbed}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(settings.address)}&output=embed&hl=zh-TW`}
                   width="100%"
                   height="300"
                   style={{ border: 0 }}
