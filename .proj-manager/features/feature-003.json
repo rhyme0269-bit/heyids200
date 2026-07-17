@@ -1,0 +1,12 @@
+{
+  "feature_id": "feature-003",
+  "name": "小工具",
+  "description": "6 個不動產試算工具：購屋總費用試算、土地增值稅試算、房地合一稅試算、房貸試算、契稅試算、貸款負擔能力試算。使用 Client Component 實作即時計算，公式已實作但稅率與公式為估算參考。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/app/tools/page.tsx",
+    "src/app/tools/ToolsClient.tsx"
+  ],
+  "dependencies": ["feature-001"]
+}

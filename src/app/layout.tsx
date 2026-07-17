@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import FloatingLine from "@/components/common/FloatingLine";
 import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
 import { getSettings } from "@/lib/db";
@@ -53,6 +54,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <FloatingLine />
       </body>
     </html>
   );

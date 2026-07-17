@@ -1,0 +1,22 @@
+{
+  "feature_id": "feature-005",
+  "name": "Admin 後台",
+  "description": "後台管理介面，含帳號密碼登入驗證。7 個管理分頁：基本資訊、關於我們、服務項目、收費標準、常見問題、服務流程、圖片管理。支援列表項目的新增、刪除、排序。所有 CRUD 操作透過 RESTful API 完成。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/app/admin/page.tsx",
+    "src/app/admin/AdminClient.tsx",
+    "src/app/api/admin/auth/route.ts",
+    "src/app/api/admin/settings/route.ts",
+    "src/app/api/admin/about/route.ts",
+    "src/app/api/admin/services/route.ts",
+    "src/app/api/admin/fees/route.ts",
+    "src/app/api/admin/faqs/route.ts",
+    "src/app/api/admin/flow/route.ts",
+    "src/app/api/admin/images/route.ts",
+    "src/lib/auth.ts",
+    "src/lib/db.ts"
+  ],
+  "dependencies": ["feature-004"]
+}

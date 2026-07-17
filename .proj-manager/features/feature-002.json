@@ -1,0 +1,14 @@
+{
+  "feature_id": "feature-002",
+  "name": "收費標準",
+  "description": "服務項目頁面中的 42 項收費標準表格，完整列出各項地政服務的收費金額與備註說明，含注意事項區塊。資料存於 SQLite，可透過後台 CRUD 管理。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/app/services/page.tsx",
+    "src/lib/default-data.ts",
+    "src/lib/db.ts",
+    "src/app/api/admin/fees/route.ts"
+  ],
+  "dependencies": ["feature-001", "feature-004"]
+}

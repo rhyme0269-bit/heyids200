@@ -1,0 +1,27 @@
+{
+  "feature_id": "feature-001",
+  "name": "前台頁面",
+  "description": "官網前台完整頁面，包含首頁（Hero + 關於簡介 + 服務快覽 + CTA）、關於我們（事務所介紹、資歷 11 項、工作經驗 8 項、專長領域 6 項）、服務項目（9 項服務 + 服務流程 5 步驟）、常見問題（7 題 FAQ 手風琴）、聯絡我們（諮詢表單 + 聯絡資訊 + Google Maps）、小工具（6 個不動產試算器）。統一導覽順序：首頁 → 關於我們 → 服務項目 → 收費標準 → 小工具 → 常見問題 → 聯絡我們。大地色系設計（stone + amber）。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/app/globals.css",
+    "src/app/about/page.tsx",
+    "src/app/services/page.tsx",
+    "src/app/faq/page.tsx",
+    "src/app/contact/page.tsx",
+    "src/app/tools/page.tsx",
+    "src/app/tools/ToolsClient.tsx",
+    "src/components/layout/Header.tsx",
+    "src/components/layout/Footer.tsx",
+    "src/components/sections/HeroSection.tsx",
+    "src/components/sections/AboutPreview.tsx",
+    "src/components/sections/ServicesPreview.tsx",
+    "src/components/sections/CtaSection.tsx",
+    "src/components/common/ContactForm.tsx",
+    "src/components/common/FaqAccordion.tsx"
+  ],
+  "dependencies": []
+}

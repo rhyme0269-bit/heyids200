@@ -15,32 +15,34 @@ export default function Footer() {
   const settings = getSettings();
 
   return (
-    <footer className="bg-stone-900 text-stone-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="bg-stone-950 text-stone-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* 事務所資訊 */}
           <div>
-            <h3 className="text-white text-lg font-bold mb-4">
+            <h3 className="text-stone-200 text-base font-bold mb-4">
               合一地政士事務所
             </h3>
-            <p className="text-stone-400 text-sm leading-relaxed mb-4">
+            <p className="text-stone-500 text-sm leading-relaxed mb-4">
               逾 26 年專業經驗，提供不動產買賣過戶、繼承登記、贈與登記、抵押權設定、節稅規劃等全方位服務。
             </p>
-            <p className="text-stone-500 text-sm">
+            <p className="text-stone-500 text-xs">
               {settings.scrivenerName} 地政士
             </p>
-            <p className="text-stone-500 text-xs mt-1">
+            <p className="text-stone-600 text-xs mt-1">
               {settings.licenseNumber}
             </p>
           </div>
 
           {/* 聯絡資訊 */}
           <div>
-            <h3 className="text-white text-lg font-bold mb-4">聯絡資訊</h3>
-            <ul className="space-y-3 text-sm">
+            <h3 className="text-stone-200 text-base font-bold mb-4">
+              聯絡資訊
+            </h3>
+            <ul className="space-y-3 text-xs">
               <li className="flex items-start">
                 <svg
-                  className="w-5 h-5 text-stone-500 mt-0.5 mr-3 flex-shrink-0"
+                  className="w-4 h-4 text-stone-600 mt-0.5 mr-2.5 flex-shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -59,7 +61,7 @@ export default function Footer() {
                   >
                     {settings.phone}
                   </a>
-                  <span className="text-stone-600 mx-1">/</span>
+                  <span className="text-stone-700 mx-1">/</span>
                   <a
                     href={`tel:${settings.mobile}`}
                     className="hover:text-amber-200 transition-colors"
@@ -70,7 +72,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start">
                 <svg
-                  className="w-5 h-5 text-stone-500 mt-0.5 mr-3 flex-shrink-0"
+                  className="w-4 h-4 text-stone-600 mt-0.5 mr-2.5 flex-shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -91,7 +93,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start">
                 <svg
-                  className="w-5 h-5 text-stone-500 mt-0.5 mr-3 flex-shrink-0"
+                  className="w-4 h-4 text-stone-600 mt-0.5 mr-2.5 flex-shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -119,7 +121,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start">
                 <svg
-                  className="w-5 h-5 text-stone-500 mt-0.5 mr-3 flex-shrink-0"
+                  className="w-4 h-4 text-stone-600 mt-0.5 mr-2.5 flex-shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -148,13 +150,15 @@ export default function Footer() {
 
           {/* 快速連結 */}
           <div>
-            <h3 className="text-white text-lg font-bold mb-4">快速連結</h3>
+            <h3 className="text-stone-200 text-base font-bold mb-4">
+              快速連結
+            </h3>
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm hover:text-amber-200 transition-colors"
+                    className="text-xs hover:text-amber-200 transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -165,8 +169,8 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-10 pt-8 border-t border-stone-700 text-center">
-          <p className="text-stone-500 text-sm">
+        <div className="mt-12 pt-8 border-t border-stone-800 text-center">
+          <p className="text-stone-600 text-xs">
             &copy; 2026 合一地政士事務所. All rights reserved.
           </p>
         </div>

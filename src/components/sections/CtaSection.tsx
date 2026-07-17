@@ -2,20 +2,34 @@ import Link from "next/link";
 
 export default function CtaSection() {
   return (
-    <section className="bg-amber-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+    <section className="relative bg-stone-900 overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800/50 to-stone-900" />
+      {/* Subtle pattern */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24">
         <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
             需要不動產登記服務？
           </h2>
-          <p className="text-amber-100 text-lg mb-8">
+          <p className="text-stone-300 text-lg md:text-xl mb-10">
             初次諮詢免費，歡迎來電或填寫表單，我們將盡快與您聯繫
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/contact"
-              className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-amber-800 bg-white rounded-lg hover:bg-amber-50 transition-colors shadow-sm"
+              className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-stone-900 bg-white rounded-lg hover:bg-stone-100 transition-colors shadow-lg"
             >
               填寫諮詢表單
               <svg
@@ -34,7 +48,7 @@ export default function CtaSection() {
             </Link>
             <a
               href="tel:02-2282-6600"
-              className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-white border-2 border-white rounded-lg hover:bg-white hover:text-amber-800 transition-colors"
+              className="inline-flex items-center px-8 py-3.5 text-base font-semibold text-white border-2 border-white/40 rounded-lg hover:bg-white/10 transition-colors"
             >
               <svg
                 className="w-5 h-5 mr-2"

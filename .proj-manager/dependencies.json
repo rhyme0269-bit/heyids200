@@ -1,0 +1,75 @@
+{
+  "runtime": {
+    "@hookform/resolvers": {
+      "version": "^5.4.0",
+      "purpose": "React Hook Form 驗證解析器（整合 Zod）"
+    },
+    "better-sqlite3": {
+      "version": "^12.11.1",
+      "purpose": "SQLite 資料庫驅動（同步 API，高效能）"
+    },
+    "next": {
+      "version": "16.2.10",
+      "purpose": "React 全端框架（App Router, SSG, standalone output）"
+    },
+    "react": {
+      "version": "19.2.4",
+      "purpose": "UI 元件庫"
+    },
+    "react-dom": {
+      "version": "19.2.4",
+      "purpose": "React DOM 渲染層"
+    },
+    "react-hook-form": {
+      "version": "^7.81.0",
+      "purpose": "表單狀態管理與驗證"
+    },
+    "zod": {
+      "version": "^4.4.3",
+      "purpose": "Schema 驗證（表單輸入與 API 請求驗證）"
+    }
+  },
+  "dev": {
+    "@tailwindcss/postcss": {
+      "version": "^4",
+      "purpose": "Tailwind CSS 4 PostCSS 整合"
+    },
+    "@types/better-sqlite3": {
+      "version": "^7.6.13",
+      "purpose": "better-sqlite3 TypeScript 型別定義"
+    },
+    "@types/node": {
+      "version": "^20",
+      "purpose": "Node.js TypeScript 型別定義"
+    },
+    "@types/react": {
+      "version": "^19",
+      "purpose": "React TypeScript 型別定義"
+    },
+    "@types/react-dom": {
+      "version": "^19",
+      "purpose": "React DOM TypeScript 型別定義"
+    },
+    "eslint": {
+      "version": "^9",
+      "purpose": "程式碼品質與風格檢查"
+    },
+    "eslint-config-next": {
+      "version": "16.2.10",
+      "purpose": "Next.js 專用 ESLint 設定"
+    },
+    "prettier": {
+      "version": "^3.9.5",
+      "purpose": "程式碼格式化"
+    },
+    "tailwindcss": {
+      "version": "^4",
+      "purpose": "Utility-first CSS 框架"
+    },
+    "typescript": {
+      "version": "^5",
+      "purpose": "TypeScript 編譯器"
+    }
+  },
+  "updated_at": "2026-07-17T00:00:00Z"
+}

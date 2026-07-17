@@ -1,0 +1,15 @@
+{
+  "feature_id": "feature-007",
+  "name": "Docker 部署",
+  "description": "Docker 多階段建置（deps → builder → runner），使用 Next.js standalone output 最小化映像大小。Nginx 反向代理處理 HTTP/HTTPS 請求轉發。Docker Compose 管理多容器（nextjs + nginx），支援 .env 環境變數設定 port 與網域。SQLite 資料庫檔案透過 Docker volume 持久化。SSL 憑證掛載支援（需手動啟用）。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "Dockerfile",
+    "docker-compose.yml",
+    ".dockerignore",
+    "nginx/nginx.conf",
+    ".env.example"
+  ],
+  "dependencies": []
+}

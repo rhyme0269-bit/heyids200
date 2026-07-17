@@ -1,0 +1,13 @@
+{
+  "feature_id": "feature-004",
+  "name": "SQLite 資料庫",
+  "description": "使用 better-sqlite3 作為資料庫層，取代原本的 Sanity CMS 方案。包含完整的 Schema 定義（site_settings、about、services、service_flow、faqs、fee_schedule、fee_notes、images 等表格）、自動 seed 預設資料、CRUD 操作函式。資料庫檔案存於 Docker volume 中持久化。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/lib/db.ts",
+    "src/lib/default-data.ts",
+    "src/lib/auth.ts"
+  ],
+  "dependencies": []
+}

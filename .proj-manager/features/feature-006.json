@@ -1,0 +1,13 @@
+{
+  "feature_id": "feature-006",
+  "name": "圖片管理",
+  "description": "圖片以 BLOB 格式儲存於 SQLite 資料庫中，支援 logo、hero_bg（首頁背景）、scrivener_photo（地政士照片）三種圖片。透過後台圖片管理分頁上傳，透過 /api/images/[key] 動態 API 提供圖片。",
+  "status": "completed",
+  "created_at": "2026-07-17T00:00:00Z",
+  "files": [
+    "src/app/api/images/[key]/route.ts",
+    "src/app/api/admin/images/route.ts",
+    "src/lib/db.ts"
+  ],
+  "dependencies": ["feature-004", "feature-005"]
+}

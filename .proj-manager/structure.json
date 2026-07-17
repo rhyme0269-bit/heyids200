@@ -1,0 +1,105 @@
+{
+  "root": "/opt/workspace/celine/heyids200",
+  "directories": {
+    "src/app": {
+      "description": "Next.js App Router 頁面路由",
+      "children": {
+        "page.tsx": "首頁入口",
+        "layout.tsx": "全站共用 Layout（Header + Footer）",
+        "globals.css": "全域樣式（Tailwind CSS 4）",
+        "favicon.ico": "網站 favicon",
+        "robots.ts": "robots.txt 動態生成",
+        "sitemap.ts": "sitemap.xml 動態生成",
+        "about/page.tsx": "關於我們頁面",
+        "services/page.tsx": "服務項目 + 收費標準頁面",
+        "tools/page.tsx": "小工具頁面（Server Component）",
+        "tools/ToolsClient.tsx": "小工具試算器（Client Component）",
+        "faq/page.tsx": "常見問題頁面",
+        "contact/page.tsx": "聯絡我們頁面",
+        "admin/page.tsx": "後台管理頁面（Server Component）",
+        "admin/AdminClient.tsx": "後台管理介面（Client Component）",
+        "api/contact/route.ts": "聯絡表單 API",
+        "api/images/[key]/route.ts": "圖片取得 API（BLOB from SQLite）",
+        "api/admin/auth/route.ts": "後台登入驗證 API",
+        "api/admin/settings/route.ts": "基本資訊 CRUD API",
+        "api/admin/about/route.ts": "關於我們 CRUD API",
+        "api/admin/services/route.ts": "服務項目 CRUD API",
+        "api/admin/fees/route.ts": "收費標準 CRUD API",
+        "api/admin/faqs/route.ts": "常見問題 CRUD API",
+        "api/admin/flow/route.ts": "服務流程 CRUD API",
+        "api/admin/images/route.ts": "圖片上傳管理 API"
+      }
+    },
+    "src/components": {
+      "description": "React 元件庫",
+      "children": {
+        "common/ContactForm.tsx": "聯絡表單元件（React Hook Form + Zod）",
+        "common/FaqAccordion.tsx": "FAQ 手風琴展開收合元件",
+        "common/StructuredData.tsx": "SEO 結構化資料元件",
+        "layout/Header.tsx": "全站導覽列",
+        "layout/Footer.tsx": "全站頁尾",
+        "sections/HeroSection.tsx": "首頁 Hero 區塊",
+        "sections/AboutPreview.tsx": "首頁關於我們預覽區塊",
+        "sections/ServicesPreview.tsx": "首頁服務項目預覽區塊",
+        "sections/CtaSection.tsx": "首頁 CTA 呼籲行動區塊"
+      }
+    },
+    "src/lib": {
+      "description": "共用函式庫與資料層",
+      "children": {
+        "db.ts": "SQLite 資料庫連線、Schema 定義、CRUD 操作、自動 seed",
+        "default-data.ts": "所有預設內容資料（42 項收費、9 項服務、7 題 FAQ 等）",
+        "structured-data.ts": "SEO JSON-LD 結構化資料生成",
+        "auth.ts": "後台驗證邏輯"
+      }
+    },
+    "docs": {
+      "description": "靜態預覽文件",
+      "children": {
+        "preview.html": "網站靜態預覽 HTML（可直接用瀏覽器開啟）"
+      }
+    },
+    "scripts": {
+      "description": "自動化腳本",
+      "children": {
+        "generate-preview.js": "從程式碼自動生成 preview.html"
+      }
+    },
+    "nginx": {
+      "description": "Nginx 反向代理設定",
+      "children": {
+        "nginx.conf": "Nginx 設定檔（HTTP + HTTPS 支援）"
+      }
+    },
+    "public": {
+      "description": "靜態資源",
+      "children": {
+        "file.svg": "檔案圖示",
+        "globe.svg": "地球圖示",
+        "next.svg": "Next.js Logo",
+        "vercel.svg": "Vercel Logo",
+        "window.svg": "視窗圖示"
+      }
+    }
+  },
+  "config_files": {
+    "package.json": "Node.js 專案設定與依賴管理",
+    "tsconfig.json": "TypeScript 編譯設定",
+    "next.config.ts": "Next.js 設定（standalone output）",
+    "postcss.config.mjs": "PostCSS 設定（Tailwind CSS 4）",
+    "eslint.config.mjs": "ESLint 程式碼品質設定",
+    "docker-compose.yml": "Docker Compose 多容器部署設定",
+    "Dockerfile": "Docker 多階段建置設定",
+    ".dockerignore": "Docker 建置忽略清單",
+    ".env": "環境變數（機密，不入版控）",
+    ".env.example": "環境變數範本",
+    ".env.local": "本機開發環境變數",
+    ".gitignore": "Git 忽略清單"
+  },
+  "doc_files": {
+    "README.md": "專案說明文件（部署指南、內容修改指南）",
+    "AGENTS.md": "Claude Code Agent 指引",
+    "CLAUDE.md": "Claude 設定",
+    "oneness-spec.md": "專案規格文件"
+  }
+}
