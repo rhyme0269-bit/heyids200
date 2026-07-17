@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 const navLinks = [
@@ -15,32 +15,17 @@ const navLinks = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled || mobileMenuOpen
-          ? "bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm"
-          : "bg-transparent border-b border-transparent"
-      }`}
+      className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <span
-              className={`text-xl font-bold transition-colors duration-300 ${
-                scrolled || mobileMenuOpen ? "text-stone-800" : "text-white"
-              }`}
+              className="text-xl font-bold text-stone-800"
             >
               合一地政士事務所
             </span>
@@ -52,11 +37,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  scrolled
-                    ? "text-stone-600 hover:text-amber-800 hover:bg-stone-50"
-                    : "text-white/80 hover:text-white hover:bg-white/10"
-                }`}
+                className="px-3 py-2 text-sm font-medium rounded-md transition-colors text-stone-600 hover:text-amber-800 hover:bg-stone-50"
               >
                 {link.label}
               </Link>
@@ -67,11 +48,7 @@ export default function Header() {
           <div className="hidden md:flex items-center">
             <a
               href="tel:02-2282-6600"
-              className={`inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                scrolled
-                  ? "text-white bg-amber-800 hover:bg-amber-900"
-                  : "text-stone-900 bg-white hover:bg-stone-100"
-              }`}
+              className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-amber-800 hover:bg-amber-900"
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -93,11 +70,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             type="button"
-            className={`md:hidden inline-flex items-center justify-center p-2 rounded-md transition-colors ${
-              scrolled || mobileMenuOpen
-                ? "text-stone-600 hover:text-stone-800 hover:bg-stone-100"
-                : "text-white hover:text-white hover:bg-white/10"
-            }`}
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md transition-colors text-stone-600 hover:text-stone-800 hover:bg-stone-100"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="開啟選單"
             aria-expanded={mobileMenuOpen}
