@@ -14,9 +14,12 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
-env:
-  BASE_PATH: /heyids200
-  SITE_URL: https://rhyme0269-bit.github.io/heyids200
+  # AUTO-DETECTED from GitHub context:
+  # github.repository = "rhyme0269-bit/heyids200"
+  # → repo name = "heyids200"
+  # → BASE_PATH = "/heyids200"
+  # → SITE_URL = "https://rhyme0269-bit.github.io/heyids200"
+  # 有自訂網域後，設定 CUSTOM_DOMAIN 就會自動切換
 
 jobs:
   build-and-deploy:
@@ -29,6 +32,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Derive URLs
+        id: urls
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          # 有自訂網域 → basePath 為空；沒有 → 用 repo 名
+          if [ -n "${{ vars.CUSTOM_DOMAIN }}" ]; then
+            echo "base_path=" >> $GITHUB_OUTPUT
+            echo "site_url=https://${{ vars.CUSTOM_DOMAIN }}" >> $GITHUB_OUTPUT
+          else
+            echo "base_path=/${REPO_NAME}" >> $GITHUB_OUTPUT
+            echo "site_url=https://${OWNER}.github.io/${REPO_NAME}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -38,17 +55,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build app with basePath
+      - name: Build app
         run: npm run build
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
-          NEXT_PUBLIC_SITE_URL: ${{ env.SITE_URL }}
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.urls.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.urls.outputs.site_url }}
           ADMIN_USERNAME: preview
           ADMIN_PASSWORD: preview
 
       - name: Capture static pages
         run: |
-          BASE="${{ env.BASE_PATH }}"
+          BASE="${{ steps.urls.outputs.base_path }}"
           PAGES=("" "about" "services" "tools" "faq" "contact")
 
           # Copy assets for standalone server
@@ -81,14 +98,14 @@ jobs:
 
           kill $SERVER_PID 2>/dev/null || true
 
-          # Create 404.html — redirects /about → /heyids200/about
+          # Create 404.html — redirects /about → /{base}/about
           # This catches Next.js client-side navigation that misses basePath
-          cat > _site/404.html << 'HEREDOC'
+          cat > _site/404.html << HEREDOC
           <!DOCTYPE html>
           <html><head><meta charset="utf-8"><title>Redirecting...</title>
           <script>
           (function(){
-            var base = '/heyids200';
+            var base = '${BASE}';
             var path = window.location.pathname;
             if (!path.startsWith(base)) {
               window.location.replace(base + path + window.location.search + window.location.hash);
@@ -96,7 +113,7 @@ jobs:
           })();
           </script>
           </head><body></body></html>
-          HEREDOC
+HEREDOC
 
           echo "Files: $(find _site -type f | wc -l), Size: $(du -sh _site | cut -f1)"
 
