@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-07-20] 前端設計感升級
+
+### 變更摘要
+參考 cx468.com.tw 設計模式，大幅提升前端視覺品質。
+
+### 改動
+- **Hero**：加入光暈裝飾球、標題裝飾線、玻璃態數據條
+- **About Preview**：加入 section label 裝飾、大引號引言、琥珀左邊框特色卡片、hover 上浮效果
+- **Services Preview**：卡片加序號（01-09）、hover 底部漸層線 + 上浮效果
+- **CTA**：頂部琥珀漸層線、光暈背景、信任指標文字列
+- **頁面過渡**：Hero→About 曲線 SVG 分隔
+- **CSS**：新增 hover-lift、text-gradient、section-label 工具類
+- **Header**：移除透明效果（修復非首頁白字不可見問題），一律白底深字
+
+### 影響檔案
+- `src/components/sections/HeroSection.tsx`
+- `src/components/sections/AboutPreview.tsx`
+- `src/components/sections/ServicesPreview.tsx`
+- `src/components/sections/CtaSection.tsx`
+- `src/components/layout/Header.tsx`
+- `src/app/globals.css`
+- `src/app/page.tsx`
+
+---
+
 ## [2026-07-17] 專案管理初始化
 
 - 建立 `.proj-manager/` 專案管理目錄
