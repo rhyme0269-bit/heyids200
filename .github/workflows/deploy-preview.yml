@@ -1,0 +1,91 @@
+name: Deploy Preview to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://rhyme0269-bit.github.io/heyids200
+          ADMIN_USERNAME: preview
+          ADMIN_PASSWORD: preview
+
+      - name: Start server and capture static pages
+        run: |
+          # Start the production server in background
+          node .next/standalone/server.js &
+          SERVER_PID=$!
+
+          # Wait for server to be ready
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            sleep 1
+          done
+
+          # Create output directory
+          mkdir -p _site
+
+          # Download all pages
+          for page in "" about services tools faq contact; do
+            echo "Downloading /$page ..."
+            curl -s http://localhost:3000/$page -o "_site/${page:-index}.html"
+          done
+
+          # Download static assets
+          cp -r .next/static _site/_next/static 2>/dev/null || true
+          cp -r public/* _site/ 2>/dev/null || true
+
+          # Fix asset paths in HTML files (add basePath)
+          for f in _site/*.html; do
+            sed -i 's|="/_next/|="/heyids200/_next/|g' "$f"
+            sed -i 's|="/favicon|="/heyids200/favicon|g' "$f"
+          done
+
+          # Stop server
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
