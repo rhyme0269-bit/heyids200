@@ -1,0 +1,16 @@
+{
+  "feature_id": "feature-010",
+  "name": "安全稽核修復",
+  "description": "速率限制、圖片上傳驗證、密碼 timing-safe 比對、移除 default credentials",
+  "status": "completed",
+  "created_at": "2026-07-20T00:00:00Z",
+  "files": [
+    "src/lib/rate-limit.ts",
+    "src/lib/db.ts",
+    "src/app/api/admin/auth/route.ts",
+    "src/app/api/admin/images/route.ts",
+    "src/app/api/contact/route.ts",
+    "src/app/api/images/[key]/route.ts"
+  ],
+  "dependencies": ["feature-004", "feature-005"]
+}

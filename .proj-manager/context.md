@@ -88,10 +88,28 @@ docker compose up -d --build
 
 網站運行於 `http://localhost:8081`（可透過 .env 調整）。
 
+### 預覽部署
+
+GitHub Pages 自動部署，每次 push 到 main 自動更新：
+- 預覽網址：https://rhyme0269-bit.github.io/heyids200
+- Workflow：`.github/workflows/deploy-preview.yml`
+- 頁面自動從 `src/app/` 掃描（排除 api/ 和 admin/）
+- 支援 `CUSTOM_DOMAIN` 變數切換自訂網域
+
+### 安全機制
+
+- 登入速率限制（5 次/分鐘 per IP）
+- 聯絡表單速率限制（5 次/分鐘 per IP）
+- 圖片上傳：5MB 限制 + MIME 白名單 + key 白名單
+- 密碼 scrypt 雜湊 + timing-safe 比對
+- httpOnly session cookie
+
 ## 尚未完成的功能
 
 - Email 服務串接（聯絡表單寄信通知）
-- Google Maps 精確座標
 - SSL / HTTPS 正式啟用
-- 網域設定與 DNS
+- 網域設定與 DNS（GitHub Pages 自訂網域）
 - 試算工具稅率確認
+- Admin API 加 Zod input validation
+- CSP / HSTS security headers
+- CSRF 防護

@@ -1,0 +1,15 @@
+{
+  "feature_id": "feature-009",
+  "name": "GitHub Pages 自動預覽部署",
+  "description": "每次 push 到 main 自動部署靜態預覽到 GitHub Pages，頁面自動掃描、URL 自動偵測、支援自訂網域",
+  "status": "completed",
+  "created_at": "2026-07-20T00:00:00Z",
+  "files": [
+    ".github/workflows/deploy-preview.yml",
+    "next.config.ts",
+    "src/lib/preview.ts",
+    "src/components/common/PreviewBanner.tsx",
+    "src/components/common/PreviewGuard.tsx"
+  ],
+  "dependencies": ["feature-001"]
+}

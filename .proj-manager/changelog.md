@@ -1,5 +1,61 @@
 # Changelog
 
+## [2026-07-20] 移除靜態 preview.html，改用 GitHub Pages
+
+### 變更摘要
+刪除手動維護的 `docs/preview.html` 和 `scripts/generate-preview.js`，預覽改為 GitHub Pages 自動部署。
+
+### 改動
+- 刪除 `docs/preview.html`（1300+ 行靜態檔）
+- 刪除 `scripts/generate-preview.js`
+- 更新 README 預覽說明指向 GitHub Pages URL
+
+---
+
+## [2026-07-20] 安全稽核與修復
+
+### 變更摘要
+完成全面安全稽核，修復所有 Critical 漏洞。
+
+### Critical 修復
+- 移除 Admin 密碼 fallback（不設環境變數則不建帳號）
+- 登入加速率限制（5 次/分鐘 per IP）
+- 聯絡表單加速率限制（5 次/分鐘 per IP）
+- 圖片上傳加 5MB 大小限制 + MIME 白名單
+- 圖片 key 限定白名單（logo, hero_bg, scrivener_photo）
+- 密碼比對改用 timing-safe comparison
+
+### Medium 修復
+- 公開圖片 API 加 MIME 白名單 + nosniff header
+- 移除殘留的 Sanity CDN remote pattern
+
+### 新增檔案
+- `src/lib/rate-limit.ts`：記憶體速率限制器
+
+---
+
+## [2026-07-20] GitHub Pages 自動部署預覽
+
+### 變更摘要
+建立 GitHub Actions workflow，每次 push 自動部署靜態預覽到 GitHub Pages。
+
+### 功能
+- 自動從 `src/app/` 掃描頁面（不寫死）
+- 自動從 GitHub context 取得 basePath 和 URL
+- 支援 `CUSTOM_DOMAIN` 變數切換自訂網域
+- `next.config.ts` 支援 `NEXT_PUBLIC_BASE_PATH` 環境變數
+- 404.html 重導向處理 client-side navigation
+
+### 預覽模式工具
+- `src/lib/preview.ts`：偵測預覽模式
+- `PreviewBanner`：頂部提示條（僅預覽版顯示）
+- `PreviewGuard`：包住 server-dependent 功能，預覽版顯示 toast 提示
+
+### 預覽網址
+https://rhyme0269-bit.github.io/heyids200
+
+---
+
 ## [2026-07-20] 前端設計感升級
 
 ### 變更摘要
