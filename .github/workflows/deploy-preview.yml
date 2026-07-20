@@ -59,18 +59,18 @@ jobs:
           node .next/standalone/server.js &
           SERVER_PID=$!
           for i in $(seq 1 30); do
-            curl -s "http://localhost:3000${BASE}/" > /dev/null 2>&1 && break
+            curl -sL "http://localhost:3000${BASE}" > /dev/null 2>&1 && break
             sleep 1
           done
 
-          # Download each page
+          # Download each page (-L follows redirects)
           mkdir -p _site
           for page in "${PAGES[@]}"; do
             if [ -z "$page" ]; then
-              curl -s "http://localhost:3000${BASE}/" -o _site/index.html
+              curl -sL "http://localhost:3000${BASE}" -o _site/index.html
             else
               mkdir -p "_site/$page"
-              curl -s "http://localhost:3000${BASE}/$page" -o "_site/$page/index.html"
+              curl -sL "http://localhost:3000${BASE}/$page" -o "_site/$page/index.html"
             fi
           done
 
