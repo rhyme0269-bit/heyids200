@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import FaqAccordion from "@/components/common/FaqAccordion";
 import StructuredData from "@/components/common/StructuredData";
@@ -46,12 +47,12 @@ export default function FaqPage() {
           <p className="text-stone-600 mb-6">
             歡迎直接聯繫我們，初次諮詢免費
           </p>
-          <a
+          <Link
             href="/contact"
             className="inline-block bg-amber-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
           >
             聯絡我們
-          </a>
+          </Link>
         </div>
       </section>
     </>
