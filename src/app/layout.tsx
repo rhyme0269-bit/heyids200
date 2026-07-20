@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import FloatingLine from "@/components/common/FloatingLine";
+import PreviewBanner from "@/components/common/PreviewBanner";
 import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
 import { getSettings } from "@/lib/db";
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="zh-TW" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <StructuredData data={generateLocalBusinessSchema(getSettings())} />
+        <PreviewBanner />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

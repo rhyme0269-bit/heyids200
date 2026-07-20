@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_noStore as noStore } from "next/cache";
 import ContactForm from "@/components/common/ContactForm";
+import PreviewGuard from "@/components/common/PreviewGuard";
 import { getSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,9 @@ export default function ContactPage() {
               <h2 className="text-2xl font-bold text-stone-800 mb-6">
                 諮詢表單
               </h2>
-              <ContactForm />
+              <PreviewGuard fallbackMessage="聯絡表單需正式部署後才能使用">
+                <ContactForm />
+              </PreviewGuard>
             </div>
 
             {/* 聯絡資訊 + 地圖 */}
