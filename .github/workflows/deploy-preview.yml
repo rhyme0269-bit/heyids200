@@ -63,7 +63,7 @@ jobs:
             sleep 1
           done
 
-          # Download each page (-L follows redirects)
+          # Download pages as dir/index.html
           mkdir -p _site
           for page in "${PAGES[@]}"; do
             if [ -z "$page" ]; then
@@ -74,23 +74,29 @@ jobs:
             fi
           done
 
-          # Copy static assets (basePath is baked into the build)
+          # Copy ALL static assets (CSS + JS)
           mkdir -p "_site/_next"
           cp -r .next/static "_site/_next/static"
           cp -r public/* _site/ 2>/dev/null || true
 
           kill $SERVER_PID 2>/dev/null || true
 
-          # Remove Next.js client-side JS router to prevent navigation hijacking.
-          # Keep CSS chunks but strip JS bootstrap scripts from HTML.
-          # This makes pages work as pure static HTML with correct href links.
-          find _site -name "*.html" -exec sed -i \
-            -e '/<script src="[^"]*chunks[^"]*\.js"/d' \
-            -e '/<script>self\.__next/d' \
-            {} \;
-
-          # Keep only CSS files in _next/static, remove JS chunks
-          find _site/_next/static/chunks -name "*.js" -delete 2>/dev/null || true
+          # Create 404.html — redirects /about → /heyids200/about
+          # This catches Next.js client-side navigation that misses basePath
+          cat > _site/404.html << 'HEREDOC'
+          <!DOCTYPE html>
+          <html><head><meta charset="utf-8"><title>Redirecting...</title>
+          <script>
+          (function(){
+            var base = '/heyids200';
+            var path = window.location.pathname;
+            if (!path.startsWith(base)) {
+              window.location.replace(base + path + window.location.search + window.location.hash);
+            }
+          })();
+          </script>
+          </head><body></body></html>
+          HEREDOC
 
           echo "Files: $(find _site -type f | wc -l), Size: $(du -sh _site | cut -f1)"
 
