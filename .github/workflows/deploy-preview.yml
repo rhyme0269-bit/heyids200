@@ -81,6 +81,17 @@ jobs:
 
           kill $SERVER_PID 2>/dev/null || true
 
+          # Remove Next.js client-side JS router to prevent navigation hijacking.
+          # Keep CSS chunks but strip JS bootstrap scripts from HTML.
+          # This makes pages work as pure static HTML with correct href links.
+          find _site -name "*.html" -exec sed -i \
+            -e '/<script src="[^"]*chunks[^"]*\.js"/d' \
+            -e '/<script>self\.__next/d' \
+            {} \;
+
+          # Keep only CSS files in _next/static, remove JS chunks
+          find _site/_next/static/chunks -name "*.js" -delete 2>/dev/null || true
+
           echo "Files: $(find _site -type f | wc -l), Size: $(du -sh _site | cut -f1)"
 
       - name: Setup Pages
