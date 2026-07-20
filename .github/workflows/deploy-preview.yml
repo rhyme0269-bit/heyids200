@@ -38,14 +38,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build app
+      - name: Build app with basePath
         run: npm run build
         env:
+          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
           NEXT_PUBLIC_SITE_URL: ${{ env.SITE_URL }}
           ADMIN_USERNAME: preview
           ADMIN_PASSWORD: preview
 
-      - name: Start server and capture site
+      - name: Capture static pages
         run: |
           BASE="${{ env.BASE_PATH }}"
           PAGES=("" "about" "services" "tools" "faq" "contact")
@@ -58,43 +59,27 @@ jobs:
           node .next/standalone/server.js &
           SERVER_PID=$!
           for i in $(seq 1 30); do
-            curl -s http://localhost:3000 > /dev/null 2>&1 && break
+            curl -s "http://localhost:3000${BASE}/" > /dev/null 2>&1 && break
             sleep 1
           done
 
-          # Download each page as dir/index.html
+          # Download each page
           mkdir -p _site
           for page in "${PAGES[@]}"; do
             if [ -z "$page" ]; then
-              curl -s http://localhost:3000/ -o _site/index.html
+              curl -s "http://localhost:3000${BASE}/" -o _site/index.html
             else
               mkdir -p "_site/$page"
-              curl -s "http://localhost:3000/$page" -o "_site/$page/index.html"
+              curl -s "http://localhost:3000${BASE}/$page" -o "_site/$page/index.html"
             fi
           done
 
-          # Copy static assets
-          mkdir -p _site/_next
-          cp -r .next/static _site/_next/static
+          # Copy static assets (basePath is baked into the build)
+          mkdir -p "_site/_next"
+          cp -r .next/static "_site/_next/static"
           cp -r public/* _site/ 2>/dev/null || true
 
           kill $SERVER_PID 2>/dev/null || true
-
-          # Rewrite all internal paths to include basePath
-          find _site -name "*.html" -exec sed -i \
-            -e "s|\"/_next/|\"${BASE}/_next/|g" \
-            -e "s|'/_next/|'${BASE}/_next/|g" \
-            {} \;
-
-          # Rewrite href links for all known pages
-          for page in "${PAGES[@]}"; do
-            if [ -z "$page" ]; then
-              find _site -name "*.html" -exec sed -i "s|href=\"/\"|href=\"${BASE}/\"|g" {} \;
-            else
-              find _site -name "*.html" -exec sed -i "s|href=\"/${page}\"|href=\"${BASE}/${page}\"|g" {} \;
-              find _site -name "*.html" -exec sed -i "s|href=\"/${page}#|href=\"${BASE}/${page}#|g" {} \;
-            fi
-          done
 
           echo "Files: $(find _site -type f | wc -l), Size: $(du -sh _site | cut -f1)"
 
