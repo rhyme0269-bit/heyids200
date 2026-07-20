@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyLogin, deleteSession, verifySession } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-// POST: 登入
+// POST: 登入（限制 5 次 / 分鐘 per IP）
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const { allowed } = checkRateLimit(`login:${ip}`, 5, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "嘗試次數過多，請稍後再試" },
+      { status: 429 }
+    );
+  }
+
   const { username, password } = await request.json();
 
   if (!username || !password) {
@@ -19,8 +29,6 @@ export async function POST(request: NextRequest) {
     username: result.username,
   });
 
-  // Set httpOnly session cookie
-  // secure 只在實際使用 HTTPS 時啟用（透過 NEXT_PUBLIC_SITE_URL 判斷）
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const isHttps = siteUrl.startsWith("https://");
 
@@ -29,7 +37,7 @@ export async function POST(request: NextRequest) {
     secure: isHttps,
     sameSite: "lax",
     path: "/",
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 24 * 60 * 60,
   });
 
   return response;

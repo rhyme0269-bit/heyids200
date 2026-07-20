@@ -215,8 +215,12 @@ function seedAdminUser(db: Database.Database) {
   const count = db.prepare("SELECT COUNT(*) as c FROM admin_users").get() as { c: number };
   if (count.c > 0) return;
 
-  const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "admin123";
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    console.warn("WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created.");
+    return;
+  }
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
 
@@ -236,7 +240,7 @@ export function verifyLogin(username: string, password: string): { token: string
   if (!user) return null;
 
   const hash = crypto.scryptSync(password, user.salt, 64).toString("hex");
-  if (hash !== user.password_hash) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(user.password_hash, "hex"))) return null;
 
   // Create session (expires in 24 hours)
   const token = crypto.randomBytes(32).toString("hex");
