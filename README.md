@@ -6,13 +6,11 @@
 
 ## 快速預覽
 
-想先看網站長什麼樣子？直接用瀏覽器打開：
+每次推送到 GitHub 會自動部署預覽版：
 
-```
-docs/preview.html
-```
+**https://rhyme0269-bit.github.io/heyids200**
 
-雙擊就能開啟，不需要安裝任何東西。
+不需安裝任何東西，開瀏覽器就能看。（注意：預覽版為靜態頁面，後台及表單功能需正式部署才能使用）
 
 ---
 
@@ -209,15 +207,6 @@ src/lib/default-data.ts
 
 改完後執行 `docker compose up -d --build` 重新建置即可看到更新。
 
-### 方法三：更新靜態預覽檔
-
-如果改了程式碼內容，想同步更新 `docs/preview.html` 預覽檔：
-
-```bash
-node scripts/generate-preview.js
-```
-
-這會自動產生最新的靜態預覽 HTML，可直接用瀏覽器打開查看。
 
 ---
 
@@ -332,7 +321,7 @@ src/
 └── sanity/               # Sanity CMS 設定（env, schemas）
 
 docs/                     # 靜態預覽 HTML
-scripts/                  # 自動化腳本（generate-preview.js）
+.github/workflows/        # GitHub Actions（自動部署預覽到 GitHub Pages）
 nginx/                    # Nginx 反向代理設定
 ```
 
