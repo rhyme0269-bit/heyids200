@@ -14,12 +14,8 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
-  # AUTO-DETECTED from GitHub context:
-  # github.repository = "rhyme0269-bit/heyids200"
-  # → repo name = "heyids200"
-  # → BASE_PATH = "/heyids200"
-  # → SITE_URL = "https://rhyme0269-bit.github.io/heyids200"
-  # 有自訂網域後，設定 CUSTOM_DOMAIN 就會自動切換
+# URLs are auto-detected from github context.
+# Set CUSTOM_DOMAIN in repo Variables to use a custom domain.
 
 jobs:
   build-and-deploy:
@@ -37,7 +33,6 @@ jobs:
         run: |
           REPO_NAME="${{ github.event.repository.name }}"
           OWNER="${{ github.repository_owner }}"
-          # 有自訂網域 → basePath 為空；沒有 → 用 repo 名
           if [ -n "${{ vars.CUSTOM_DOMAIN }}" ]; then
             echo "base_path=" >> $GITHUB_OUTPUT
             echo "site_url=https://${{ vars.CUSTOM_DOMAIN }}" >> $GITHUB_OUTPUT
@@ -67,22 +62,19 @@ jobs:
         run: |
           BASE="${{ steps.urls.outputs.base_path }}"
 
-          # Auto-detect pages from src/app/ directory
-          # Finds all page.tsx, excludes api/ and admin/, extracts route paths
+          # Auto-detect pages from src/app/
           PAGES=("")
-          for page_file in $(find src/app -name "page.tsx" -not -path "*/api/*" -not -path "*/admin/*" | sort); do
-            route=$(dirname "$page_file" | sed 's|^src/app||' | sed 's|^/||')
+          for f in $(find src/app -name "page.tsx" -not -path "*/api/*" -not -path "*/admin/*" | sort); do
+            route=$(dirname "$f" | sed 's|^src/app||' | sed 's|^/||')
             if [ -n "$route" ] && [ "$route" != "." ]; then
               PAGES+=("$route")
             fi
           done
           echo "Detected pages: ${PAGES[*]}"
 
-          # Copy assets for standalone server
+          # Prepare standalone server
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
-
-          # Start server
           node .next/standalone/server.js &
           SERVER_PID=$!
           for i in $(seq 1 30); do
@@ -90,7 +82,7 @@ jobs:
             sleep 1
           done
 
-          # Download pages as dir/index.html
+          # Download pages
           mkdir -p _site
           for page in "${PAGES[@]}"; do
             if [ -z "$page" ]; then
@@ -101,29 +93,19 @@ jobs:
             fi
           done
 
-          # Copy ALL static assets (CSS + JS)
+          # Copy static assets
           mkdir -p "_site/_next"
           cp -r .next/static "_site/_next/static"
           cp -r public/* _site/ 2>/dev/null || true
 
           kill $SERVER_PID 2>/dev/null || true
 
-          # Create 404.html — redirects /about → /{base}/about
-          # This catches Next.js client-side navigation that misses basePath
-          cat > _site/404.html << HEREDOC
-          <!DOCTYPE html>
-          <html><head><meta charset="utf-8"><title>Redirecting...</title>
-          <script>
-          (function(){
-            var base = '${BASE}';
-            var path = window.location.pathname;
-            if (!path.startsWith(base)) {
-              window.location.replace(base + path + window.location.search + window.location.hash);
-            }
-          })();
-          </script>
+          # 404.html redirect for client-side navigation
+          cat > _site/404.html <<EOF
+          <!DOCTYPE html><html><head><meta charset="utf-8"><title>Redirecting</title>
+          <script>var b='${BASE}',p=location.pathname;if(!p.startsWith(b))location.replace(b+p+location.search+location.hash);</script>
           </head><body></body></html>
-HEREDOC
+          EOF
 
           echo "Files: $(find _site -type f | wc -l), Size: $(du -sh _site | cut -f1)"
 
