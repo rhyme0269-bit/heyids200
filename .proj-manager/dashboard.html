@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>heyids200 - Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fc;color:#333}
+.header{background:linear-gradient(135deg,#1a1a2e,#2d2b55);color:#fff;padding:1.5rem 2rem}
+.header h1{font-size:1.4rem}
+.header .sub{color:rgba(255,255,255,.5);font-size:.82rem;margin-top:.3rem}
+.main{max-width:1200px;margin:0 auto;padding:1.5rem}
+.stats{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:1rem 1.5rem;text-align:center;flex:1;min-width:120px}
+.stat-num{font-size:1.8rem;font-weight:800}
+.stat-num.green{color:#10b981}.stat-num.red{color:#ef4444}.stat-num.blue{color:#4361ee}.stat-num.purple{color:#7c3aed}
+.stat-label{font-size:.78rem;color:#9ca3af;margin-top:.2rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:1rem;margin-bottom:1.5rem}
+.card{background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:1.25rem}
+.card h2{font-size:1rem;color:#1a1a2e;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:2px solid #e8ecf1}
+.full{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{text-align:left;padding:.4rem .5rem;background:#f8f9fc;color:#6b7280;font-size:.78rem;border-bottom:1px solid #e8ecf1}
+td{padding:.4rem .5rem;border-bottom:1px solid #f3f4f6}
+.badge{display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.72rem;font-weight:600}
+.badge-green{background:#d1fae5;color:#065f46}.badge-red{background:#fee2e2;color:#991b1b}.badge-yellow{background:#fef3c7;color:#92400e}.badge-gray{background:#f3f4f6;color:#6b7280}
+.empty{color:#9ca3af;font-size:.85rem;text-align:center;padding:1.5rem}
+.cl-timeline{position:relative;padding-left:1.2rem}
+.cl-timeline::before{content:'';position:absolute;left:.45rem;top:.5rem;bottom:.5rem;width:2px;background:#e8ecf1}
+.cl-entry{position:relative;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start}
+.cl-dot{width:10px;height:10px;border-radius:50%;background:var(--cl-color,#4361ee);flex-shrink:0;margin-top:.45rem;position:relative;z-index:1;box-shadow:0 0 0 3px #fff}
+.cl-content{flex:1;min-width:0}
+.cl-header{display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.3rem 0;user-select:none}
+.cl-header:hover .cl-title{color:#4361ee}
+.cl-date{background:#f3f4f6;color:#6b7280;font-size:.72rem;padding:.1rem .4rem;border-radius:4px;white-space:nowrap;font-family:'SF Mono','Fira Code',monospace}
+.cl-title{font-weight:600;font-size:.86rem;color:#1a1a2e;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-arrow{font-size:.65rem;color:#9ca3af;flex-shrink:0}
+.cl-body{font-size:.82rem;color:#374151;margin-top:.2rem;padding-left:.25rem;border-left:2px solid #f3f4f6}
+.cl-body h3,.cl-body h4{font-size:.84rem;margin:.4rem 0 .2rem;color:#4b5563}
+.cl-body ul{padding-left:1.2rem;margin:.2rem 0}
+.cl-body p{margin-bottom:.25rem}
+.md-code{background:#f3f4f6;padding:.5rem;border-radius:6px;font-size:.78rem;overflow-x:auto;font-family:'SF Mono','Fira Code',monospace}
+.test-item{margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:1px solid #f3f4f6}
+.md-small{font-size:.8rem;color:#6b7280;margin-top:.2rem}
+.md-small h2,.md-small h3,.md-small h4{font-size:.82rem}
+.footer{text-align:center;padding:1rem;color:#d1d5db;font-size:.75rem}
+p{margin-bottom:.3rem}
+h2{margin:.5rem 0 .3rem}h3{margin:.4rem 0 .2rem}h4{margin:.3rem 0 .2rem}
+.inline-code{background:#f3f4f6;padding:.1rem .3rem;border-radius:3px;font-size:.82rem;font-family:'SF Mono','Fira Code',monospace;color:#e11d48}
+.md-table{width:100%;border-collapse:collapse;font-size:.83rem;margin:.4rem 0}
+.md-table th{text-align:left;padding:.35rem .5rem;background:#f8f9fc;color:#6b7280;font-size:.78rem;border-bottom:1px solid #e8ecf1}
+.md-table td{padding:.35rem .5rem;border-bottom:1px solid #f3f4f6}
+.md-hr{border:none;border-top:1px solid #e8ecf1;margin:.6rem 0}
+.checklist{list-style:none;padding-left:.5rem}
+.checklist li{position:relative;padding-left:1.4rem;margin:.2rem 0}
+.checklist li::before{position:absolute;left:0;font-size:.9rem}
+.checklist li.checked::before{content:"\2611";color:#10b981}
+.checklist li.unchecked::before{content:"\2610";color:#9ca3af}
+.ctx-section{margin-bottom:.5rem;border-radius:8px;overflow:hidden;border:1px solid #f3f4f6}
+.ctx-header{padding:.5rem .75rem;font-weight:600;font-size:.88rem;color:#1a1a2e;background:#fafbfc;border-left:3px solid;cursor:pointer;user-select:none;display:flex;align-items:center;gap:.4rem}
+.ctx-header:hover{background:#f3f4f6}
+.ctx-arrow{font-size:.7rem;color:#9ca3af;width:1rem;text-align:center}
+.ctx-body{padding:.5rem .75rem .5rem 1.5rem;font-size:.84rem;color:#374151}
+.ctx-body h3{font-size:.85rem;color:#4b5563;margin:.5rem 0 .2rem}
+.ctx-body h4{font-size:.83rem;color:#6b7280;margin:.4rem 0 .2rem}
+.ctx-body ul{padding-left:1.2rem;margin:.2rem 0}
+.ctx-body p{margin-bottom:.25rem}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>heyids200</h1>
+<div class="sub">node · nextjs · TypeScript · 產出時間：2026-07-22 14:22</div>
+</div>
+<div class="main">
+
+<div class="stats">
+<div class="stat-card"><div class="stat-num blue">10</div><div class="stat-label">功能</div></div>
+<div class="stat-card"><div class="stat-num red">0</div><div class="stat-label">開放缺陷</div></div>
+<div class="stat-card"><div class="stat-num purple">0</div><div class="stat-label">相依套件</div></div>
+<div class="stat-card"><div class="stat-num green">0</div><div class="stat-label">測試報告</div></div>
+</div>
+
+<div class="grid">
+<div class="card"><h2>功能 Features</h2><table><thead><tr><th>ID</th><th>名稱</th><th>狀態</th></tr></thead><tbody><tr><td>feature-001</td><td>前台頁面</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-002</td><td>收費標準</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-003</td><td>小工具</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-004</td><td>SQLite 資料庫</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-005</td><td>Admin 後台</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-006</td><td>圖片管理</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-007</td><td>Docker 部署</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-008</td><td>SEO</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-009</td><td>GitHub Pages 自動預覽部署</td><td><span class="badge badge-green">completed</span></td></tr>
+<tr><td>feature-010</td><td>安全稽核修復</td><td><span class="badge badge-green">completed</span></td></tr>
+</tbody></table></div>
+<div class="card"><h2>缺陷 Bugs</h2><div class="empty">沒有缺陷記錄</div></div>
+<div class="card"><h2>相依套件</h2><div class="empty">無相依套件記錄</div></div>
+<div class="card"><h2>測試</h2><div class="empty">尚無測試記錄</div></div>
+</div>
+
+<div class="card full" style="margin-bottom:1rem"><h2>變更日誌</h2><div style="max-height:500px;overflow-y:auto"><div class="cl-timeline"><div class="cl-entry" style="--cl-color:#ef4444"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-20</span><span class="cl-title">移除靜態 preview.html，改用 GitHub Pages</span><span class="cl-arrow">&#9660;</span></div><div class="cl-body" ><h4>變更摘要</h4>
+<p>刪除手動維護的 <code class="inline-code">docs/preview.html</code> 和 <code class="inline-code">scripts/generate-preview.js</code>，預覽改為 GitHub Pages 自動部署。</p>
+<h4>改動</h4>
+<ul>
+<li>刪除 <code class="inline-code">docs/preview.html</code>（1300+ 行靜態檔）</li>
+<li>刪除 <code class="inline-code">scripts/generate-preview.js</code></li>
+<li>更新 README 預覽說明指向 GitHub Pages URL</li>
+</ul>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#f59e0b"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-20</span><span class="cl-title">安全稽核與修復</span><span class="cl-arrow">&#9660;</span></div><div class="cl-body" ><h4>變更摘要</h4>
+<p>完成全面安全稽核，修復所有 Critical 漏洞。</p>
+<h4>Critical 修復</h4>
+<ul>
+<li>移除 Admin 密碼 fallback（不設環境變數則不建帳號）</li>
+<li>登入加速率限制（5 次/分鐘 per IP）</li>
+<li>聯絡表單加速率限制（5 次/分鐘 per IP）</li>
+<li>圖片上傳加 5MB 大小限制 + MIME 白名單</li>
+<li>圖片 key 限定白名單（logo, hero_bg, scrivener_photo）</li>
+<li>密碼比對改用 timing-safe comparison</li>
+</ul>
+<h4>Medium 修復</h4>
+<ul>
+<li>公開圖片 API 加 MIME 白名單 + nosniff header</li>
+<li>移除殘留的 Sanity CDN remote pattern</li>
+</ul>
+<h4>新增檔案</h4>
+<ul>
+<li><code class="inline-code">src/lib/rate-limit.ts</code>：記憶體速率限制器</li>
+</ul>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#8b5cf6"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-20</span><span class="cl-title">GitHub Pages 自動部署預覽</span><span class="cl-arrow">&#9660;</span></div><div class="cl-body" ><h4>變更摘要</h4>
+<p>建立 GitHub Actions workflow，每次 push 自動部署靜態預覽到 GitHub Pages。</p>
+<h4>功能</h4>
+<ul>
+<li>自動從 <code class="inline-code">src/app/</code> 掃描頁面（不寫死）</li>
+<li>自動從 GitHub context 取得 basePath 和 URL</li>
+<li>支援 <code class="inline-code">CUSTOM_DOMAIN</code> 變數切換自訂網域</li>
+<li><code class="inline-code">next.config.ts</code> 支援 <code class="inline-code">NEXT_PUBLIC_BASE_PATH</code> 環境變數</li>
+<li>404.html 重導向處理 client-side navigation</li>
+</ul>
+<h4>預覽模式工具</h4>
+<ul>
+<li><code class="inline-code">src/lib/preview.ts</code>：偵測預覽模式</li>
+<li><code class="inline-code">PreviewBanner</code>：頂部提示條（僅預覽版顯示）</li>
+<li><code class="inline-code">PreviewGuard</code>：包住 server-dependent 功能，預覽版顯示 toast 提示</li>
+</ul>
+<h4>預覽網址</h4>
+<p>https://rhyme0269-bit.github.io/heyids200</p>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#06b6d4"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-20</span><span class="cl-title">前端設計感升級</span><span class="cl-arrow">&#9654;</span></div><div class="cl-body" style="display:none"><h4>變更摘要</h4>
+<p>參考 cx468.com.tw 設計模式，大幅提升前端視覺品質。</p>
+<h4>改動</h4>
+<ul>
+<li><strong>Hero</strong>：加入光暈裝飾球、標題裝飾線、玻璃態數據條</li>
+<li><strong>About Preview</strong>：加入 section label 裝飾、大引號引言、琥珀左邊框特色卡片、hover 上浮效果</li>
+<li><strong>Services Preview</strong>：卡片加序號（01-09）、hover 底部漸層線 + 上浮效果</li>
+<li><strong>CTA</strong>：頂部琥珀漸層線、光暈背景、信任指標文字列</li>
+<li><strong>頁面過渡</strong>：Hero→About 曲線 SVG 分隔</li>
+<li><strong>CSS</strong>：新增 hover-lift、text-gradient、section-label 工具類</li>
+<li><strong>Header</strong>：移除透明效果（修復非首頁白字不可見問題），一律白底深字</li>
+</ul>
+<h4>影響檔案</h4>
+<ul>
+<li><code class="inline-code">src/components/sections/HeroSection.tsx</code></li>
+<li><code class="inline-code">src/components/sections/AboutPreview.tsx</code></li>
+<li><code class="inline-code">src/components/sections/ServicesPreview.tsx</code></li>
+<li><code class="inline-code">src/components/sections/CtaSection.tsx</code></li>
+<li><code class="inline-code">src/components/layout/Header.tsx</code></li>
+<li><code class="inline-code">src/app/globals.css</code></li>
+<li><code class="inline-code">src/app/page.tsx</code></li>
+</ul>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#6b7280"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-17</span><span class="cl-title">專案管理初始化</span><span class="cl-arrow">&#9654;</span></div><div class="cl-body" style="display:none"><ul>
+<li>建立 <code class="inline-code">.proj-manager/</code> 專案管理目錄</li>
+<li>記錄專案結構、功能清單、依賴關係、開發上下文</li>
+</ul>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#4361ee"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-17</span><span class="cl-title">Sanity CMS 遷移至 SQLite + Admin 後台</span><span class="cl-arrow">&#9654;</span></div><div class="cl-body" style="display:none"><h4>變更摘要</h4>
+<p>將原本規劃的 Sanity CMS 方案替換為 SQLite（better-sqlite3）本地資料庫方案，並新增完整的後台管理介面。</p>
+<h4>新增功能</h4>
+<ul>
+<li><strong>SQLite 資料庫層</strong>：<code class="inline-code">src/lib/db.ts</code>，含完整 Schema、自動 seed、CRUD 操作</li>
+<li><strong>Admin 後台</strong>：<code class="inline-code">/admin</code> 路徑，7 個管理分頁（基本資訊、關於我們、服務項目、收費標準、常見問題、服務流程、圖片管理）</li>
+<li><strong>圖片 BLOB 儲存</strong>：Logo、首頁背景、地政士照片以 BLOB 存入 SQLite</li>
+<li><strong>RESTful API</strong>：8 個後台 API 端點（auth, settings, about, services, fees, faqs, flow, images）</li>
+<li><strong>驗證機制</strong>：帳號密碼登入，透過環境變數設定</li>
+</ul>
+<h4>移除</h4>
+<ul>
+<li>Sanity CMS 相關程式碼與設定（sanity/ 目錄）</li>
+<li>Sanity 相關環境變數（NEXT_PUBLIC_SANITY_*）</li>
+</ul>
+<h4>影響範圍</h4>
+<ul>
+<li>所有前台頁面改為從 SQLite 讀取資料</li>
+<li>Docker volume 用於持久化 SQLite 資料庫檔案</li>
+<li>部署不再需要外部 CMS 服務</li>
+</ul>
+<hr class="md-hr"></div></div></div>
+<div class="cl-entry" style="--cl-color:#10b981"><div class="cl-dot"></div><div class="cl-content"><div class="cl-header" onclick="var b=this.nextElementSibling;var a=this.querySelector('.cl-arrow');if(b.style.display==='none'){b.style.display='block';a.innerHTML='&#9660;'}else{b.style.display='none';a.innerHTML='&#9654;'}"><span class="cl-date">2026-07-17</span><span class="cl-title">初始專案建置 - 客戶 10 項需求實作</span><span class="cl-arrow">&#9654;</span></div><div class="cl-body" style="display:none"><h4>變更摘要</h4>
+<p>根據客戶提出的 10 項需求，完成專案重構與功能實作。</p>
+<h4>客戶需求處理</h4>
+<table class="md-table"><thead><tr>
+<th>#</th>
+<th>需求</th>
+<th>狀態</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>一頁式與分頁式的區段順序統一</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>2</td>
+<td>服務項目「建物第一次登記」改為「房地合一稅」</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>3</td>
+<td>收費方式列出 42 項收費標準</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>4</td>
+<td>資歷順序調整（87年國考及格起）</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>5</td>
+<td>刪除「全國不動產特約地政士」</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>6</td>
+<td>專長領域新增「房地合一稅節稅規劃」</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>7</td>
+<td>買賣過戶時間改為 30~45 天</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>8</td>
+<td>新增「小工具」分頁（6 個試算器）</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>9</td>
+<td>網頁風格改為大地色系</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Copyright 保留</td>
+<td>已完成</td>
+</tr>
+</tbody></table>
+<h4>實作內容</h4>
+<ul>
+<li>6 個前台頁面：首頁、關於我們、服務項目、小工具、常見問題、聯絡我們</li>
+<li>42 項收費標準表格</li>
+<li>6 個不動產試算工具（購屋總費用、土地增值稅、房地合一稅、房貸、契稅、貸款負擔能力）</li>
+<li>SEO 結構化資料、sitemap、robots.txt</li>
+<li>Docker + Nginx 部署方案</li>
+<li>靜態預覽 HTML（docs/preview.html）</li>
+</ul></div></div></div></div></div></div>
+<div class="card full"><h2>專案上下文</h2><div style="max-height:400px;overflow-y:auto"><div class="ctx-section"><div class="ctx-header" style="border-left-color:#4361ee" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 專案概述</div><div class="ctx-body"><p>合一地政士事務所（Oneness Scrivener Office）的官方網站，提供事務所介紹、服務項目、收費標準、不動產試算工具、常見問題與聯絡資訊。網站具備完整的後台管理介面，非工程師可自行編輯所有內容（文字、照片）。</p></div></div>
+<div class="ctx-section"><div class="ctx-header" style="border-left-color:#10b981" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 技術棧</div><div class="ctx-body"><table class="md-table"><thead><tr>
+<th>層級</th>
+<th>技術</th>
+<th>版本</th>
+</tr></thead><tbody>
+<tr>
+<td>框架</td>
+<td>Next.js (App Router)</td>
+<td>16.2.10</td>
+</tr>
+<tr>
+<td>語言</td>
+<td>TypeScript</td>
+<td>^5</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>React</td>
+<td>19.2.4</td>
+</tr>
+<tr>
+<td>樣式</td>
+<td>Tailwind CSS</td>
+<td>^4</td>
+</tr>
+<tr>
+<td>資料庫</td>
+<td>SQLite (better-sqlite3)</td>
+<td>^12.11.1</td>
+</tr>
+<tr>
+<td>表單</td>
+<td>React Hook Form + Zod</td>
+<td>^7.81.0 / ^4.4.3</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>Docker (multi-stage) + Nginx</td>
+<td>-</td>
+</tr>
+</tbody></table></div></div>
+<div class="ctx-section"><div class="ctx-header" style="border-left-color:#f59e0b" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 設計風格</div><div class="ctx-body"><ul>
+<li>色調：大地色系 - stone（暖灰棕）+ amber-800（深琥珀）</li>
+<li>風格：專業、可信賴、溫暖</li>
+<li>響應式設計，支援桌面與行動裝置</li>
+</ul></div></div>
+<div class="ctx-section"><div class="ctx-header" style="border-left-color:#8b5cf6" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 目錄結構說明</div><div class="ctx-body"><pre class="md-code">
+src/
+├── app/                  # Next.js App Router 頁面
+│   ├── page.tsx          # 首頁
+│   ├── layout.tsx        # 全站 Layout
+│   ├── about/            # 關於我們
+│   ├── services/         # 服務項目 + 收費標準
+│   ├── tools/            # 小工具（6 個試算器）
+│   ├── faq/              # 常見問題
+│   ├── contact/          # 聯絡我們
+│   ├── admin/            # 後台管理介面
+│   └── api/              # API 路由
+│       ├── contact/      # 聯絡表單 POST
+│       ├── images/[key]/ # 圖片取得（BLOB from SQLite）
+│       └── admin/        # 後台 CRUD API（7 個端點）
+├── components/
+│   ├── common/           # 共用元件
+│   ├── layout/           # Header, Footer
+│   └── sections/         # 首頁區塊元件
+└── lib/
+    ├── db.ts             # SQLite 連線、Schema、CRUD、auto-seed
+    ├── default-data.ts   # 所有預設內容資料
+    ├── auth.ts           # 後台驗證邏輯
+    └── structured-data.ts # SEO JSON-LD
+</pre></div></div>
+<div class="ctx-section"><div class="ctx-header" style="border-left-color:#ef4444" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 開發指引</div><div class="ctx-body"><h4>資料流</h4>
+<p>1. <strong>首次啟動</strong>：<code class="inline-code">db.ts</code> 自動建立 SQLite 資料庫，從 <code class="inline-code">default-data.ts</code> seed 預設資料</p>
+<p>2. <strong>前台讀取</strong>：各頁面 Server Component 從 SQLite 讀取資料渲染</p>
+<p>3. <strong>後台編輯</strong>：AdminClient.tsx 透過 <code class="inline-code">/api/admin/*</code> RESTful API 進行 CRUD</p>
+<p>4. <strong>圖片</strong>：以 BLOB 存入 SQLite，透過 <code class="inline-code">/api/images/[key]</code> 動態提供</p>
+<h4>新增頁面</h4>
+<p>1. 在 <code class="inline-code">src/app/</code> 下建立目錄與 <code class="inline-code">page.tsx</code></p>
+<p>2. 在 <code class="inline-code">Header.tsx</code> 新增導覽連結</p>
+<p>3. 在 <code class="inline-code">sitemap.ts</code> 新增路由</p>
+<p>4. 視需要在 <code class="inline-code">db.ts</code> 新增資料表與 CRUD 函式</p>
+<h4>新增後台管理分頁</h4>
+<p>1. 在 <code class="inline-code">src/app/api/admin/</code> 下建立 API route</p>
+<p>2. 在 <code class="inline-code">AdminClient.tsx</code> 新增對應 tab 與 UI</p>
+<p>3. 在 <code class="inline-code">db.ts</code> 新增資料表 Schema 與操作函式</p>
+<p>4. 在 <code class="inline-code">default-data.ts</code> 新增預設資料</p>
+<h4>環境變數</h4>
+<ul>
+<li><code class="inline-code">HTTP_PORT</code> / <code class="inline-code">HTTPS_PORT</code>：Docker 對外 port</li>
+<li><code class="inline-code">DOMAIN</code>：網域名稱</li>
+<li><code class="inline-code">NEXT_PUBLIC_SITE_URL</code>：網站完整 URL</li>
+<li><code class="inline-code">ADMIN_USERNAME</code> / <code class="inline-code">ADMIN_PASSWORD</code>：後台登入帳密</li>
+</ul>
+<h4>部署流程</h4>
+<pre class="md-code">
+docker compose up -d --build
+</pre>
+<p>網站運行於 <code class="inline-code">http://localhost:8081</code>（可透過 .env 調整）。</p>
+<h4>預覽部署</h4>
+<p>GitHub Pages 自動部署，每次 push 到 main 自動更新：</p>
+<ul>
+<li>預覽網址：https://rhyme0269-bit.github.io/heyids200</li>
+<li>Workflow：<code class="inline-code">.github/workflows/deploy-preview.yml</code></li>
+<li>頁面自動從 <code class="inline-code">src/app/</code> 掃描（排除 api/ 和 admin/）</li>
+<li>支援 <code class="inline-code">CUSTOM_DOMAIN</code> 變數切換自訂網域</li>
+</ul>
+<h4>安全機制</h4>
+<ul>
+<li>登入速率限制（5 次/分鐘 per IP）</li>
+<li>聯絡表單速率限制（5 次/分鐘 per IP）</li>
+<li>圖片上傳：5MB 限制 + MIME 白名單 + key 白名單</li>
+<li>密碼 scrypt 雜湊 + timing-safe 比對</li>
+<li>httpOnly session cookie</li>
+</ul></div></div>
+<div class="ctx-section"><div class="ctx-header" style="border-left-color:#06b6d4" onclick="var b=this.nextElementSibling;var a=this.querySelector('.ctx-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='&#9660;'}else{b.style.display='none';a.textContent='&#9654;'}"><span class="ctx-arrow">&#9660;</span> 尚未完成的功能</div><div class="ctx-body"><ul>
+<li>Email 服務串接（聯絡表單寄信通知）</li>
+<li>SSL / HTTPS 正式啟用</li>
+<li>網域設定與 DNS（GitHub Pages 自訂網域）</li>
+<li>試算工具稅率確認</li>
+<li>Admin API 加 Zod input validation</li>
+<li>CSP / HSTS security headers</li>
+<li>CSRF 防護</li>
+</ul></div></div></div></div>
+
+</div>
+<div class="footer">Project Manager Dashboard · 2026-07-22 14:22</div>
+</body>
+</html>
