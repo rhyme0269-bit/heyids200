@@ -5,8 +5,8 @@
       "description": "Next.js App Router 頁面路由",
       "children": {
         "page.tsx": "首頁入口",
-        "layout.tsx": "全站共用 Layout（Header + Footer）",
-        "globals.css": "全域樣式（Tailwind CSS 4）",
+        "layout.tsx": "全站共用 Layout（Header + Footer + PreviewBanner）",
+        "globals.css": "全域樣式（Tailwind CSS 4 + 自訂動畫）",
         "favicon.ico": "網站 favicon",
         "robots.ts": "robots.txt 動態生成",
         "sitemap.ts": "sitemap.xml 動態生成",
@@ -18,51 +18,50 @@
         "contact/page.tsx": "聯絡我們頁面",
         "admin/page.tsx": "後台管理頁面（Server Component）",
         "admin/AdminClient.tsx": "後台管理介面（Client Component）",
-        "api/contact/route.ts": "聯絡表單 API",
-        "api/images/[key]/route.ts": "圖片取得 API（BLOB from SQLite）",
-        "api/admin/auth/route.ts": "後台登入驗證 API",
+        "api/contact/route.ts": "聯絡表單 API（含速率限制）",
+        "api/images/[key]/route.ts": "圖片取得 API（BLOB + MIME 白名單）",
+        "api/admin/auth/route.ts": "後台登入驗證 API（含速率限制）",
         "api/admin/settings/route.ts": "基本資訊 CRUD API",
         "api/admin/about/route.ts": "關於我們 CRUD API",
         "api/admin/services/route.ts": "服務項目 CRUD API",
         "api/admin/fees/route.ts": "收費標準 CRUD API",
         "api/admin/faqs/route.ts": "常見問題 CRUD API",
         "api/admin/flow/route.ts": "服務流程 CRUD API",
-        "api/admin/images/route.ts": "圖片上傳管理 API"
+        "api/admin/images/route.ts": "圖片上傳管理 API（size + MIME + key 白名單）"
       }
     },
     "src/components": {
       "description": "React 元件庫",
       "children": {
-        "common/ContactForm.tsx": "聯絡表單元件（React Hook Form + Zod）",
+        "common/ContactForm.tsx": "聯絡表單元件",
         "common/FaqAccordion.tsx": "FAQ 手風琴展開收合元件",
+        "common/FloatingLine.tsx": "手機浮動 LINE 按鈕",
+        "common/PreviewBanner.tsx": "預覽版頂部提示條",
+        "common/PreviewGuard.tsx": "預覽版功能攔截 + toast 提示",
         "common/StructuredData.tsx": "SEO 結構化資料元件",
         "layout/Header.tsx": "全站導覽列",
         "layout/Footer.tsx": "全站頁尾",
-        "sections/HeroSection.tsx": "首頁 Hero 區塊",
-        "sections/AboutPreview.tsx": "首頁關於我們預覽區塊",
-        "sections/ServicesPreview.tsx": "首頁服務項目預覽區塊",
+        "sections/HeroSection.tsx": "首頁 Hero 區塊（光暈 + 數據條）",
+        "sections/AboutPreview.tsx": "首頁關於我們預覽（引言 + 特色卡片 + 數據條）",
+        "sections/ServicesPreview.tsx": "首頁服務項目預覽（序號卡片 + hover 效果）",
         "sections/CtaSection.tsx": "首頁 CTA 呼籲行動區塊"
       }
     },
     "src/lib": {
       "description": "共用函式庫與資料層",
       "children": {
-        "db.ts": "SQLite 資料庫連線、Schema 定義、CRUD 操作、自動 seed",
-        "default-data.ts": "所有預設內容資料（42 項收費、9 項服務、7 題 FAQ 等）",
+        "db.ts": "SQLite 資料庫連線、Schema、CRUD、auth、auto-seed",
+        "default-data.ts": "所有預設內容資料（seed 用）",
         "structured-data.ts": "SEO JSON-LD 結構化資料生成",
-        "auth.ts": "後台驗證邏輯"
+        "auth.ts": "後台 session 驗證邏輯",
+        "rate-limit.ts": "記憶體速率限制器",
+        "preview.ts": "預覽模式偵測（NEXT_PUBLIC_BASE_PATH）"
       }
     },
-    "docs": {
-      "description": "靜態預覽文件",
+    ".github/workflows": {
+      "description": "GitHub Actions CI/CD",
       "children": {
-        "preview.html": "網站靜態預覽 HTML（可直接用瀏覽器開啟）"
-      }
-    },
-    "scripts": {
-      "description": "自動化腳本",
-      "children": {
-        "generate-preview.js": "從程式碼自動生成 preview.html"
+        "deploy-preview.yml": "自動部署預覽到 GitHub Pages"
       }
     },
     "nginx": {
@@ -74,30 +73,24 @@
     "public": {
       "description": "靜態資源",
       "children": {
-        "file.svg": "檔案圖示",
-        "globe.svg": "地球圖示",
-        "next.svg": "Next.js Logo",
-        "vercel.svg": "Vercel Logo",
-        "window.svg": "視窗圖示"
+        "favicon.ico": "網站 favicon"
       }
     }
   },
   "config_files": {
     "package.json": "Node.js 專案設定與依賴管理",
     "tsconfig.json": "TypeScript 編譯設定",
-    "next.config.ts": "Next.js 設定（standalone output）",
+    "next.config.ts": "Next.js 設定（standalone + basePath）",
     "postcss.config.mjs": "PostCSS 設定（Tailwind CSS 4）",
     "eslint.config.mjs": "ESLint 程式碼品質設定",
-    "docker-compose.yml": "Docker Compose 多容器部署設定",
+    "docker-compose.yml": "Docker Compose 部署設定（含 volume）",
     "Dockerfile": "Docker 多階段建置設定",
     ".dockerignore": "Docker 建置忽略清單",
-    ".env": "環境變數（機密，不入版控）",
-    ".env.example": "環境變數範本",
-    ".env.local": "本機開發環境變數",
+    ".env.example": "環境變數範本（ADMIN 帳密 + port + 網域）",
     ".gitignore": "Git 忽略清單"
   },
   "doc_files": {
-    "README.md": "專案說明文件（部署指南、內容修改指南）",
+    "README.md": "部署指南 + 後台使用說明",
     "AGENTS.md": "Claude Code Agent 指引",
     "CLAUDE.md": "Claude 設定",
     "oneness-spec.md": "專案規格文件"
