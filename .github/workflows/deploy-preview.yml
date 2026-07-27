@@ -74,7 +74,7 @@ jobs:
 
           # Prepare standalone server
           cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
+          if [ -d public ]; then cp -r public .next/standalone/public; fi
           node .next/standalone/server.js &
           SERVER_PID=$!
           for i in $(seq 1 30); do
