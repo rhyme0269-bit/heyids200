@@ -1490,8 +1490,8 @@ export default function AdminClient() {
                                     : "relative h-32 bg-stone-800"
                                   : "h-40 bg-stone-100"
                               }`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
-                                {/* Show image preview for non-color modes */}
-                                {(!isBg || mode === "image") && (() => {
+                                {/* Show image preview (all modes except color for bg) */}
+                                {(!isBg || mode !== "color") && (() => {
                                   const ts = imageTimestamps[slot.key];
                                   const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
                                   const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
@@ -1531,8 +1531,8 @@ export default function AdminClient() {
                                     <span className="text-sm font-bold text-stone-600">{slot.label}</span>
                                   </div>
                                 )}
-                                {/* Fallback for non-bg without image */}
-                                {!isBg && (
+                                {/* Fallback placeholder — only show when no default image exists */}
+                                {!DEFAULT_IMAGES[slot.key] && (
                                   <div className="flex flex-col items-center justify-center text-stone-400">
                                     <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1540,19 +1540,10 @@ export default function AdminClient() {
                                     <span className="text-xs">尚無圖片</span>
                                   </div>
                                 )}
-                                {/* Fallback for bg image mode without image */}
-                                {isBg && mode === "image" && (
-                                  <div className="flex flex-col items-center justify-center text-stone-400">
-                                    <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="text-xs">請上傳背景圖</span>
-                                  </div>
-                                )}
                               </div>
 
-                              {/* Upload + Delete (show for non-bg, or bg in image mode) */}
-                              {(!isBg || mode === "image") && (
+                              {/* Upload + Delete (show for non-bg, or bg in non-color mode) */}
+                              {(!isBg || mode !== "color") && (
                                 <div className="flex gap-2">
                                   <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
                                     上傳圖片

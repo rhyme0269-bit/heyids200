@@ -1,5 +1,24 @@
 # Changelog
 
+## [fix: 後台圖片預覽修正] - 2026-07-27T00:00:00Z
+
+### 變更類型
+
+Bug 修復
+
+### 修改描述
+
+修正後台圖片管理預覽問題：背景圖 default 模式下不顯示預覽圖、非背景圖欄位有預設圖時仍顯示「尚無圖片」。改為所有非 color 模式都顯示預覽，fallback placeholder 只在無預設圖時才出現。
+
+### 修改檔案
+
+- `src/app/admin/AdminClient.tsx`
+    - 圖片預覽條件從 `mode === "image"` 改為 `mode !== "color"`
+    - 上傳按鈕同步調整
+    - fallback placeholder 改為只在 `!DEFAULT_IMAGES[key]` 時顯示
+
+---
+
 ## [mod-004: 預設圖片系統與事務所照片展示] - 2026-07-27T00:00:00Z
 
 ### 變更類型
