@@ -1,7 +1,7 @@
 {
   "feature_id": "feature-006",
   "name": "圖片管理",
-  "description": "圖片以 BLOB 格式儲存於 SQLite，支援 8 種圖片 key。後台圖片管理分兩組顯示，每個頁面 Hero 支援三種模式（預設漸層/背景圖/純色），含色票選取器。預覽機制使用 cookie-based iframe，可全站跨頁預覽未儲存的設定，確認後才正式套用。",
+  "description": "圖片以 BLOB 格式儲存於 SQLite，支援 8 種圖片 key。後台圖片管理分兩組顯示，每個頁面 Hero 支援三種模式（預設漸層/背景圖/純色），含色票選取器與裁切器。預覽機制使用 cookie-based iframe，可全站跨頁預覽未儲存的設定。前台 Header 顯示 DB logo，關於頁顯示代書照片。圖片 API 使用 no-cache + ETag 確保即時更新。",
   "status": "completed",
   "created_at": "2026-07-17T00:00:00Z",
   "updated_at": "2026-07-27T00:00:00Z",
@@ -13,8 +13,10 @@
     "src/lib/db.ts",
     "src/components/common/PageHero.tsx",
     "src/components/sections/HeroSection.tsx",
+    "src/components/layout/Header.tsx",
+    "src/app/about/page.tsx",
     "src/app/admin/AdminClient.tsx"
   ],
   "dependencies": ["feature-004", "feature-005"],
-  "modifications": ["mod-001", "mod-002"]
+  "modifications": ["mod-001", "mod-002", "mod-003"]
 }

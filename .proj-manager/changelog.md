@@ -1,5 +1,42 @@
 # Changelog
 
+## [mod-003: 圖片裁切器與前台顯示修正] - 2026-07-27T00:00:00Z
+
+### 變更類型
+
+功能增強 + Bug 修復
+
+### 目標功能
+
+feature-006 (圖片管理)
+
+### 修改描述
+
+新增 react-easy-crop 裁切器，上傳圖片前可裁切調整。前台 Header 接上 DB logo、關於頁接上代書照片。修正圖片快取問題，改用 no-cache + ETag 確保上傳新圖後立即生效。nginx 上傳大小限制提高到 10MB。
+
+### 修改檔案
+
+- `src/app/admin/AdminClient.tsx`
+    - 整合 react-easy-crop，背景圖 16:6 / Logo 與代書照片 3:4 比例裁切
+    - 圖片預覽改用 React key 強制刷新
+- `src/components/layout/Header.tsx`
+    - Logo 區塊接上 /api/images/logo，失敗時 fallback 純文字
+- `src/app/about/page.tsx`
+    - 代書照片接上 /api/images/scrivener_photo
+- `src/app/api/images/[key]/route.ts`
+    - Cache-Control 改為 no-cache + ETag
+- `nginx/nginx.conf`
+    - 新增 client_max_body_size 10m
+- `package.json`
+    - 新增 react-easy-crop 依賴
+
+### 影響評估
+
+- 風險等級: Low
+- 破壞性變更: No
+
+---
+
 ## [mod-002: Hero 純色模式與預覽機制] - 2026-07-27T00:00:00Z
 
 ### 變更類型

@@ -1,0 +1,74 @@
+{
+  "modification_id": "mod-003",
+  "feature_id": "feature-006",
+  "parent_modification_id": "mod-002",
+  "type": "enhancement",
+  "scope": "feature",
+  "status": "applied",
+  "description": "圖片裁切器、Logo 前台顯示、代書照片接 DB、圖片快取修正、nginx 上傳大小限制調整",
+  "created_at": "2026-07-27T00:00:00Z",
+  "created_by": "claude",
+  "tracked_at": "2026-07-27T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": true,
+    "affects_schema": false,
+    "affects_dependencies": true,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "src/app/admin/AdminClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "整合 react-easy-crop 裁切器，選圖後先裁切再上傳；背景圖 16:6 比例、Logo/代書照片 3:4 比例；圖片預覽改用 React key 強制刷新"
+      },
+      {
+        "path": "src/components/layout/Header.tsx",
+        "change_type": "modified",
+        "diff_summary": "Logo 區塊新增 img 標籤，從 /api/images/logo 載入 DB 圖片，失敗時隱藏只顯示文字"
+      },
+      {
+        "path": "src/app/about/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "代書照片從灰色 placeholder 改為從 /api/images/scrivener_photo 載入"
+      },
+      {
+        "path": "src/app/api/images/[key]/route.ts",
+        "change_type": "modified",
+        "diff_summary": "Cache-Control 從 max-age=3600 改為 no-cache + ETag，確保上傳新圖後立即顯示"
+      },
+      {
+        "path": "nginx/nginx.conf",
+        "change_type": "modified",
+        "diff_summary": "新增 client_max_body_size 10m，允許上傳大圖"
+      },
+      {
+        "path": "package.json",
+        "change_type": "modified",
+        "diff_summary": "新增 react-easy-crop 依賴"
+      }
+    ]
+  },
+  "dependency_changes": {
+    "external": [
+      {
+        "package": "react-easy-crop",
+        "change_type": "added",
+        "to_version": "^6.2.3"
+      }
+    ]
+  },
+  "api_changes": [
+    {
+      "endpoint_or_export": "GET /api/images/[key]",
+      "change_type": "modified",
+      "backward_compatible": true
+    }
+  ],
+  "notes": [
+    "裁切器比例：背景圖 16:6（橫向寬幅）、Logo/代書照片 3:4（直向）",
+    "圖片快取改為 no-cache + ETag，每次請求驗證是否有更新",
+    "nginx client_max_body_size 從預設 1m 提高到 10m"
+  ]
+}

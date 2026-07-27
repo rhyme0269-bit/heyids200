@@ -58,7 +58,7 @@ docker compose up -d --build
 | 收費標準 | 42 項收費 + 注意事項 |
 | 常見問題 | 問題和答案 |
 | 服務流程 | 步驟名稱和說明 |
-| 圖片管理 | Logo、首頁背景、代書照片 |
+| 圖片管理 | Logo、各頁背景圖（含裁切）、代書照片、背景模式切換（漸層/圖片/純色）、全站預覽 |
 
 儲存後重新整理前台即可看到更新。
 
@@ -70,10 +70,37 @@ docker compose up -d --build
 |------|------|
 | 啟動 | `docker compose up -d` |
 | 停止 | `docker compose down` |
-| 更新 | `git pull origin main && docker compose up -d --build` |
 | 改 port | 編輯 `.env` 的 `HTTP_PORT` |
 
-更新不會影響後台已修改的資料。
+---
+
+## 版本更新
+
+已經部署過的服務，用以下步驟更新到最新版：
+
+```bash
+# 1. 進入專案目錄
+cd heyids200
+
+# 2. 拉取最新程式碼
+git pull origin main
+
+# 3. 重新建置並啟動（資料不受影響）
+docker compose up -d --build
+```
+
+後台已編輯的資料（文字、圖片等）存在 Docker volume 裡，更新程式碼**不會覆蓋**。
+
+如果更新後遇到問題，可以回到上一個版本：
+
+```bash
+# 查看版本紀錄
+git log --oneline -10
+
+# 回到指定版本
+git checkout <commit-hash>
+docker compose up -d --build
+```
 
 ---
 
