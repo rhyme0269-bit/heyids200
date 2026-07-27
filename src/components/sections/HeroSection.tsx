@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { hasImage, getHeroConfigs, getHeroConfigsPreview } from "@/lib/db";
+import { DEFAULT_IMAGES } from "@/lib/default-images";
 
 export default async function HeroSection() {
   const cookieStore = await cookies();
@@ -9,19 +10,20 @@ export default async function HeroSection() {
   const cfg = configs["hero_bg"];
   const mode = cfg?.mode || "default";
   const bgColor = mode === "color" ? cfg.color : undefined;
-  const showImage = mode === "image" && hasImage("hero_bg");
+  const imageSrc = hasImage("hero_bg") ? "/api/images/hero_bg" : DEFAULT_IMAGES["hero_bg"] || null;
+  const showImage = (mode === "image" || mode === "default") && !!imageSrc;
 
   return (
     <section
       className="relative bg-stone-900 md:min-h-[85vh] flex items-center overflow-hidden"
       style={bgColor ? { backgroundColor: bgColor } : undefined}
     >
-      {/* Background image from DB */}
-      {showImage && (
+      {/* Background image */}
+      {showImage && imageSrc && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/api/images/hero_bg"
+            src={imageSrc}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
           />

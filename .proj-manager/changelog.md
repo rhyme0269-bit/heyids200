@@ -1,5 +1,40 @@
 # Changelog
 
+## [mod-004: 預設圖片系統與事務所照片展示] - 2026-07-27T00:00:00Z
+
+### 變更類型
+
+功能增強
+
+### 目標功能
+
+feature-006 (圖片管理)
+
+### 修改描述
+
+建立預設圖片系統：heyids-photo 搬至 public/defaults/（英文命名）、所有頁面背景補上 Unsplash placeholder。新增首頁「事務所環境」照片展示區。所有圖片欄位支援 DB → 預設圖 → 漸層三層 fallback。後台新增事務所照片管理群組。
+
+### 修改檔案
+
+- `public/defaults/` — 12 張預設圖（英文命名）
+- `heyids-photo/` — 已刪除（移至 public/defaults/）
+- `src/lib/default-images.ts` — 預設圖片映射
+- `src/components/sections/OfficeGallery.tsx` — 首頁照片展示區
+- `src/app/page.tsx` — 加入 OfficeGallery
+- `src/components/common/PageHero.tsx` — fallback 邏輯
+- `src/components/sections/HeroSection.tsx` — fallback 邏輯
+- `src/app/about/page.tsx` — 代書照片 fallback
+- `src/components/layout/Header.tsx` — Logo hidden by default
+- `src/app/admin/AdminClient.tsx` — 事務所照片群組 + 預設圖預覽
+- `src/app/api/admin/images/route.ts` — 新增 3 個 key
+
+### 影響評估
+
+- 風險等級: Low
+- 破壞性變更: No
+
+---
+
 ## [mod-003: 圖片裁切器與前台顯示修正] - 2026-07-27T00:00:00Z
 
 ### 變更類型

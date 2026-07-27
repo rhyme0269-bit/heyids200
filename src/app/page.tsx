@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import HeroSection from "@/components/sections/HeroSection";
 import AboutPreview from "@/components/sections/AboutPreview";
+import OfficeGallery from "@/components/sections/OfficeGallery";
 import ServicesPreview from "@/components/sections/ServicesPreview";
 import CtaSection from "@/components/sections/CtaSection";
 
@@ -18,6 +19,7 @@ export default function Home() {
         </svg>
       </div>
       <AboutPreview />
+      <OfficeGallery />
       <ServicesPreview />
       <CtaSection />
     </>

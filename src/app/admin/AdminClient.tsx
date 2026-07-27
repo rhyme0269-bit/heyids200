@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import { DEFAULT_IMAGES } from "@/lib/default-images";
 
 /* ============================================================
    Types
@@ -83,8 +84,17 @@ const IMAGE_GROUPS = [
     ],
   },
   {
+    group: "首頁事務所照片",
+    description: "首頁「事務所環境」區塊展示的照片。留空則使用預設照片。",
+    slots: [
+      { key: "office_interior", label: "內部環境", hint: "事務所內部環境照" },
+      { key: "office_exterior", label: "外觀", hint: "事務所外觀照" },
+      { key: "office_sign", label: "招牌", hint: "事務所招牌照" },
+    ],
+  },
+  {
     group: "頁面背景圖",
-    description: "各頁面頂部橫幅背景，建議尺寸 1920×600 以上。留空則使用預設純色漸層。",
+    description: "各頁面頂部橫幅背景，建議尺寸 1920×600 以上。留空則使用預設圖片。",
     slots: [
       { key: "hero_bg", label: "首頁", hint: "首頁大圖橫幅背景", pageUrl: "/" },
       { key: "about_bg", label: "關於我們", hint: "關於我們頁面頂部背景", pageUrl: "/about" },
@@ -1481,23 +1491,34 @@ export default function AdminClient() {
                                   : "h-40 bg-stone-100"
                               }`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
                                 {/* Show image preview for non-color modes */}
-                                {(!isBg || mode === "image") && (
-                                  <>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      key={`${slot.key}-${imageTimestamps[slot.key] || 0}`}
-                                      src={`/api/images/${slot.key}?t=${imageTimestamps[slot.key] || 0}`}
-                                      alt={slot.label}
-                                      className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = "none";
-                                      }}
-                                      onLoad={(e) => {
-                                        (e.target as HTMLImageElement).style.display = "block";
-                                      }}
-                                    />
-                                  </>
-                                )}
+                                {(!isBg || mode === "image") && (() => {
+                                  const ts = imageTimestamps[slot.key];
+                                  const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
+                                  const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
+                                  return (
+                                    <>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        key={`${slot.key}-${ts || 0}`}
+                                        src={dbSrc}
+                                        alt={slot.label}
+                                        className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
+                                        onError={(e) => {
+                                          const img = e.target as HTMLImageElement;
+                                          if (defaultSrc && !img.dataset.fallback) {
+                                            img.dataset.fallback = "1";
+                                            img.src = defaultSrc;
+                                          } else {
+                                            img.style.display = "none";
+                                          }
+                                        }}
+                                        onLoad={(e) => {
+                                          (e.target as HTMLImageElement).style.display = "block";
+                                        }}
+                                      />
+                                    </>
+                                  );
+                                })()}
                                 {/* Overlay + label for bg */}
                                 {isBg && (mode === "image" || mode === "color") && (
                                   <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center">

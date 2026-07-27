@@ -1,0 +1,88 @@
+{
+  "modification_id": "mod-004",
+  "feature_id": "feature-006",
+  "parent_modification_id": "mod-003",
+  "type": "enhancement",
+  "scope": "feature",
+  "status": "applied",
+  "description": "預設圖片系統重構：heyids-photo 移至 public/defaults/（英文命名）、所有頁面背景補上 Unsplash placeholder、新增首頁事務所環境照片展示區（OfficeGallery）、後台圖片管理新增事務所照片群組、所有圖片欄位 DB 優先 fallback 預設靜態圖",
+  "created_at": "2026-07-27T00:00:00Z",
+  "created_by": "claude",
+  "tracked_at": "2026-07-27T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": true,
+    "affects_schema": false,
+    "affects_dependencies": false,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "public/defaults/",
+        "change_type": "added",
+        "diff_summary": "12 張預設圖片（7 張事務所自有 + 5 張 Unsplash placeholder），全部英文命名"
+      },
+      {
+        "path": "heyids-photo/",
+        "change_type": "deleted",
+        "diff_summary": "照片已移至 public/defaults/，原目錄刪除"
+      },
+      {
+        "path": "src/lib/default-images.ts",
+        "change_type": "added",
+        "diff_summary": "預設圖片映射常數 DEFAULT_IMAGES（10 個 key）"
+      },
+      {
+        "path": "src/components/sections/OfficeGallery.tsx",
+        "change_type": "added",
+        "diff_summary": "首頁事務所環境照片展示區，DB 優先 fallback 預設圖"
+      },
+      {
+        "path": "src/app/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "首頁加入 OfficeGallery 區塊"
+      },
+      {
+        "path": "src/components/common/PageHero.tsx",
+        "change_type": "modified",
+        "diff_summary": "所有模式都支援 DB → 預設圖 fallback"
+      },
+      {
+        "path": "src/components/sections/HeroSection.tsx",
+        "change_type": "modified",
+        "diff_summary": "default 模式也顯示預設背景圖"
+      },
+      {
+        "path": "src/app/about/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "代書照片 DB → 預設圖 fallback"
+      },
+      {
+        "path": "src/components/layout/Header.tsx",
+        "change_type": "modified",
+        "diff_summary": "Logo 預設 hidden，onLoad 成功才顯示"
+      },
+      {
+        "path": "src/app/api/admin/images/route.ts",
+        "change_type": "modified",
+        "diff_summary": "ALLOWED_KEYS 新增 office_interior, office_exterior, office_sign"
+      },
+      {
+        "path": "src/app/admin/AdminClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "新增「首頁事務所照片」群組、圖片預覽 fallback 到預設圖"
+      },
+      {
+        "path": ".gitignore",
+        "change_type": "modified",
+        "diff_summary": "移除 public/images/ 排除規則"
+      }
+    ]
+  },
+  "notes": [
+    "預設圖片來源：7 張事務所自有（無版權問題）+ 5 張 Unsplash（免費商用授權）",
+    "所有圖片 fallback 順序：DB 圖片 → public/defaults/ 預設圖 → 純色漸層",
+    "後台圖片管理新增第三組「首頁事務所照片」"
+  ]
+}

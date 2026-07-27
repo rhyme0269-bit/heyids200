@@ -28,8 +28,9 @@ export default function Header() {
             <img
               src="/api/images/logo"
               alt="合一地政士事務所"
-              className="h-10 w-auto"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              className="h-10 w-auto hidden"
+              onError={(e) => { (e.target as HTMLImageElement).classList.add("hidden"); }}
+              onLoad={(e) => { (e.target as HTMLImageElement).classList.remove("hidden"); }}
             />
             <span className="text-xl font-bold text-stone-800">
               合一地政士事務所

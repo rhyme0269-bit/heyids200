@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_noStore as noStore } from "next/cache";
-import { getAbout, getSettings } from "@/lib/db";
+import { getAbout, getSettings, hasImage } from "@/lib/db";
+import { DEFAULT_IMAGES } from "@/lib/default-images";
 import PageHero from "@/components/common/PageHero";
 
 export const metadata: Metadata = {
@@ -15,6 +16,9 @@ export default function AboutPage() {
   noStore();
   const about = getAbout();
   const settings = getSettings();
+  const scrivenerSrc = hasImage("scrivener_photo")
+    ? "/api/images/scrivener_photo"
+    : DEFAULT_IMAGES["scrivener_photo"] || null;
 
   return (
     <>
@@ -46,12 +50,16 @@ export default function AboutPage() {
             </div>
             <div>
               <div className="relative bg-stone-200 rounded-2xl h-64 flex items-center justify-center overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/api/images/scrivener_photo"
-                  alt={`${settings.scrivenerName} 地政士`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
+                {scrivenerSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={scrivenerSrc}
+                    alt={`${settings.scrivenerName} 地政士`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-stone-400 text-sm">地政士照片</span>
+                )}
               </div>
               <div className="text-center mt-4">
                 <p className="font-bold text-stone-800 text-lg">

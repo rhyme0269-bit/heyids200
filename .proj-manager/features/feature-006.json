@@ -18,5 +18,5 @@
     "src/app/admin/AdminClient.tsx"
   ],
   "dependencies": ["feature-004", "feature-005"],
-  "modifications": ["mod-001", "mod-002", "mod-003"]
+  "modifications": ["mod-001", "mod-002", "mod-003", "mod-004"]
 }
