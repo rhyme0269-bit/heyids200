@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { listImages, upsertImage, deleteImage } from "@/lib/db";
 
-const ALLOWED_KEYS = ["logo", "hero_bg", "scrivener_photo"];
+const ALLOWED_KEYS = [
+  "logo",
+  "hero_bg",
+  "scrivener_photo",
+  "about_bg",
+  "services_bg",
+  "contact_bg",
+  "faq_bg",
+  "tools_bg",
+];
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 

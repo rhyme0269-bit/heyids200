@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import ContactForm from "@/components/common/ContactForm";
 import PreviewGuard from "@/components/common/PreviewGuard";
 import { getSettings } from "@/lib/db";
+import PageHero from "@/components/common/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,11 @@ export default function ContactPage() {
   return (
     <>
       {/* 頁面標題 */}
-      <section className="bg-gradient-to-br from-stone-50 to-amber-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-stone-800 mb-4">聯絡我們</h1>
-          <p className="text-stone-600 text-lg">
-            歡迎來電、來訊或填寫表單，我們將盡快回覆
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="聯絡我們"
+        subtitle="歡迎來電、來訊或填寫表單，我們將盡快回覆"
+        imageKey="contact_bg"
+      />
 
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

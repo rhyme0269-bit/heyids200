@@ -72,11 +72,31 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
-const IMAGE_SLOTS = [
-  { key: "logo", label: "Logo" },
-  { key: "hero_bg", label: "首頁背景" },
-  { key: "scrivener_photo", label: "代書照片" },
+const IMAGE_GROUPS = [
+  {
+    group: "網站通用",
+    slots: [
+      { key: "logo", label: "Logo", hint: "顯示於網站左上角" },
+      { key: "scrivener_photo", label: "代書照片", hint: "顯示於關於我們頁面" },
+    ],
+  },
+  {
+    group: "頁面背景圖",
+    description: "各頁面頂部橫幅背景，建議尺寸 1920×600 以上。留空則使用預設純色漸層。",
+    slots: [
+      { key: "hero_bg", label: "首頁", hint: "首頁大圖橫幅背景", pageUrl: "/" },
+      { key: "about_bg", label: "關於我們", hint: "關於我們頁面頂部背景", pageUrl: "/about" },
+      { key: "services_bg", label: "服務項目", hint: "服務項目頁面頂部背景", pageUrl: "/services" },
+      { key: "contact_bg", label: "聯絡我們", hint: "聯絡我們頁面頂部背景", pageUrl: "/contact" },
+      { key: "faq_bg", label: "常見問題", hint: "常見問題頁面頂部背景", pageUrl: "/faq" },
+      { key: "tools_bg", label: "小工具", hint: "小工具頁面頂部背景", pageUrl: "/tools" },
+    ],
+  },
 ] as const;
+
+const IMAGE_SLOTS = IMAGE_GROUPS.flatMap((g) =>
+  g.slots.map((s) => ({ key: s.key, label: s.label, hint: s.hint }))
+);
 
 const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "name", label: "名稱" },
@@ -286,6 +306,10 @@ export default function AdminClient() {
   const [imageTimestamps, setImageTimestamps] = useState<
     Record<string, number>
   >({});
+  const [heroConfigs, setHeroConfigs] = useState<
+    Record<string, { mode: string; color: string }>
+  >({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   /* ------ Check existing session on mount ------ */
   useEffect(() => {
@@ -367,6 +391,10 @@ export default function AdminClient() {
             url = "/api/admin/flow";
             break;
           case "images":
+            fetch("/api/admin/hero-config", { headers: authHeaders() })
+              .then((r) => r.ok ? r.json() : {})
+              .then((data) => setHeroConfigs(data))
+              .catch(() => {});
             setLoading(false);
             return;
         }
@@ -497,6 +525,42 @@ export default function AdminClient() {
       setImageTimestamps((prev) => ({ ...prev, [key]: Date.now() }));
     } catch {
       showToast("圖片刪除失敗", "error");
+    }
+  };
+
+  const handlePreview = async (pageUrl: string) => {
+    try {
+      const res = await fetch("/api/admin/hero-config/preview", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(heroConfigs),
+      });
+      if (!res.ok) throw new Error("Save preview failed");
+      document.cookie = "hero_preview=1; path=/; max-age=600";
+      setPreviewUrl(pageUrl);
+    } catch {
+      showToast("預覽暫存失敗", "error");
+    }
+  };
+
+  const closePreview = () => {
+    document.cookie = "hero_preview=; path=/; max-age=0";
+    setPreviewUrl(null);
+  };
+
+  const handleApplyPreview = async () => {
+    try {
+      const res = await fetch("/api/admin/hero-config", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(heroConfigs),
+      });
+      if (!res.ok) throw new Error("Apply failed");
+      document.cookie = "hero_preview=; path=/; max-age=0";
+      showToast("設定已正式套用", "success");
+      setPreviewUrl(null);
+    } catch {
+      showToast("套用失敗", "error");
     }
   };
 
@@ -1281,92 +1345,199 @@ export default function AdminClient() {
                   Tab: 圖片管理
                   ============================ */}
               {activeTab === "images" && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <h2 className="mb-4 text-lg font-bold text-stone-800">
                     圖片管理
                   </h2>
 
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {IMAGE_SLOTS.map((slot) => (
-                      <div
-                        key={slot.key}
-                        className="rounded-lg border border-stone-200 p-4"
-                      >
-                        <h3 className="mb-3 text-sm font-semibold text-stone-700">
-                          {slot.label}
-                        </h3>
-
-                        {/* Image preview */}
-                        <div className="mb-3 flex h-40 items-center justify-center overflow-hidden rounded-lg bg-stone-100">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`/api/images/${slot.key}${imageTimestamps[slot.key] ? `?t=${imageTimestamps[slot.key]}` : ""}`}
-                            alt={slot.label}
-                            className="h-full w-full object-contain"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = "none";
-                              if (target.nextElementSibling) {
-                                (
-                                  target.nextElementSibling as HTMLElement
-                                ).style.display = "flex";
-                              }
-                            }}
-                            onLoad={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = "block";
-                              if (target.nextElementSibling) {
-                                (
-                                  target.nextElementSibling as HTMLElement
-                                ).style.display = "none";
-                              }
-                            }}
-                          />
-                          <div className="flex flex-col items-center justify-center text-stone-400">
-                            <svg
-                              className="mb-1 h-8 w-8"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span className="text-xs">尚無圖片</span>
-                          </div>
-                        </div>
-
-                        {/* Upload */}
-                        <div className="flex gap-2">
-                          <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
-                            上傳圖片
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImageUpload(slot.key, file);
-                                }
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => handleImageDelete(slot.key)}
-                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
-                          >
-                            刪除
-                          </button>
-                        </div>
+                  {IMAGE_GROUPS.map((group) => (
+                    <div key={group.group}>
+                      <div className="mb-4">
+                        <h3 className="text-base font-bold text-stone-700">{group.group}</h3>
+                        {"description" in group && group.description && (
+                          <p className="mt-1 text-sm text-stone-500">{group.description}</p>
+                        )}
                       </div>
-                    ))}
+
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        {group.slots.map((slot) => {
+                          const isBg = slot.key.endsWith("_bg");
+                          const cfg = heroConfigs[slot.key];
+                          const mode = cfg?.mode || "default";
+                          const color = cfg?.color || "#44403c";
+                          return (
+                            <div
+                              key={slot.key}
+                              className="rounded-lg border border-stone-200 p-4"
+                            >
+                              <h4 className="mb-1 text-sm font-semibold text-stone-700">
+                                {slot.label}
+                              </h4>
+                              <p className="mb-3 text-xs text-stone-400">{slot.hint}</p>
+
+                              {/* Mode selector for bg slots */}
+                              {isBg && (
+                                <div className="mb-3">
+                                  <label className="mb-1.5 block text-xs font-medium text-stone-600">顯示模式</label>
+                                  <div className="flex gap-1">
+                                    {([
+                                      ["default", "預設漸層"],
+                                      ["image", "背景圖"],
+                                      ["color", "純色"],
+                                    ] as const).map(([val, label]) => (
+                                      <button
+                                        key={val}
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = { ...heroConfigs, [slot.key]: { mode: val, color } };
+                                          setHeroConfigs(updated);
+                                        }}
+                                        className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition ${
+                                          mode === val
+                                            ? "bg-amber-800 text-white"
+                                            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                                        }`}
+                                      >
+                                        {label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Color picker for color mode */}
+                              {isBg && mode === "color" && (
+                                <div className="mb-3 flex items-center gap-2">
+                                  <label className="text-xs font-medium text-stone-600">背景色</label>
+                                  <input
+                                    type="color"
+                                    value={color}
+                                    onChange={(e) => {
+                                      const updated = { ...heroConfigs, [slot.key]: { mode: "color", color: e.target.value } };
+                                      setHeroConfigs(updated);
+                                    }}
+                                    className="h-8 w-10 cursor-pointer rounded border border-stone-300"
+                                  />
+                                  <span className="text-xs text-stone-500">{color}</span>
+                                </div>
+                              )}
+
+                              {/* Preview */}
+                              <div className={`mb-3 flex items-center justify-center overflow-hidden rounded-lg ${
+                                isBg
+                                  ? mode === "color"
+                                    ? "relative h-32"
+                                    : "relative h-32 bg-stone-800"
+                                  : "h-40 bg-stone-100"
+                              }`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
+                                {/* Show image preview for non-color modes */}
+                                {(!isBg || mode === "image") && (
+                                  <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={`/api/images/${slot.key}${imageTimestamps[slot.key] ? `?t=${imageTimestamps[slot.key]}` : ""}`}
+                                      alt={slot.label}
+                                      className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = "none";
+                                        if (target.nextElementSibling) {
+                                          (target.nextElementSibling as HTMLElement).style.display = "flex";
+                                        }
+                                      }}
+                                      onLoad={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = "block";
+                                        if (target.nextElementSibling) {
+                                          (target.nextElementSibling as HTMLElement).style.display = "none";
+                                        }
+                                      }}
+                                    />
+                                  </>
+                                )}
+                                {/* Overlay + label for bg */}
+                                {isBg && (mode === "image" || mode === "color") && (
+                                  <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center">
+                                    <span className="text-white text-sm font-bold">{slot.label}</span>
+                                  </div>
+                                )}
+                                {/* Default state placeholder */}
+                                {isBg && mode === "default" && (
+                                  <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50">
+                                    <span className="text-sm font-bold text-stone-600">{slot.label}</span>
+                                  </div>
+                                )}
+                                {/* Fallback for non-bg without image */}
+                                {!isBg && (
+                                  <div className="flex flex-col items-center justify-center text-stone-400">
+                                    <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-xs">尚無圖片</span>
+                                  </div>
+                                )}
+                                {/* Fallback for bg image mode without image */}
+                                {isBg && mode === "image" && (
+                                  <div className="flex flex-col items-center justify-center text-stone-400">
+                                    <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-xs">請上傳背景圖</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Upload + Delete (show for non-bg, or bg in image mode) */}
+                              {(!isBg || mode === "image") && (
+                                <div className="flex gap-2">
+                                  <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
+                                    上傳圖片
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleImageUpload(slot.key, file);
+                                        }
+                                        e.target.value = "";
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleImageDelete(slot.key)}
+                                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+                                  >
+                                    刪除
+                                  </button>
+                                </div>
+                              )}
+
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Action buttons */}
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handlePreview("/")}
+                      className="rounded-lg border border-stone-300 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition"
+                    >
+                      預覽全部頁面
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSave("/api/admin/hero-config", heroConfigs)}
+                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900 transition"
+                    >
+                      儲存顯示設定
+                    </button>
                   </div>
                 </div>
               )}
@@ -1374,6 +1545,42 @@ export default function AdminClient() {
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="relative flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            {/* Modal header */}
+            <div className="flex items-center justify-between border-b border-stone-200 px-6 py-3">
+              <h3 className="text-sm font-bold text-stone-800">
+                預覽模式 — {previewUrl.replace("?preview=1", "")}
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyPreview}
+                  className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900 transition"
+                >
+                  確認套用
+                </button>
+                <button
+                  type="button"
+                  onClick={closePreview}
+                  className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition"
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+            {/* iframe */}
+            <iframe
+              src={previewUrl}
+              className="flex-1 w-full"
+              title="頁面預覽"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

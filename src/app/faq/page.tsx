@@ -5,6 +5,7 @@ import FaqAccordion from "@/components/common/FaqAccordion";
 import StructuredData from "@/components/common/StructuredData";
 import { generateFaqSchema } from "@/lib/structured-data";
 import { getFaqs } from "@/lib/db";
+import PageHero from "@/components/common/PageHero";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +23,11 @@ export default function FaqPage() {
       <StructuredData data={generateFaqSchema(faqs)} />
 
       {/* 頁面標題 */}
-      <section className="bg-gradient-to-br from-stone-50 to-amber-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-stone-800 mb-4">常見問題</h1>
-          <p className="text-stone-600 text-lg">
-            關於不動產登記，您可能想知道的事
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="常見問題"
+        subtitle="關於不動產登記，您可能想知道的事"
+        imageKey="faq_bg"
+      />
 
       {/* FAQ 列表 */}
       <section className="py-16 bg-white">

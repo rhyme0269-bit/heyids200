@@ -1,5 +1,109 @@
 # Changelog
 
+## [mod-002: Hero 純色模式與預覽機制] - 2026-07-27T00:00:00Z
+
+### 變更類型
+
+功能增強
+
+### 目標功能
+
+feature-006 (圖片管理)
+
+### 修改描述
+
+新增 Hero 純色背景模式（含色票選取器），並實作 cookie-based 預覽暫存機制。管理者可在後台調整各頁面模式（預設漸層/背景圖/純色），透過 iframe 全站預覽後確認套用。
+
+### 修改檔案
+
+- `src/lib/db.ts`
+    - 新增 HeroMode/HeroConfig 型別、hero config CRUD 函數、preview 暫存函數
+- `src/app/api/admin/hero-config/route.ts`
+    - 新增 Hero 設定 API（GET/PUT）
+- `src/app/api/admin/hero-config/preview/route.ts`
+    - 新增預覽暫存 API（PUT 暫存 / POST 套用）
+- `src/components/common/PageHero.tsx`
+    - 支援 default/image/color 三模式，改用 cookie 判斷預覽
+- `src/components/sections/HeroSection.tsx`
+    - 同上，支援 color 模式 + cookie 預覽
+- `src/app/admin/AdminClient.tsx`
+    - 模式選擇器、色票、預覽全部頁面按鈕、iframe modal、確認套用流程
+
+### API 變更
+
+- 新增 `GET/PUT /api/admin/hero-config` — Hero 設定 CRUD
+- 新增 `PUT/POST /api/admin/hero-config/preview` — 預覽暫存/套用
+- **向後相容**: Yes
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-004 (後台管理), feature-006 (圖片管理)
+- 破壞性變更: No
+
+### 測試建議
+
+1. 後台切換模式（預設/背景圖/純色）確認卡片預覽即時更新
+2. 純色模式選色後確認前台渲染正確
+3. 點「預覽全部頁面」→ iframe 內切頁確認所有頁面都套用預覽設定
+4. 「確認套用」後重新整理前台確認正式生效
+5. 「關閉」後確認前台未受影響
+
+---
+
+## [mod-001: 頁面背景圖管理] - 2026-07-27T00:00:00Z
+
+### 變更類型
+
+功能增強
+
+### 目標功能
+
+feature-006 (圖片管理)
+
+### 修改描述
+
+擴充圖片管理系統，支援各頁面 Hero 區塊背景圖。新增 PageHero 共用元件，後台圖片管理改為分組顯示並加入位置預覽，前台根據 DB 是否有圖片自動切換背景圖/純色漸層模式。
+
+### 修改檔案
+
+- `src/components/common/PageHero.tsx`
+    - 新增共用元件，接受 imageKey prop，自動判斷 DB 有無圖片切換顯示模式
+- `src/components/sections/HeroSection.tsx`
+    - 改用 DB 圖片 (hero_bg)，移除靜態 Image import
+- `src/app/about/page.tsx`、`services/page.tsx`、`contact/page.tsx`、`faq/page.tsx`
+    - Hero 區塊改用 PageHero 元件
+- `src/app/tools/page.tsx`
+    - PageHero 移至 server page 層級
+- `src/app/tools/ToolsClient.tsx`
+    - 移除 PageHero，只保留計算機區塊
+- `src/app/api/admin/images/route.ts`
+    - ALLOWED_KEYS 新增 5 個頁面背景 key
+- `src/app/admin/AdminClient.tsx`
+    - 圖片管理 UI 改為分組顯示，加入預覽提示
+- `src/lib/db.ts`
+    - 新增 hasImage() 函數
+
+### API 變更
+
+- `POST /api/admin/images` 新增可接受 key: about_bg, services_bg, contact_bg, faq_bg, tools_bg
+- **向後相容**: Yes
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-004 (後台管理), feature-006 (圖片管理)
+- 破壞性變更: No
+
+### 測試建議
+
+1. 後台圖片管理分頁確認分組顯示正確
+2. 上傳各頁面背景圖後確認前台顯示效果
+3. 刪除背景圖後確認前台回到純色漸層
+4. 確認首頁 HeroSection 背景圖正常
+
+---
+
 ## [2026-07-20] 移除靜態 preview.html，改用 GitHub Pages
 
 ### 變更摘要

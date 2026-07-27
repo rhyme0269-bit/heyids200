@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_noStore as noStore } from "next/cache";
 import { getServices, getServiceFlow, getFees, getFeeNotes } from "@/lib/db";
+import PageHero from "@/components/common/PageHero";
 
 export const metadata: Metadata = {
   title: "服務項目與收費標準",
@@ -20,14 +21,11 @@ export default function ServicesPage() {
   return (
     <>
       {/* 頁面標題 */}
-      <section className="bg-gradient-to-br from-stone-50 to-amber-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-stone-800 mb-4">服務項目</h1>
-          <p className="text-stone-600 text-lg">
-            全方位不動產登記服務，專業守護您的權益
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="服務項目"
+        subtitle="全方位不動產登記服務，專業守護您的權益"
+        imageKey="services_bg"
+      />
 
       {/* 服務列表 */}
       <section className="py-16 bg-white">

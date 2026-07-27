@@ -13,6 +13,9 @@ out/
 # database
 data/
 
+# uploaded images
+public/images/
+
 # misc
 .DS_Store
 *.tgz

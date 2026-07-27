@@ -1,8 +1,33 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { hasImage, getHeroConfigs, getHeroConfigsPreview } from "@/lib/db";
 
-export default function HeroSection() {
+export default async function HeroSection() {
+  const cookieStore = await cookies();
+  const isPreview = cookieStore.get("hero_preview")?.value === "1";
+  const configs = isPreview ? getHeroConfigsPreview() : getHeroConfigs();
+  const cfg = configs["hero_bg"];
+  const mode = cfg?.mode || "default";
+  const bgColor = mode === "color" ? cfg.color : undefined;
+  const showImage = mode === "image" && hasImage("hero_bg");
+
   return (
-    <section className="relative bg-stone-900 md:min-h-[85vh] flex items-center overflow-hidden">
+    <section
+      className="relative bg-stone-900 md:min-h-[85vh] flex items-center overflow-hidden"
+      style={bgColor ? { backgroundColor: bgColor } : undefined}
+    >
+      {/* Background image from DB */}
+      {showImage && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/api/images/hero_bg"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-stone-900/65" />
+        </>
+      )}
       {/* Decorative gradient orbs */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-800/20 rounded-full blur-[128px] -translate-y-1/2 translate-x-1/4" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-stone-600/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />

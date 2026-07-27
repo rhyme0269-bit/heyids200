@@ -1,0 +1,81 @@
+{
+  "modification_id": "mod-002",
+  "feature_id": "feature-006",
+  "parent_modification_id": "mod-001",
+  "type": "enhancement",
+  "scope": "feature",
+  "status": "applied",
+  "description": "Hero 背景圖管理增強：新增純色模式（含色票選取器）、預覽暫存機制（cookie-based iframe 全站預覽）、確認套用流程",
+  "created_at": "2026-07-27T00:00:00Z",
+  "created_by": "claude",
+  "tracked_at": "2026-07-27T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": true,
+    "affects_schema": false,
+    "affects_dependencies": false,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "src/lib/db.ts",
+        "change_type": "modified",
+        "diff_summary": "新增 HeroMode/HeroConfig 型別、getHeroConfigs/updateHeroConfigs/getHeroConfigsPreview/updateHeroConfigsPreview/applyHeroConfigsPreview 函數"
+      },
+      {
+        "path": "src/app/api/admin/hero-config/route.ts",
+        "change_type": "added",
+        "diff_summary": "Hero 設定 CRUD API (GET/PUT)，含 key 和 mode 驗證"
+      },
+      {
+        "path": "src/app/api/admin/hero-config/preview/route.ts",
+        "change_type": "added",
+        "diff_summary": "預覽暫存 API — PUT 暫存、POST 套用"
+      },
+      {
+        "path": "src/components/common/PageHero.tsx",
+        "change_type": "modified",
+        "diff_summary": "支援 default/image/color 三種模式，改用 cookie 判斷預覽狀態，移除 preview prop"
+      },
+      {
+        "path": "src/components/sections/HeroSection.tsx",
+        "change_type": "modified",
+        "diff_summary": "支援 color 模式，改用 cookie 判斷預覽狀態，移除 preview prop"
+      },
+      {
+        "path": "src/app/admin/AdminClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "圖片管理加入模式選擇器(預設漸層/背景圖/純色)、色票選取器、預覽全部頁面按鈕(iframe modal)、確認套用/關閉流程"
+      },
+      {
+        "path": "src/app/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "加入 force-dynamic，移除 searchParams（改用 cookie）"
+      },
+      {
+        "path": "src/app/tools/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "加入 force-dynamic，移除 searchParams（改用 cookie）"
+      }
+    ]
+  },
+  "api_changes": [
+    {
+      "endpoint_or_export": "GET/PUT /api/admin/hero-config",
+      "change_type": "added",
+      "backward_compatible": true
+    },
+    {
+      "endpoint_or_export": "PUT/POST /api/admin/hero-config/preview",
+      "change_type": "added",
+      "backward_compatible": true
+    }
+  ],
+  "notes": [
+    "三種 Hero 模式：default(漸層)、image(背景圖+暗色遮罩)、color(純色+色票)",
+    "預覽機制改用 cookie (hero_preview=1) 取代 query param，iframe 內跨頁瀏覽都能保持預覽狀態",
+    "cookie 有效期 600 秒，關閉或套用時清除",
+    "確認套用直接寫入正式 hero_configs，不走 apply preview 間接流程"
+  ]
+}

@@ -371,6 +371,52 @@ export function getImage(
   } | null;
 }
 
+export function hasImage(key: string): boolean {
+  const db = getDb();
+  const row = db.prepare("SELECT 1 FROM images WHERE key = ?").get(key);
+  return !!row;
+}
+
+export type HeroMode = "default" | "image" | "color";
+
+export interface HeroConfig {
+  mode: HeroMode;
+  color: string;
+}
+
+export function getHeroConfigs(): Record<string, HeroConfig> {
+  const db = getDb();
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'hero_configs'").get() as { value: string } | undefined;
+  if (!row) return {};
+  try { return JSON.parse(row.value); } catch { return {}; }
+}
+
+export function updateHeroConfigs(configs: Record<string, HeroConfig>) {
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES ('hero_configs', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(JSON.stringify(configs));
+}
+
+export function getHeroConfigsPreview(): Record<string, HeroConfig> {
+  const db = getDb();
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'hero_configs_preview'").get() as { value: string } | undefined;
+  if (!row) return {};
+  try { return JSON.parse(row.value); } catch { return {}; }
+}
+
+export function updateHeroConfigsPreview(configs: Record<string, HeroConfig>) {
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES ('hero_configs_preview', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(JSON.stringify(configs));
+}
+
+export function applyHeroConfigsPreview() {
+  const preview = getHeroConfigsPreview();
+  updateHeroConfigs(preview);
+}
+
 // ===== Write Functions (for admin API) =====
 
 export function updateSettings(data: Partial<SiteSettings>) {

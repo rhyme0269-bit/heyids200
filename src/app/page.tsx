@@ -1,9 +1,13 @@
+import { unstable_noStore as noStore } from "next/cache";
 import HeroSection from "@/components/sections/HeroSection";
 import AboutPreview from "@/components/sections/AboutPreview";
 import ServicesPreview from "@/components/sections/ServicesPreview";
 import CtaSection from "@/components/sections/CtaSection";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
+  noStore();
   return (
     <>
       <HeroSection />

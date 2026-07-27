@@ -27,7 +27,9 @@
         "api/admin/fees/route.ts": "收費標準 CRUD API",
         "api/admin/faqs/route.ts": "常見問題 CRUD API",
         "api/admin/flow/route.ts": "服務流程 CRUD API",
-        "api/admin/images/route.ts": "圖片上傳管理 API（size + MIME + key 白名單）"
+        "api/admin/images/route.ts": "圖片上傳管理 API（size + MIME + key 白名單）",
+        "api/admin/hero-config/route.ts": "Hero 背景設定 API（模式 + 顏色）",
+        "api/admin/hero-config/preview/route.ts": "Hero 預覽暫存 API（暫存 + 套用）"
       }
     },
     "src/components": {
@@ -38,10 +40,11 @@
         "common/FloatingLine.tsx": "手機浮動 LINE 按鈕",
         "common/PreviewBanner.tsx": "預覽版頂部提示條",
         "common/PreviewGuard.tsx": "預覽版功能攔截 + toast 提示",
+        "common/PageHero.tsx": "頁面 Hero 共用元件（支援背景圖/純色漸層切換）",
         "common/StructuredData.tsx": "SEO 結構化資料元件",
         "layout/Header.tsx": "全站導覽列",
         "layout/Footer.tsx": "全站頁尾",
-        "sections/HeroSection.tsx": "首頁 Hero 區塊（光暈 + 數據條）",
+        "sections/HeroSection.tsx": "首頁 Hero 區塊（DB 背景圖 + 光暈 + 數據條）",
         "sections/AboutPreview.tsx": "首頁關於我們預覽（引言 + 特色卡片 + 數據條）",
         "sections/ServicesPreview.tsx": "首頁服務項目預覽（序號卡片 + hover 效果）",
         "sections/CtaSection.tsx": "首頁 CTA 呼籲行動區塊"

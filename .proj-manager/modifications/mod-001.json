@@ -1,0 +1,91 @@
+{
+  "modification_id": "mod-001",
+  "feature_id": "feature-006",
+  "type": "enhancement",
+  "scope": "feature",
+  "status": "applied",
+  "description": "擴充圖片管理系統，支援各頁面 Hero 背景圖。新增 PageHero 共用元件，後台圖片管理分組顯示並加入位置預覽。前台根據 DB 是否有圖片自動切換背景圖/純色模式。",
+  "created_at": "2026-07-27T00:00:00Z",
+  "created_by": "claude",
+  "tracked_at": "2026-07-27T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": true,
+    "affects_schema": false,
+    "affects_dependencies": false,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "src/components/common/PageHero.tsx",
+        "change_type": "added",
+        "diff_summary": "新增 PageHero 共用元件，支援背景圖(DB)/純色漸層兩種模式"
+      },
+      {
+        "path": "src/components/sections/HeroSection.tsx",
+        "change_type": "modified",
+        "diff_summary": "改用 DB 圖片 (hero_bg key)，無圖片時保持原深色背景"
+      },
+      {
+        "path": "src/app/about/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "Hero 區塊改用 PageHero 元件 (imageKey: about_bg)"
+      },
+      {
+        "path": "src/app/services/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "Hero 區塊改用 PageHero 元件 (imageKey: services_bg)"
+      },
+      {
+        "path": "src/app/contact/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "Hero 區塊改用 PageHero 元件 (imageKey: contact_bg)"
+      },
+      {
+        "path": "src/app/faq/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "Hero 區塊改用 PageHero 元件 (imageKey: faq_bg)"
+      },
+      {
+        "path": "src/app/tools/page.tsx",
+        "change_type": "modified",
+        "diff_summary": "PageHero 移至 server page，ToolsClient 只保留計算機區塊"
+      },
+      {
+        "path": "src/app/tools/ToolsClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "移除 PageHero，只保留計算機內容區塊"
+      },
+      {
+        "path": "src/app/api/admin/images/route.ts",
+        "change_type": "modified",
+        "diff_summary": "ALLOWED_KEYS 新增 about_bg, services_bg, contact_bg, faq_bg, tools_bg"
+      },
+      {
+        "path": "src/app/admin/AdminClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "圖片管理改為分組顯示(網站通用/頁面背景圖)，加入位置預覽與提示文字"
+      },
+      {
+        "path": "src/lib/db.ts",
+        "change_type": "modified",
+        "diff_summary": "新增 hasImage() 函數，用於前台判斷是否有 DB 圖片"
+      }
+    ]
+  },
+  "api_changes": [
+    {
+      "endpoint_or_export": "POST /api/admin/images",
+      "change_type": "modified",
+      "backward_compatible": true
+    }
+  ],
+  "notes": [
+    "新增 5 個圖片 key: about_bg, services_bg, contact_bg, faq_bg, tools_bg",
+    "後台圖片管理分為「網站通用」和「頁面背景圖」兩組",
+    "背景圖預覽模擬實際效果（object-cover + 暗色遮罩 + 頁面名稱）",
+    "無圖片時前台自動 fallback 為純色漸層",
+    "placeholder 圖片放在 public/images/，僅開發測試用"
+  ]
+}

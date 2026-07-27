@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+
 /* ------------------------------------------------------------------ */
 /*  Shared helpers                                                     */
 /* ------------------------------------------------------------------ */
@@ -482,16 +483,7 @@ function LoanAffordabilityCalc() {
 
 export default function ToolsClient() {
   return (
-    <section className="min-h-screen bg-gradient-to-b from-stone-50 to-amber-50">
-      {/* Header */}
-      <div className="mx-auto max-w-5xl px-4 pt-16 pb-8 text-center sm:px-6">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-800 sm:text-4xl">小工具</h1>
-        <p className="mt-3 text-stone-600">
-          實用不動產試算工具，快速估算各類稅費與貸款。
-        </p>
-      </div>
-
-      {/* Calculator Grid */}
+    <section className="bg-gradient-to-b from-stone-50 to-amber-50 py-16">
       <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <div className="grid gap-6 md:grid-cols-2">
           <HomePurchaseCostCalc />

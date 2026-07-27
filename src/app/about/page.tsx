@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_noStore as noStore } from "next/cache";
 import { getAbout, getSettings } from "@/lib/db";
+import PageHero from "@/components/common/PageHero";
 
 export const metadata: Metadata = {
   title: "關於我們",
@@ -18,12 +19,11 @@ export default function AboutPage() {
   return (
     <>
       {/* 頁面標題 */}
-      <section className="bg-gradient-to-br from-stone-50 to-amber-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-stone-800 mb-4">關於我們</h1>
-          <p className="text-stone-600 text-lg">認識合一地政士事務所</p>
-        </div>
-      </section>
+      <PageHero
+        title="關於我們"
+        subtitle="認識合一地政士事務所"
+        imageKey="about_bg"
+      />
 
       {/* 事務所介紹 */}
       <section className="py-16 bg-white">
