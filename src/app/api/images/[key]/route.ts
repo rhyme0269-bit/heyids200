@@ -22,7 +22,8 @@ export async function GET(
   return new NextResponse(new Uint8Array(image.data), {
     headers: {
       "Content-Type": mimeType,
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "Cache-Control": "no-cache",
+      "ETag": `"${image.updated_at}"`,
       "X-Content-Type-Options": "nosniff",
       "Content-Disposition": "inline",
     },

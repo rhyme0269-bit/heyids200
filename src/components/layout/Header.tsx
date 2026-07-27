@@ -24,9 +24,14 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <span
-              className="text-xl font-bold text-stone-800"
-            >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/api/images/logo"
+              alt="合一地政士事務所"
+              className="h-10 w-auto"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <span className="text-xl font-bold text-stone-800">
               合一地政士事務所
             </span>
           </Link>

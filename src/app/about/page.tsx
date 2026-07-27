@@ -45,8 +45,13 @@ export default function AboutPage() {
               </p>
             </div>
             <div>
-              <div className="bg-stone-200 rounded-2xl h-64 flex items-center justify-center">
-                <span className="text-stone-400 text-sm">地政士照片</span>
+              <div className="relative bg-stone-200 rounded-2xl h-64 flex items-center justify-center overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/api/images/scrivener_photo"
+                  alt={`${settings.scrivenerName} 地政士`}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               </div>
               <div className="text-center mt-4">
                 <p className="font-bold text-stone-800 text-lg">

@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 
 /* ============================================================
    Types
@@ -310,6 +312,14 @@ export default function AdminClient() {
     Record<string, { mode: string; color: string }>
   >({});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [cropState, setCropState] = useState<{
+    imageUrl: string;
+    key: string;
+    aspect: number;
+  } | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const croppedAreaRef = useRef<Area | null>(null);
 
   /* ------ Check existing session on mount ------ */
   useEffect(() => {
@@ -526,6 +536,46 @@ export default function AdminClient() {
     } catch {
       showToast("圖片刪除失敗", "error");
     }
+  };
+
+  const openCropper = (file: File, key: string) => {
+    const url = URL.createObjectURL(file);
+    const isBg = key.endsWith("_bg");
+    setCropState({ imageUrl: url, key, aspect: isBg ? 16 / 6 : 3 / 4 });
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    croppedAreaRef.current = null;
+  };
+
+  const handleCropComplete = useCallback((_: Area, croppedArea: Area) => {
+    croppedAreaRef.current = croppedArea;
+  }, []);
+
+  const handleCropConfirm = async () => {
+    if (!cropState || !croppedAreaRef.current) return;
+    const { imageUrl, key } = cropState;
+    const area = croppedAreaRef.current;
+
+    // Draw cropped image on canvas
+    const image = new Image();
+    image.src = imageUrl;
+    await new Promise((resolve) => { image.onload = resolve; });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = area.width;
+    canvas.height = area.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
+
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9)
+    );
+
+    URL.revokeObjectURL(imageUrl);
+    setCropState(null);
+
+    const file = new File([blob], `${key}.jpg`, { type: "image/jpeg" });
+    await handleImageUpload(key, file);
   };
 
   const handlePreview = async (pageUrl: string) => {
@@ -1435,22 +1485,15 @@ export default function AdminClient() {
                                   <>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
-                                      src={`/api/images/${slot.key}${imageTimestamps[slot.key] ? `?t=${imageTimestamps[slot.key]}` : ""}`}
+                                      key={`${slot.key}-${imageTimestamps[slot.key] || 0}`}
+                                      src={`/api/images/${slot.key}?t=${imageTimestamps[slot.key] || 0}`}
                                       alt={slot.label}
                                       className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
                                       onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = "none";
-                                        if (target.nextElementSibling) {
-                                          (target.nextElementSibling as HTMLElement).style.display = "flex";
-                                        }
+                                        (e.target as HTMLImageElement).style.display = "none";
                                       }}
                                       onLoad={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = "block";
-                                        if (target.nextElementSibling) {
-                                          (target.nextElementSibling as HTMLElement).style.display = "none";
-                                        }
+                                        (e.target as HTMLImageElement).style.display = "block";
                                       }}
                                     />
                                   </>
@@ -1499,7 +1542,7 @@ export default function AdminClient() {
                                       onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                          handleImageUpload(slot.key, file);
+                                          openCropper(file, slot.key);
                                         }
                                         e.target.value = "";
                                       }}
@@ -1545,6 +1588,56 @@ export default function AdminClient() {
           )}
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {cropState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-200 px-6 py-3">
+              <h3 className="text-sm font-bold text-stone-800">裁切圖片</h3>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleCropConfirm}
+                  className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900 transition"
+                >
+                  確認裁切
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { URL.revokeObjectURL(cropState.imageUrl); setCropState(null); }}
+                  className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+            <div className="relative h-[60vh]">
+              <Cropper
+                image={cropState.imageUrl}
+                crop={crop}
+                zoom={zoom}
+                aspect={cropState.aspect}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            </div>
+            <div className="flex items-center gap-3 border-t border-stone-200 px-6 py-3">
+              <span className="text-xs text-stone-500">縮放</span>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="flex-1"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {previewUrl && (
