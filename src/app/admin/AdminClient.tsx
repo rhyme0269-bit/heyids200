@@ -5,6 +5,7 @@ import Link from "next/link";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
+import PageBuilder from "./PageBuilder";
 
 /* ============================================================
    Types
@@ -65,6 +66,7 @@ interface FlowItem {
    ============================================================ */
 
 const TABS = [
+  { key: "pages", label: "頁面管理" },
   { key: "settings", label: "基本資訊" },
   { key: "about", label: "關於我們" },
   { key: "services", label: "服務項目" },
@@ -268,7 +270,7 @@ export default function AdminClient() {
   const [authChecked, setAuthChecked] = useState(false);
 
   /* ------ Dashboard state ------ */
-  const [activeTab, setActiveTabState] = useState<TabKey>("settings");
+  const [activeTab, setActiveTabState] = useState<TabKey>("pages");
 
   // Sync tab with URL hash
   const setActiveTab = useCallback((tab: TabKey) => {
@@ -435,6 +437,9 @@ export default function AdminClient() {
       try {
         let url = "";
         switch (tab) {
+          case "pages":
+            setLoading(false);
+            return;
           case "settings":
             url = "/api/admin/settings";
             break;
@@ -851,6 +856,13 @@ export default function AdminClient() {
             <Spinner />
           ) : (
             <>
+              {/* ============================
+                  Tab: 頁面管理
+                  ============================ */}
+              {activeTab === "pages" && (
+                <PageBuilder showToast={showToast} />
+              )}
+
               {/* ============================
                   Tab: 基本資訊
                   ============================ */}
