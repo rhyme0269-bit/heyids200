@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 import crypto from "crypto";
 import type {
   Page,
@@ -8,6 +9,7 @@ import type {
   BlockType,
   PageTemplate,
   NavItem,
+  NavLink,
   PageStatus,
   HeroMode,
 } from "./cms-types";
@@ -19,6 +21,9 @@ let _db: Database.Database | null = null;
 
 function getDb(): Database.Database {
   if (_db) return _db;
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
   _db = new Database(DB_PATH);
   _db.pragma("journal_mode = WAL");
   _db.pragma("foreign_keys = ON");
@@ -69,6 +74,15 @@ export function initCmsTables(db?: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS nav_links (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      href TEXT NOT NULL,
+      nav_order INTEGER NOT NULL DEFAULT 0,
+      is_external INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_blocks_page_order ON blocks(page_id, sort_order);
@@ -470,28 +484,137 @@ export function createPageFromTemplate(
   return { page, blocks };
 }
 
+// ===== Page Reorder =====
+
+export function reorderPages(pageIds: string[]): void {
+  const db = getDb();
+  const update = db.prepare(
+    "UPDATE pages SET nav_order = ?, updated_at = datetime('now') WHERE id = ?"
+  );
+  const reorder = db.transaction(() => {
+    pageIds.forEach((id, i) => update.run(i, id));
+  });
+  reorder();
+}
+
+// ===== Custom Nav Links CRUD =====
+
+interface NavLinkRow {
+  id: string;
+  label: string;
+  href: string;
+  nav_order: number;
+  is_external: number;
+  created_at: string;
+}
+
+function rowToNavLink(row: NavLinkRow): NavLink {
+  return {
+    id: row.id,
+    label: row.label,
+    href: row.href,
+    navOrder: row.nav_order,
+    isExternal: row.is_external === 1,
+    createdAt: row.created_at,
+  };
+}
+
+export function listNavLinks(): NavLink[] {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT * FROM nav_links ORDER BY nav_order")
+    .all() as NavLinkRow[];
+  return rows.map(rowToNavLink);
+}
+
+export function createNavLink(data: {
+  label: string;
+  href: string;
+  navOrder?: number;
+  isExternal?: boolean;
+}): NavLink {
+  const db = getDb();
+  const id = uuid();
+  const order =
+    data.navOrder ??
+    ((
+      db
+        .prepare("SELECT COALESCE(MAX(nav_order), -1) + 1 as next FROM nav_links")
+        .get() as { next: number }
+    ).next);
+  db.prepare(
+    "INSERT INTO nav_links (id, label, href, nav_order, is_external) VALUES (?, ?, ?, ?, ?)"
+  ).run(id, data.label, data.href, order, data.isExternal ? 1 : 0);
+  return rowToNavLink(
+    db.prepare("SELECT * FROM nav_links WHERE id = ?").get(id) as NavLinkRow
+  );
+}
+
+export function updateNavLink(
+  id: string,
+  data: Partial<{ label: string; href: string; navOrder: number; isExternal: boolean }>
+): NavLink | null {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM nav_links WHERE id = ?")
+    .get(id) as NavLinkRow | undefined;
+  if (!row) return null;
+  const current = rowToNavLink(row);
+  db.prepare(
+    "UPDATE nav_links SET label = ?, href = ?, nav_order = ?, is_external = ? WHERE id = ?"
+  ).run(
+    data.label ?? current.label,
+    data.href ?? current.href,
+    data.navOrder ?? current.navOrder,
+    (data.isExternal ?? current.isExternal) ? 1 : 0,
+    id
+  );
+  return rowToNavLink(
+    db.prepare("SELECT * FROM nav_links WHERE id = ?").get(id) as NavLinkRow
+  );
+}
+
+export function deleteNavLink(id: string): boolean {
+  const db = getDb();
+  const result = db.prepare("DELETE FROM nav_links WHERE id = ?").run(id);
+  return result.changes > 0;
+}
+
 // ===== Navigation (Public) =====
 
 export function getNavItems(): NavItem[] {
   const db = getDb();
-  const rows = db
+  const pageRows = db
     .prepare(
       "SELECT slug, title, nav_order FROM pages WHERE show_in_nav = 1 AND status = 'published' ORDER BY nav_order"
     )
     .all() as { slug: string; title: string; nav_order: number }[];
-  return rows.map((r) => ({
+  const pageItems: NavItem[] = pageRows.map((r) => ({
     slug: r.slug,
     title: r.title,
     href: r.slug === "home" ? "/" : `/${r.slug}`,
     navOrder: r.nav_order,
   }));
+
+  const linkRows = db
+    .prepare("SELECT * FROM nav_links ORDER BY nav_order")
+    .all() as NavLinkRow[];
+  const linkItems: NavItem[] = linkRows.map((r) => ({
+    slug: `__link_${r.id}`,
+    title: r.label,
+    href: r.href,
+    navOrder: r.nav_order,
+    isExternal: r.is_external === 1,
+  }));
+
+  return [...pageItems, ...linkItems].sort((a, b) => a.navOrder - b.navOrder);
 }
 
 // ===== Check if CMS is initialized =====
 
 export function isCmsInitialized(): boolean {
-  const db = getDb();
   try {
+    const db = getDb();
     const row = db
       .prepare("SELECT COUNT(*) as c FROM pages")
       .get() as { c: number };

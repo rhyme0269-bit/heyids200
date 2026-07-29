@@ -165,4 +165,15 @@ export interface NavItem {
   title: string;
   href: string;
   navOrder: number;
+  isExternal?: boolean;
+}
+
+// Custom nav link (not tied to a CMS page)
+export interface NavLink {
+  id: string;
+  label: string;
+  href: string;
+  navOrder: number;
+  isExternal: boolean;
+  createdAt: string;
 }

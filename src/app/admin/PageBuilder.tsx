@@ -77,6 +77,12 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
   const [newPageTitle, setNewPageTitle] = useState("");
   const [newPageTemplate, setNewPageTemplate] = useState("blank");
   const [showAddBlock, setShowAddBlock] = useState(false);
+  const [navLinks, setNavLinks] = useState<{ id: string; label: string; href: string; navOrder: number; isExternal: boolean }[]>([]);
+  const [showNavLinks, setShowNavLinks] = useState(false);
+  const [newLinkLabel, setNewLinkLabel] = useState("");
+  const [newLinkHref, setNewLinkHref] = useState("");
+  const [newLinkExternal, setNewLinkExternal] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   const fetchPages = useCallback(async () => {
     setLoading(true);
@@ -94,10 +100,18 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
     } catch { /* empty */ }
   }, []);
 
+  const fetchNavLinks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/cms/nav-links");
+      if (res.ok) setNavLinks(await res.json());
+    } catch { /* empty */ }
+  }, []);
+
   useEffect(() => {
     fetchPages();
     fetchTemplates();
-  }, [fetchPages, fetchTemplates]);
+    fetchNavLinks();
+  }, [fetchPages, fetchTemplates, fetchNavLinks]);
 
   const openEditor = async (page: CmsPage) => {
     try {
@@ -172,6 +186,76 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
       fetchPages();
     } catch {
       showToast("建立失敗", "error");
+    }
+  };
+
+  const handleReorderPage = async (index: number, delta: number) => {
+    const reordered = moveItem(pages, index, delta);
+    setPages(reordered);
+    setReordering(true);
+    try {
+      const res = await fetch("/api/admin/cms/pages/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageIds: reordered.map((p) => p.id) }),
+      });
+      if (!res.ok) throw new Error();
+      showToast("排序已更新", "success");
+    } catch {
+      showToast("排序更新失敗", "error");
+      fetchPages();
+    }
+    setReordering(false);
+  };
+
+  const handleToggleNav = async (page: CmsPage) => {
+    const newVal = !page.showInNav;
+    setPages(pages.map((p) => (p.id === page.id ? { ...p, showInNav: newVal } : p)));
+    try {
+      const res = await fetch(`/api/admin/cms/pages/${page.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showInNav: newVal }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      showToast("更新失敗", "error");
+      fetchPages();
+    }
+  };
+
+  const handleCreateNavLink = async () => {
+    if (!newLinkLabel || !newLinkHref) return;
+    try {
+      const res = await fetch("/api/admin/cms/nav-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newLinkLabel, href: newLinkHref, isExternal: newLinkExternal }),
+      });
+      if (!res.ok) throw new Error();
+      showToast("連結已新增", "success");
+      setNewLinkLabel("");
+      setNewLinkHref("");
+      setNewLinkExternal(false);
+      fetchNavLinks();
+    } catch {
+      showToast("新增連結失敗", "error");
+    }
+  };
+
+  const handleDeleteNavLink = async (id: string) => {
+    if (!confirm("確定刪除此連結？")) return;
+    try {
+      const res = await fetch("/api/admin/cms/nav-links", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error();
+      showToast("連結已刪除", "success");
+      fetchNavLinks();
+    } catch {
+      showToast("刪除失敗", "error");
     }
   };
 
@@ -447,17 +531,37 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 text-stone-700">
+                <th className="px-3 py-3 text-center font-semibold w-20">排序</th>
                 <th className="px-4 py-3 text-left font-semibold">標題</th>
                 <th className="px-4 py-3 text-left font-semibold">路徑</th>
-                <th className="px-4 py-3 text-center font-semibold">排序</th>
                 <th className="px-4 py-3 text-center font-semibold">狀態</th>
                 <th className="px-4 py-3 text-center font-semibold">導覽列</th>
                 <th className="px-4 py-3 text-right font-semibold">操作</th>
               </tr>
             </thead>
             <tbody>
-              {pages.map((page) => (
+              {pages.map((page, idx) => (
                 <tr key={page.id} className="border-t border-stone-100 hover:bg-stone-50">
+                  <td className="px-3 py-3 text-center">
+                    <div className="flex justify-center gap-1">
+                      <button
+                        onClick={() => handleReorderPage(idx, -1)}
+                        disabled={idx === 0 || reordering}
+                        className="rounded bg-stone-200 px-1.5 py-0.5 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                        title="上移"
+                      >
+                        &#9650;
+                      </button>
+                      <button
+                        onClick={() => handleReorderPage(idx, 1)}
+                        disabled={idx === pages.length - 1 || reordering}
+                        className="rounded bg-stone-200 px-1.5 py-0.5 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
+                        title="下移"
+                      >
+                        &#9660;
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-stone-800">{page.title}</span>
@@ -467,7 +571,6 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-stone-500">/{page.slug}</td>
-                  <td className="px-4 py-3 text-center text-stone-500">{page.navOrder}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
                       page.status === "published"
@@ -477,8 +580,17 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                       {page.status === "published" ? "已發佈" : "草稿"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-stone-500">
-                    {page.showInNav ? "是" : "否"}
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => handleToggleNav(page)}
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                        page.showInNav
+                          ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                          : "bg-stone-100 text-stone-400 hover:bg-stone-200"
+                      }`}
+                    >
+                      {page.showInNav ? "顯示" : "隱藏"}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
@@ -504,6 +616,85 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
           </table>
         </div>
       )}
+
+      {/* Custom Nav Links */}
+      <div className="rounded-lg border border-stone-200">
+        <button
+          onClick={() => setShowNavLinks(!showNavLinks)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-stone-50"
+        >
+          <h3 className="text-sm font-bold text-stone-700">自訂導覽連結</h3>
+          <span className="text-xs text-stone-400">{showNavLinks ? "收合" : "展開"} ({navLinks.length})</span>
+        </button>
+
+        {showNavLinks && (
+          <div className="border-t border-stone-200 p-4 space-y-3">
+            <p className="text-xs text-stone-500">
+              新增不屬於 CMS 頁面的連結到導覽列，例如外部網站或特定錨點。
+            </p>
+
+            {navLinks.length > 0 && (
+              <div className="space-y-2">
+                {navLinks.map((link) => (
+                  <div key={link.id} className="flex items-center gap-3 rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
+                    <span className="flex-1 text-sm text-stone-700">{link.label}</span>
+                    <span className="text-xs text-stone-400 truncate max-w-[200px]">{link.href}</span>
+                    {link.isExternal && (
+                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-600">外部</span>
+                    )}
+                    <span className="text-xs text-stone-400">排序: {link.navOrder}</span>
+                    <button
+                      onClick={() => handleDeleteNavLink(link.id)}
+                      className="rounded bg-red-600 px-2 py-0.5 text-[10px] text-white hover:bg-red-700"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-white p-3">
+              <div className="flex-1 min-w-[120px]">
+                <label className="mb-1 block text-xs font-medium text-stone-600">顯示名稱</label>
+                <input
+                  type="text"
+                  value={newLinkLabel}
+                  onChange={(e) => setNewLinkLabel(e.target.value)}
+                  placeholder="例如：收費標準"
+                  className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                />
+              </div>
+              <div className="flex-1 min-w-[160px]">
+                <label className="mb-1 block text-xs font-medium text-stone-600">連結網址</label>
+                <input
+                  type="text"
+                  value={newLinkHref}
+                  onChange={(e) => setNewLinkHref(e.target.value)}
+                  placeholder="例如：/services#fees 或 https://..."
+                  className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                />
+              </div>
+              <label className="flex items-center gap-1.5 pb-2 text-xs text-stone-600">
+                <input
+                  type="checkbox"
+                  checked={newLinkExternal}
+                  onChange={(e) => setNewLinkExternal(e.target.checked)}
+                  className="rounded border-stone-300"
+                />
+                外部連結
+              </label>
+              <button
+                onClick={handleCreateNavLink}
+                disabled={!newLinkLabel || !newLinkHref}
+                className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
+              >
+                新增
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Create Page Modal */}
       {showCreateModal && (

@@ -1,5 +1,37 @@
 # Changelog
 
+## [feat(cms): Phase 4 整合 — 動態導覽列、舊頁面清理] - 2026-07-29T00:00:00Z
+
+### 變更類型
+
+功能修改
+
+### 變更摘要
+
+CMS 整合最後階段：Header/Footer 改為從 CMS 動態讀取導覽項目（頁面+自訂連結），支援頁面排序與顯示/隱藏切換。新增自訂導覽連結功能（支援內部/外部 URL）。刪除舊的靜態頁面路由（about、services、faq、contact），改由 CMS `[slug]` 動態路由處理。AdminClient 移除舊分頁（about/services/fees/faqs/flow），僅保留頁面管理、基本資訊、圖片管理。FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料。
+
+### 改動
+
+- `src/lib/cms-types.ts` — 新增 NavItem.isExternal、NavLink interface
+- `src/lib/cms-db.ts` — 新增 nav_links 表、reorderPages()、NavLink CRUD、getNavItems()
+- `src/app/[slug]/page.tsx` — SKIP_SLUGS、FAQ JSON-LD、CMS 動態渲染
+- `src/app/admin/PageBuilder.tsx` — 頁面排序 UI、導覽切換、自訂連結管理
+- `src/app/admin/AdminClient.tsx` — 移除 5 個舊分頁及所有相關程式碼（-723 行）
+- `src/components/layout/Header.tsx` — 改為 navItems prop 動態渲染
+- `src/components/layout/Footer.tsx` — 從 CMS 讀取動態導覽
+- `src/app/layout.tsx` — 傳入 CMS navItems
+- `src/app/api/admin/cms/pages/reorder/route.ts` — 新增頁面排序 API
+- `src/app/api/admin/cms/nav-links/route.ts` — 新增自訂連結 CRUD API
+- 刪除 `src/app/about/page.tsx`、`services/page.tsx`、`faq/page.tsx`、`contact/page.tsx`
+
+### 影響評估
+
+- 風險等級: Medium
+- 受影響功能: feature-011 (CMS), feature-004 (後台管理)
+- 破壞性變更: Yes（舊靜態路由已刪除，由 CMS 接管）
+
+---
+
 ## [fix: 後台圖片預覽修正] - 2026-07-27T00:00:00Z
 
 ### 變更類型

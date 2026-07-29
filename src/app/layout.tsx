@@ -7,6 +7,7 @@ import PreviewBanner from "@/components/common/PreviewBanner";
 import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
 import { getSettings } from "@/lib/db";
+import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,17 +44,28 @@ export const metadata: Metadata = {
   },
 };
 
+const fallbackNav = [
+  { title: "首頁", href: "/", slug: "home", navOrder: 0 },
+  { title: "關於我們", href: "/about", slug: "about", navOrder: 1 },
+  { title: "服務項目", href: "/services", slug: "services", navOrder: 2 },
+  { title: "小工具", href: "/tools", slug: "tools", navOrder: 4 },
+  { title: "常見問題", href: "/faq", slug: "faq", navOrder: 5 },
+  { title: "聯絡我們", href: "/contact", slug: "contact", navOrder: 6 },
+];
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const navItems = isCmsInitialized() ? getNavItems() : fallbackNav;
+
   return (
     <html lang="zh-TW" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <StructuredData data={generateLocalBusinessSchema(getSettings())} />
         <PreviewBanner />
-        <Header />
+        <Header navItems={navItems} />
         <main className="flex-1">{children}</main>
         <Footer />
         <FloatingLine />

@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/db";
+import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
 
-const quickLinks = [
-  { label: "首頁", href: "/" },
-  { label: "關於我們", href: "/about" },
-  { label: "服務項目", href: "/services" },
-  { label: "收費標準", href: "/services#fees" },
-  { label: "小工具", href: "/tools" },
-  { label: "常見問題", href: "/faq" },
-  { label: "聯絡我們", href: "/contact" },
+const fallbackLinks = [
+  { label: "首頁", href: "/", isExternal: false },
+  { label: "關於我們", href: "/about", isExternal: false },
+  { label: "服務項目", href: "/services", isExternal: false },
+  { label: "小工具", href: "/tools", isExternal: false },
+  { label: "常見問題", href: "/faq", isExternal: false },
+  { label: "聯絡我們", href: "/contact", isExternal: false },
 ];
 
 export default function Footer() {
   const settings = getSettings();
+  const quickLinks = isCmsInitialized()
+    ? getNavItems().map((n) => ({ label: n.title, href: n.href, isExternal: !!n.isExternal }))
+    : fallbackLinks;
 
   return (
     <footer className="bg-stone-950 text-stone-400">
@@ -156,12 +159,23 @@ export default function Footer() {
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-xs hover:text-amber-200 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
+                  {link.isExternal ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs hover:text-amber-200 transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-xs hover:text-amber-200 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

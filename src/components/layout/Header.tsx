@@ -3,17 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const navLinks = [
-  { label: "首頁", href: "/" },
-  { label: "關於我們", href: "/about" },
-  { label: "服務項目", href: "/services" },
-  { label: "收費標準", href: "/services#fees" },
-  { label: "小工具", href: "/tools" },
-  { label: "常見問題", href: "/faq" },
-  { label: "聯絡我們", href: "/contact" },
-];
+interface NavItem {
+  title: string;
+  href: string;
+  isExternal?: boolean;
+}
 
-export default function Header() {
+function NavLink({ item, className, onClick }: { item: NavItem; className: string; onClick?: () => void }) {
+  if (item.isExternal) {
+    return (
+      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className} onClick={onClick}>
+        {item.title}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} className={className} onClick={onClick}>
+      {item.title}
+    </Link>
+  );
+}
+
+export default function Header({ navItems }: { navItems: NavItem[] }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -39,14 +50,12 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
                 className="px-3 py-2 text-sm font-medium rounded-md transition-colors text-stone-600 hover:text-amber-800 hover:bg-stone-50"
-              >
-                {link.label}
-              </Link>
+              />
             ))}
           </nav>
 
@@ -118,15 +127,13 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-stone-200 bg-white">
           <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
                 className="block px-3 py-2 text-base font-medium text-stone-700 hover:text-amber-800 hover:bg-stone-50 rounded-md transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
+              />
             ))}
             <div className="pt-3 border-t border-stone-200">
               <a

@@ -27,24 +27,26 @@
 ```
 src/
 ├── app/                  # Next.js App Router 頁面
-│   ├── page.tsx          # 首頁
-│   ├── layout.tsx        # 全站 Layout
-│   ├── about/            # 關於我們
-│   ├── services/         # 服務項目 + 收費標準
-│   ├── tools/            # 小工具（6 個試算器）
-│   ├── faq/              # 常見問題
-│   ├── contact/          # 聯絡我們
-│   ├── admin/            # 後台管理介面
+│   ├── page.tsx          # 首頁（靜態）
+│   ├── layout.tsx        # 全站 Layout（動態導覽列）
+│   ├── [slug]/           # CMS 動態頁面路由（取代舊靜態頁面）
+│   ├── tools/            # 小工具（6 個試算器，靜態）
+│   ├── admin/            # 後台管理介面（頁面管理、基本資訊、圖片管理）
 │   └── api/              # API 路由
 │       ├── contact/      # 聯絡表單 POST
 │       ├── images/[key]/ # 圖片取得（BLOB from SQLite）
-│       └── admin/        # 後台 CRUD API（7 個端點）
+│       └── admin/        # 後台 CRUD API
+│           ├── cms/      # CMS API（pages, blocks, templates, nav-links, reorder, migrate）
+│           └── ...       # 其他 admin API（auth, settings, hero-config, images）
 ├── components/
+│   ├── cms/              # CMS 區塊渲染器（BlockRenderer + 16 種 renderers）
 │   ├── common/           # 共用元件
-│   ├── layout/           # Header, Footer
+│   ├── layout/           # Header（動態 nav）, Footer（動態 nav）
 │   └── sections/         # 首頁區塊元件
 └── lib/
     ├── db.ts             # SQLite 連線、Schema、CRUD、auto-seed
+    ├── cms-db.ts         # CMS 資料層（頁面、區塊、範本、導覽）
+    ├── cms-types.ts      # CMS 型別定義
     ├── default-data.ts   # 所有預設內容資料
     ├── auth.ts           # 後台驗證邏輯
     └── structured-data.ts # SEO JSON-LD
@@ -59,19 +61,20 @@ src/
 3. **後台編輯**：AdminClient.tsx 透過 `/api/admin/*` RESTful API 進行 CRUD
 4. **圖片**：以 BLOB 存入 SQLite，透過 `/api/images/[key]` 動態提供
 
-### 新增頁面
+### 新增頁面（CMS 方式）
 
-1. 在 `src/app/` 下建立目錄與 `page.tsx`
-2. 在 `Header.tsx` 新增導覽連結
-3. 在 `sitemap.ts` 新增路由
-4. 視需要在 `db.ts` 新增資料表與 CRUD 函式
+1. 後台「頁面管理」→「建立新頁面」，選擇範本
+2. 使用區塊編輯器組合頁面內容（16 種區塊類型）
+3. 設定 slug、標題、是否顯示於導覽列
+4. 導覽列順序可在頁面管理中用上下箭頭調整
+5. 自訂導覽連結（內部/外部 URL）在「自訂導覽連結」區塊管理
 
-### 新增後台管理分頁
+### CMS 架構
 
-1. 在 `src/app/api/admin/` 下建立 API route
-2. 在 `AdminClient.tsx` 新增對應 tab 與 UI
-3. 在 `db.ts` 新增資料表 Schema 與操作函式
-4. 在 `default-data.ts` 新增預設資料
+- 三層模型：PageTemplate → Page → Block
+- 前台 `[slug]` 動態路由渲染所有 CMS 頁面（home 和 tools 除外）
+- 導覽列由 `getNavItems()` 整合頁面 nav + 自訂連結，按 navOrder 排序
+- FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料
 
 ### 環境變數
 
