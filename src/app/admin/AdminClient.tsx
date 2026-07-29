@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
@@ -331,6 +332,48 @@ export default function AdminClient() {
   const [zoom, setZoom] = useState(1);
   const croppedAreaRef = useRef<Area | null>(null);
 
+  /* ------ Dirty tracking ------ */
+  const savedSnapshots = useRef<Record<string, string>>({});
+
+  const getTabPayload = useCallback((tab: string): string => {
+    switch (tab) {
+      case "settings": return JSON.stringify(settings);
+      case "about": return JSON.stringify(about);
+      case "services": return JSON.stringify(services);
+      case "fees": return JSON.stringify({ fees: fees.items, notes: fees.notes });
+      case "faqs": return JSON.stringify(faqs);
+      case "flow": return JSON.stringify(flow);
+      case "heroConfigs": return JSON.stringify(heroConfigs);
+      default: return "";
+    }
+  }, [settings, about, services, fees, faqs, flow, heroConfigs]);
+
+  const dirtyTabs = TABS.filter((tab) => {
+    if (tab.key === "images") {
+      const snap = savedSnapshots.current["heroConfigs"];
+      if (!snap) return false;
+      return snap !== JSON.stringify(heroConfigs);
+    }
+    const snap = savedSnapshots.current[tab.key];
+    if (!snap) return false;
+    return snap !== getTabPayload(tab.key);
+  });
+
+  /* ------ Hide global header/footer on admin ------ */
+  useEffect(() => {
+    const header = document.querySelector("body > header");
+    const footer = document.querySelector("body > footer");
+    const fab = document.getElementById("floating-line");
+    if (header) (header as HTMLElement).style.display = "none";
+    if (footer) (footer as HTMLElement).style.display = "none";
+    if (fab) fab.style.display = "none";
+    return () => {
+      if (header) (header as HTMLElement).style.display = "";
+      if (footer) (footer as HTMLElement).style.display = "";
+      if (fab) fab.style.display = "";
+    };
+  }, []);
+
   /* ------ Check existing session on mount ------ */
   useEffect(() => {
     fetch("/api/admin/auth")
@@ -413,7 +456,10 @@ export default function AdminClient() {
           case "images":
             fetch("/api/admin/hero-config", { headers: authHeaders() })
               .then((r) => r.ok ? r.json() : {})
-              .then((data) => setHeroConfigs(data))
+              .then((data) => {
+                setHeroConfigs(data);
+                savedSnapshots.current["heroConfigs"] = JSON.stringify(data);
+              })
               .catch(() => {});
             setLoading(false);
             return;
@@ -434,21 +480,27 @@ export default function AdminClient() {
         switch (tab) {
           case "settings":
             setSettings(data);
+            savedSnapshots.current["settings"] = JSON.stringify(data);
             break;
           case "about":
             setAbout(data);
+            savedSnapshots.current["about"] = JSON.stringify(data);
             break;
           case "services":
             setServices(data);
+            savedSnapshots.current["services"] = JSON.stringify(data);
             break;
           case "fees":
             setFees({ items: data.fees || [], notes: data.notes || [] });
+            savedSnapshots.current["fees"] = JSON.stringify({ fees: data.fees || [], notes: data.notes || [] });
             break;
           case "faqs":
             setFaqs(data);
+            savedSnapshots.current["faqs"] = JSON.stringify(data);
             break;
           case "flow":
             setFlow(data);
+            savedSnapshots.current["flow"] = JSON.stringify(data);
             break;
         }
       } catch {
@@ -489,9 +541,37 @@ export default function AdminClient() {
         throw new Error("Save failed");
       }
 
+      if (endpoint === "/api/admin/hero-config") {
+        savedSnapshots.current["heroConfigs"] = JSON.stringify(body);
+      } else {
+        const tabKey = endpoint.replace("/api/admin/", "");
+        savedSnapshots.current[tabKey] = JSON.stringify(body);
+      }
       showToast("儲存成功", "success");
     } catch {
       showToast("儲存失敗", "error");
+    }
+  };
+
+  /* ------ Save current tab ------ */
+  const saveTab = async (tabKey: string) => {
+    const endpointMap: Record<string, { url: string; body: unknown }> = {
+      settings: { url: "/api/admin/settings", body: settings },
+      about: { url: "/api/admin/about", body: about },
+      services: { url: "/api/admin/services", body: services },
+      fees: { url: "/api/admin/fees", body: { fees: fees.items, notes: fees.notes } },
+      faqs: { url: "/api/admin/faqs", body: faqs },
+      flow: { url: "/api/admin/flow", body: flow },
+      images: { url: "/api/admin/hero-config", body: heroConfigs },
+    };
+    const entry = endpointMap[tabKey];
+    if (!entry) return;
+    await handleSave(entry.url, entry.body);
+  };
+
+  const saveAllDirty = async () => {
+    for (const tab of dirtyTabs) {
+      await saveTab(tab.key);
     }
   };
 
@@ -712,10 +792,21 @@ export default function AdminClient() {
         />
       )}
 
-      <div className="mx-auto max-w-[1200px] px-4 py-8">
+      <div className={`mx-auto max-w-[1200px] px-4 py-8 ${dirtyTabs.length > 0 ? "pb-24" : ""}`}>
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-stone-800">後台管理</h1>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-amber-800 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              回首頁
+            </Link>
+            <h1 className="text-2xl font-bold text-stone-800">後台管理</h1>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-stone-500">
               {displayName}，您好
@@ -732,19 +823,25 @@ export default function AdminClient() {
         {/* Tab bar */}
         <div className="mb-6 overflow-x-auto rounded-xl bg-stone-200">
           <div className="flex min-w-max">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-3 text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? "border-b-2 border-amber-800 text-amber-800 bg-white"
-                    : "text-stone-600 hover:text-stone-800 hover:bg-stone-100"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const isDirty = dirtyTabs.some((d) => d.key === tab.key);
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`relative px-5 py-3 text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? "border-b-2 border-amber-800 text-amber-800 bg-white"
+                      : "text-stone-600 hover:text-stone-800 hover:bg-stone-100"
+                  }`}
+                >
+                  {tab.label}
+                  {isDirty && (
+                    <span className="absolute top-2 right-1.5 h-2 w-2 rounded-full bg-amber-500" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -798,16 +895,6 @@ export default function AdminClient() {
                     ))}
                   </div>
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() =>
-                        handleSave("/api/admin/settings", settings)
-                      }
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -886,14 +973,6 @@ export default function AdminClient() {
                     }
                   />
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() => handleSave("/api/admin/about", about)}
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1001,16 +1080,6 @@ export default function AdminClient() {
                     新增
                   </button>
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() =>
-                        handleSave("/api/admin/services", services)
-                      }
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1169,14 +1238,6 @@ export default function AdminClient() {
                     />
                   </div>
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() => handleSave("/api/admin/fees", { fees: fees.items, notes: fees.notes })}
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1278,14 +1339,6 @@ export default function AdminClient() {
                     新增
                   </button>
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() => handleSave("/api/admin/faqs", faqs)}
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1390,14 +1443,6 @@ export default function AdminClient() {
                     新增
                   </button>
 
-                  <div className="pt-4">
-                    <button
-                      onClick={() => handleSave("/api/admin/flow", flow)}
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-                    >
-                      儲存
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1578,20 +1623,13 @@ export default function AdminClient() {
                   ))}
 
                   {/* Action buttons */}
-                  <div className="mt-6 flex gap-3">
+                  <div className="mt-6">
                     <button
                       type="button"
                       onClick={() => handlePreview("/")}
                       className="rounded-lg border border-stone-300 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition"
                     >
                       預覽全部頁面
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSave("/api/admin/hero-config", heroConfigs)}
-                      className="rounded-lg bg-amber-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-900 transition"
-                    >
-                      儲存顯示設定
                     </button>
                   </div>
                 </div>
@@ -1600,6 +1638,48 @@ export default function AdminClient() {
           )}
         </div>
       </div>
+
+      {/* Unified Save Bar */}
+      {dirtyTabs.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-amber-200 bg-amber-50/95 backdrop-blur-sm shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto max-w-[1200px] px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="shrink-0 text-sm font-medium text-amber-900">未儲存：</span>
+              <div className="flex flex-wrap gap-1.5">
+                {dirtyTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`rounded-full px-3 py-0.5 text-xs font-medium transition-colors ${
+                      activeTab === tab.key
+                        ? "bg-amber-800 text-white"
+                        : "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {dirtyTabs.some((t) => t.key === activeTab) && (
+                <button
+                  onClick={() => saveTab(activeTab)}
+                  className="rounded-lg border border-amber-800 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100 transition"
+                >
+                  儲存此頁
+                </button>
+              )}
+              <button
+                onClick={saveAllDirty}
+                className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 transition"
+              >
+                全部儲存{dirtyTabs.length > 1 ? ` (${dirtyTabs.length})` : ""}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Crop Modal */}
       {cropState && (

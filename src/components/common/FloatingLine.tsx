@@ -3,6 +3,7 @@
 export default function FloatingLine() {
   return (
     <a
+      id="floating-line"
       href="https://line.me/R/ti/p/@240mvtlq"
       target="_blank"
       rel="noopener noreferrer"
