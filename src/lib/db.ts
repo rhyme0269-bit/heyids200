@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { initCmsTables } from "./cms-db";
 import {
   defaultSiteSettings,
   defaultAbout,
@@ -38,6 +39,7 @@ function getDb(): Database.Database {
 
   initTables(_db);
   seedIfEmpty(_db);
+  initCmsTables(_db);
 
   return _db;
 }
