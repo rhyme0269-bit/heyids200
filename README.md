@@ -114,6 +114,107 @@ docker compose up -d --build
 
 ---
 
+## Git 入門指南
+
+Git 是程式碼的版本管理工具，可以把它想成「程式碼的時光機」。以下介紹最常用的操作。
+
+### 安裝 Git
+
+- **Windows**：下載安裝 https://git-scm.com/download/win ，安裝時全部按下一步即可
+- **Mac**：打開終端機輸入 `git --version`，系統會自動提示安裝
+
+安裝完成後，打開「命令提示字元」（Windows）或「終端機」（Mac），輸入以下指令確認：
+
+```bash
+git --version
+```
+
+看到版本號（如 `git version 2.x.x`）就代表安裝成功。
+
+### 基本概念
+
+| 名詞 | 說明 |
+|------|------|
+| **Repository（倉庫）** | 存放程式碼的地方，簡稱 repo |
+| **Clone（複製）** | 把遠端的程式碼下載到你的電腦 |
+| **Pull（拉取）** | 把遠端的最新更新同步到你的電腦 |
+| **Commit（提交）** | 把修改記錄下來，像是存檔 |
+| **Push（推送）** | 把你的修改上傳到遠端 |
+
+### 常用指令
+
+```bash
+# 第一次下載程式碼
+git clone https://github.com/rhyme0269-bit/heyids200.git
+
+# 進入專案資料夾
+cd heyids200
+
+# 查看目前狀態（有沒有檔案被修改）
+git status
+
+# 拉取最新版本
+git pull origin main
+
+# 查看歷史紀錄
+git log --oneline -10
+```
+
+### 搭配 Docker 的完整流程
+
+第一次部署：
+
+```bash
+git clone https://github.com/rhyme0269-bit/heyids200.git
+cd heyids200
+cp .env.example .env        # 建立環境設定檔（記得改帳號密碼）
+docker compose up -d --build # 啟動網站
+```
+
+之後更新版本：
+
+```bash
+cd heyids200
+git pull origin main         # 拉取最新程式碼
+docker compose up -d --build # 重新建置並啟動
+```
+
+### 常見問題
+
+**Q: `git pull` 時出現錯誤怎麼辦？**
+
+如果出現衝突訊息，通常是因為本地有修改過的檔案。執行以下指令放棄本地修改，重新同步：
+
+```bash
+git stash
+git pull origin main
+```
+
+**Q: 怎麼確認目前是哪個版本？**
+
+```bash
+git log --oneline -5
+```
+
+最上面那一行就是目前的版本，前面的英數字串是版本編號。
+
+**Q: 想回到之前的版本？**
+
+```bash
+git log --oneline -10          # 先查看版本紀錄
+git checkout <版本編號>         # 切換到指定版本
+docker compose up -d --build   # 重新啟動
+```
+
+要回到最新版本：
+
+```bash
+git checkout main
+docker compose up -d --build
+```
+
+---
+
 ## HTTPS 與網域
 
 正式上線時：
