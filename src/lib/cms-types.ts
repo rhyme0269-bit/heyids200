@@ -107,7 +107,7 @@ export interface ListData {
 
 export interface KeyValueListData {
   title: string;
-  items: Array<{ label: string; value: string; icon?: string }>;
+  items: Array<{ label: string; value: string; icon?: string; url?: string }>;
 }
 
 export interface TableData {
@@ -133,6 +133,7 @@ export interface StepsFlowData {
 
 export interface ContactFormData {
   title: string;
+  googleFormUrl?: string;
 }
 
 export interface MapEmbedData {

@@ -513,6 +513,19 @@ export default function CalcEditor() {
     await fetchCalcs();
   };
 
+  const handleMove = async (index: number, direction: "up" | "down") => {
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= calcs.length) return;
+    const ids = calcs.map((c) => c.id);
+    [ids[index], ids[swapIdx]] = [ids[swapIdx], ids[index]];
+    await fetch("/api/admin/calculators", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    await fetchCalcs();
+  };
+
   if (editing) {
     return <CalcDetailEditor calc={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
   }
@@ -533,12 +546,30 @@ export default function CalcEditor() {
         <p className="text-stone-400 text-sm">載入中...</p>
       ) : (
         <div className="space-y-2">
-          {calcs.map((calc) => (
+          {calcs.map((calc, idx) => (
             <div
               key={calc.id}
               className="flex items-center justify-between rounded-lg border border-stone-200 bg-white p-4"
             >
               <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    onClick={() => handleMove(idx, "up")}
+                    disabled={idx === 0}
+                    className="text-stone-400 hover:text-stone-700 disabled:opacity-20 disabled:cursor-default text-xs leading-none"
+                    title="上移"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => handleMove(idx, "down")}
+                    disabled={idx === calcs.length - 1}
+                    className="text-stone-400 hover:text-stone-700 disabled:opacity-20 disabled:cursor-default text-xs leading-none"
+                    title="下移"
+                  >
+                    ▼
+                  </button>
+                </div>
                 <span className="text-xl">{calc.icon}</span>
                 <div>
                   <div className="font-medium text-stone-800">

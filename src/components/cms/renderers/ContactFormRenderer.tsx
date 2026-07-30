@@ -10,9 +10,18 @@ export default function ContactFormRenderer({ data }: { data: Record<string, unk
       {d.title && (
         <h2 className="text-2xl font-bold text-stone-800 mb-6">{d.title}</h2>
       )}
-      <PreviewGuard fallbackMessage="聯絡表單需正式部署後才能使用">
-        <ContactForm />
-      </PreviewGuard>
+      {d.googleFormUrl ? (
+        <iframe
+          src={d.googleFormUrl}
+          className="w-full rounded-lg border border-stone-200"
+          style={{ minHeight: 600 }}
+          title="聯絡表單"
+        />
+      ) : (
+        <PreviewGuard fallbackMessage="聯絡表單需正式部署後才能使用">
+          <ContactForm />
+        </PreviewGuard>
+      )}
     </div>
   );
 }

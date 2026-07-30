@@ -952,30 +952,39 @@ function BlockEditor({
           <Field label="標題" value={data.title as string} onChange={(v) => set("title", v)} />
           <ArrayEditor
             label="項目"
-            items={(data.items as Array<{ label: string; value: string; icon?: string }>) || []}
+            items={(data.items as Array<{ label: string; value: string; icon?: string; url?: string }>) || []}
             renderItem={(item, i, update) => (
-              <div className="flex gap-2">
+              <div className="space-y-1">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item.icon || ""}
+                    onChange={(e) => update({ ...item, icon: e.target.value })}
+                    placeholder="😀"
+                    title="圖示（emoji）"
+                    className="w-12 rounded-lg border border-stone-200 px-2 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  />
+                  <input
+                    type="text"
+                    value={item.label}
+                    onChange={(e) => update({ ...item, label: e.target.value })}
+                    placeholder="標題"
+                    className="w-1/4 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  />
+                  <input
+                    type="text"
+                    value={item.value}
+                    onChange={(e) => update({ ...item, value: e.target.value })}
+                    placeholder="內容"
+                    className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  />
+                </div>
                 <input
                   type="text"
-                  value={item.icon || ""}
-                  onChange={(e) => update({ ...item, icon: e.target.value })}
-                  placeholder="😀"
-                  title="圖示（emoji）"
-                  className="w-12 rounded-lg border border-stone-200 px-2 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                />
-                <input
-                  type="text"
-                  value={item.label}
-                  onChange={(e) => update({ ...item, label: e.target.value })}
-                  placeholder="標題"
-                  className="w-1/4 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                />
-                <input
-                  type="text"
-                  value={item.value}
-                  onChange={(e) => update({ ...item, value: e.target.value })}
-                  placeholder="內容"
-                  className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  value={item.url || ""}
+                  onChange={(e) => update({ ...item, url: e.target.value || undefined })}
+                  placeholder="連結網址（選填，如 https://...）"
+                  className="w-full rounded-lg border border-stone-200 px-3 py-1.5 text-xs text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-800"
                 />
               </div>
             )}
@@ -1105,7 +1114,12 @@ function BlockEditor({
       );
 
     case "contact_form":
-      return <Field label="區塊標題" value={data.title as string} onChange={(v) => set("title", v)} />;
+      return (
+        <div className="space-y-3">
+          <Field label="區塊標題" value={data.title as string} onChange={(v) => set("title", v)} />
+          <Field label="Google 表單網址（選填，填入後改用 Google 表單）" value={(data.googleFormUrl as string) || ""} onChange={(v) => set("googleFormUrl", v)} />
+        </div>
+      );
 
     case "map_embed":
       return (
@@ -1206,6 +1220,7 @@ function BlockEditor({
       return (
         <div className="space-y-3">
           <Field label="表單標題" value={(data.formTitle as string) || ""} onChange={(v) => set("formTitle", v)} />
+          <Field label="Google 表單網址（選填，填入後改用 Google 表單）" value={(data.googleFormUrl as string) || ""} onChange={(v) => set("googleFormUrl", v)} />
           <Field label="聯絡資訊標題" value={(data.infoTitle as string) || ""} onChange={(v) => set("infoTitle", v)} />
           <Field label="地圖地址" value={(data.mapAddress as string) || ""} onChange={(v) => set("mapAddress", v)} />
           <Field label="地圖嵌入 URL（選填）" value={(data.mapEmbedUrl as string) || ""} onChange={(v) => set("mapEmbedUrl", v)} />

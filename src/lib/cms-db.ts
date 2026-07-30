@@ -863,6 +863,30 @@ export function seedCmsPages(db?: Database.Database) {
         data: { html: "__TOOLS_PAGE__" },
       },
     ]);
+
+    // Links
+    const linksId = uuid();
+    insertSeedPage(d, linksId, "links", "實用連結", "常用不動產相關網站與查詢工具", { navOrder: 5 });
+    insertSeedBlocks(d, linksId, [
+      {
+        blockType: "hero_banner",
+        data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" },
+      },
+      {
+        blockType: "key_value_list",
+        data: {
+          title: "政府查詢工具",
+          items: [
+            { label: "實價登錄", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
+            { label: "地籍圖資查詢", value: "內政部地政司地籍圖資網路便民服務", icon: "🗺️", url: "https://easymap.land.moi.gov.tw/" },
+            { label: "土地增值稅試算", value: "財政部線上稅額試算服務", icon: "📈", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
+            { label: "房地合一稅試算", value: "財政部房地合一稅預繳稅額試算", icon: "🧾", url: "https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
+            { label: "公告土地現值查詢", value: "各縣市地政局公告現值查詢", icon: "📊", url: "https://www.land.moi.gov.tw/ngis/" },
+            { label: "建物謄本查詢", value: "全國地政電子謄本系統", icon: "📋", url: "https://ep.land.nat.gov.tw/" },
+          ],
+        },
+      },
+    ]);
   });
 
   seed();
