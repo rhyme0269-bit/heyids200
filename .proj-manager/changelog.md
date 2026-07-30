@@ -1,5 +1,26 @@
 # Changelog
 
+## [feat: DB 驅動計算器系統] - 2026-07-30T18:00:00Z
+
+### 變更類型
+
+新功能
+
+### 變更摘要
+
+將 6 個硬編碼試算器轉為 SQLite + JSON blob 驅動的動態系統。新增 S-expression 公式引擎（支援 +, -, *, /, pow, round, abs, min, max, if, 比較運算, tiered 累進稅率, and, or, not）。前端 ToolsClient 從 505 行硬編碼重寫為 ~170 行泛用渲染器。後台新增「小工具」tab，提供計算器 CRUD 管理介面（輸入欄位、公式、結果顯示、總計列編輯器）。
+
+### 改動
+
+- 新增 calc-types.ts / calc-engine.ts / calc-seed.ts / calc-db.ts（計算器核心）
+- 新增 CalcEditor.tsx（後台計算器管理介面）
+- 新增 /api/calculators 和 /api/admin/calculators API
+- 重寫 ToolsClient.tsx（硬編碼 → 動態渲染）
+- 修改 db.ts 整合 calculators 表初始化
+- AdminClient.tsx 新增「小工具」tab
+
+---
+
 ## [fix: 前端動態設定、PNG 透明、Admin 圖片 UX] - 2026-07-30T12:00:00Z
 
 ### 變更類型
