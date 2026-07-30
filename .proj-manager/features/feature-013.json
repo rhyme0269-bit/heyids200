@@ -1,0 +1,14 @@
+{
+  "feature_id": "feature-013",
+  "name": "後台使用手冊",
+  "description": "後台管理新增「使用手冊」tab，提供 4 大章節（系統總覽、頁面管理、圖片管理、基本資訊）共 10 個子章節的操作說明。靜態 React 元件，左側導航 + 右側內容排版，手機版折疊選單。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/app/admin/ManualContent.tsx",
+    "src/app/admin/AdminClient.tsx"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": []
+}

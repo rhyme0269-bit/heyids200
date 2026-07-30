@@ -31,7 +31,7 @@ src/
 │   ├── layout.tsx        # 全站 Layout（動態導覽列）
 │   ├── [slug]/           # CMS 動態頁面路由（取代舊靜態頁面）
 │   ├── tools/            # 小工具（6 個試算器，靜態）
-│   ├── admin/            # 後台管理介面（頁面管理、基本資訊、圖片管理）
+│   ├── admin/            # 後台管理介面（頁面管理、基本資訊、圖片庫、使用手冊）
 │   └── api/              # API 路由
 │       ├── contact/      # 聯絡表單 POST
 │       ├── images/[key]/ # 圖片取得（BLOB from SQLite）
@@ -39,7 +39,7 @@ src/
 │           ├── cms/      # CMS API（pages, blocks, templates, nav-links, reorder, migrate）
 │           └── ...       # 其他 admin API（auth, settings, hero-config, images）
 ├── components/
-│   ├── cms/              # CMS 區塊渲染器（BlockRenderer + 16 種 renderers）
+│   ├── cms/              # CMS 區塊渲染器（BlockRenderer + 19 種 renderers）
 │   ├── common/           # 共用元件
 │   ├── layout/           # Header（動態 nav）, Footer（動態 nav）
 │   └── sections/         # 首頁區塊元件
@@ -59,7 +59,7 @@ src/
 1. **首次啟動**：`db.ts` 自動建立 SQLite 資料庫，從 `default-data.ts` seed 預設資料
 2. **前台讀取**：各頁面 Server Component 從 SQLite 讀取資料渲染
 3. **後台編輯**：AdminClient.tsx 透過 `/api/admin/*` RESTful API 進行 CRUD
-4. **圖片**：以 BLOB 存入 SQLite，透過 `/api/images/[key]` 動態提供
+4. **圖片**：以 BLOB 存入 SQLite，透過 `/api/images/[key]` 動態提供。圖片庫以 image_groups/image_slots 表管理動態群組與欄位
 
 ### 新增頁面（CMS 方式）
 
@@ -103,7 +103,7 @@ GitHub Pages 自動部署，每次 push 到 main 自動更新：
 
 - 登入速率限制（5 次/分鐘 per IP）
 - 聯絡表單速率限制（5 次/分鐘 per IP）
-- 圖片上傳：5MB 限制 + MIME 白名單 + key 白名單
+- 圖片上傳：5MB 限制 + MIME 白名單 + 動態 key 驗證（image_slots 表）
 - 密碼 scrypt 雜湊 + timing-safe 比對
 - httpOnly session cookie
 

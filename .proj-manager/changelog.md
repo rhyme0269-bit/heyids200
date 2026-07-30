@@ -1,5 +1,34 @@
 # Changelog
 
+## [feat: 圖片庫 + 使用手冊 + 編輯器提示] - 2026-07-30T00:00:00Z
+
+### 變更類型
+
+新增功能
+
+### 變更摘要
+
+三大後台功能：(1) 圖片庫 — 將固定 11 個 key/3 個硬編碼群組改為資料庫驅動的動態群組與欄位系統，使用者可自由新增/編輯/刪除群組和圖片欄位，系統圖片受保護；(2) 使用手冊 — 後台新增「使用手冊」tab，含 4 大章節 10 個子頁面的操作說明；(3) 區塊編輯器提示 — 區塊選擇器按鈕顯示描述文字，區塊標頭旁加 info icon tooltip。
+
+### 改動
+
+- `src/lib/db.ts` — 新增 image_groups / image_slots 表、seedImageLibrary()、ImageGroup/ImageSlot 型別、15+ CRUD 函式
+- `src/app/api/admin/images/route.ts` — GET 回傳結構化資料（groups+slots+images），移除 ALLOWED_KEYS 改為 isValidImageKey()
+- `src/app/api/admin/hero-config/route.ts` — 移除硬編碼 ALLOWED_KEYS，改為 getBackgroundSlotKeys() 動態查詢
+- `src/app/api/admin/image-groups/route.ts` — 新增群組 CRUD API
+- `src/app/api/admin/image-slots/route.ts` — 新增欄位 CRUD API
+- `src/app/admin/AdminClient.tsx` — 移除 IMAGE_GROUPS/IMAGE_SLOTS 常數，改為動態 API 驅動；新增群組/欄位 CRUD UI；新增「使用手冊」tab
+- `src/app/admin/ManualContent.tsx` — 新增使用手冊元件（側邊欄導航 + 內容）
+- `src/app/admin/PageBuilder.tsx` — 新增 BLOCK_TYPE_HINTS（19 種區塊描述）、區塊選擇器顯示提示文字、區塊標頭 info icon tooltip
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-012, feature-013, feature-014
+- 破壞性變更: No
+
+---
+
 ## [feat(cms): Phase 4 整合 — 動態導覽列、舊頁面清理] - 2026-07-29T00:00:00Z
 
 ### 變更類型
