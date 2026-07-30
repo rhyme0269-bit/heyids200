@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { initCmsTables } from "./cms-db";
+import { initCalcTables, seedCalculators } from "./calc-db";
 import {
   defaultSiteSettings,
   defaultAbout,
@@ -41,6 +42,8 @@ function getDb(): Database.Database {
   seedIfEmpty(_db);
   seedImageLibrary(_db);
   initCmsTables(_db);
+  initCalcTables(_db);
+  seedCalculators(_db);
 
   return _db;
 }

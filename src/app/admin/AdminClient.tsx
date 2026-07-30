@@ -7,6 +7,7 @@ import type { Area } from "react-easy-crop";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
 import PageBuilder from "./PageBuilder";
 import ManualContent from "./ManualContent";
+import CalcEditor from "./CalcEditor";
 
 /* ============================================================
    Types
@@ -36,6 +37,7 @@ const TABS = [
   { key: "pages", label: "頁面管理" },
   { key: "settings", label: "基本資訊" },
   { key: "images", label: "圖片管理" },
+  { key: "calculators", label: "小工具" },
   { key: "manual", label: "使用手冊" },
 ] as const;
 
@@ -1177,6 +1179,13 @@ export default function AdminClient() {
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* ============================
+                  Tab: 小工具
+                  ============================ */}
+              {activeTab === "calculators" && (
+                <CalcEditor />
               )}
 
               {/* ============================
