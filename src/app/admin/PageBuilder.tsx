@@ -49,6 +49,9 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   cta_section: "行動呼籲",
   stats_strip: "數據條",
   custom_html: "自訂 HTML",
+  profile_card: "個人簡介",
+  two_column_list: "雙欄清單",
+  contact_layout: "聯絡雙欄",
 };
 
 const ALL_BLOCK_TYPES = Object.keys(BLOCK_TYPE_LABELS) as BlockType[];
@@ -1120,6 +1123,56 @@ function BlockEditor({
         </div>
       );
 
+    case "profile_card":
+      return (
+        <div className="space-y-3">
+          <Field label="介紹文字" value={(data.introduction as string) || ""} onChange={(v) => set("introduction", v)} />
+          <Field label="服務理念（引言）" value={(data.quote as string) || ""} onChange={(v) => set("quote", v)} />
+          <Field label="圖片 Key（如 scrivener_photo）" value={(data.imageKey as string) || ""} onChange={(v) => set("imageKey", v)} />
+          <Field label="姓名" value={(data.imageName as string) || ""} onChange={(v) => set("imageName", v)} />
+          <Field label="副標題（如證號）" value={(data.imageSubtitle as string) || ""} onChange={(v) => set("imageSubtitle", v)} />
+        </div>
+      );
+
+    case "two_column_list":
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="左欄標題" value={(data.leftTitle as string) || ""} onChange={(v) => set("leftTitle", v)} />
+            <Field label="右欄標題" value={(data.rightTitle as string) || ""} onChange={(v) => set("rightTitle", v)} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">左欄圖示</label>
+              <select value={(data.leftStyle as string) || "check"} onChange={(e) => set("leftStyle", e.target.value)} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm">
+                <option value="check">打勾</option>
+                <option value="bullet">圓點</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">右欄圖示</label>
+              <select value={(data.rightStyle as string) || "check"} onChange={(e) => set("rightStyle", e.target.value)} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm">
+                <option value="check">打勾</option>
+                <option value="circle-check">圓形打勾</option>
+                <option value="bullet">圓點</option>
+              </select>
+            </div>
+          </div>
+          <StringArrayEditor label="左欄項目" items={(data.leftItems as string[]) || []} onChange={(v) => set("leftItems", v)} />
+          <StringArrayEditor label="右欄項目" items={(data.rightItems as string[]) || []} onChange={(v) => set("rightItems", v)} />
+        </div>
+      );
+
+    case "contact_layout":
+      return (
+        <div className="space-y-3">
+          <Field label="表單標題" value={(data.formTitle as string) || ""} onChange={(v) => set("formTitle", v)} />
+          <Field label="聯絡資訊標題" value={(data.infoTitle as string) || ""} onChange={(v) => set("infoTitle", v)} />
+          <Field label="地圖地址" value={(data.mapAddress as string) || ""} onChange={(v) => set("mapAddress", v)} />
+          <Field label="地圖嵌入 URL（選填）" value={(data.mapEmbedUrl as string) || ""} onChange={(v) => set("mapEmbedUrl", v)} />
+        </div>
+      );
+
     default:
       return <p className="text-sm text-stone-400">不支援的區塊類型：{blockType}</p>;
   }
@@ -1220,6 +1273,9 @@ function getDefaultData(blockType: BlockType): Record<string, unknown> {
     case "cta_section": return { title: "", subtitle: "", primaryLabel: "", primaryHref: "", secondaryLabel: "", secondaryHref: "" };
     case "stats_strip": return { items: [] };
     case "custom_html": return { html: "" };
+    case "profile_card": return { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" };
+    case "two_column_list": return { leftTitle: "", leftItems: [], leftStyle: "check", rightTitle: "", rightItems: [], rightStyle: "check" };
+    case "contact_layout": return { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" };
     default: return {};
   }
 }

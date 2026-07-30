@@ -271,20 +271,20 @@ export function migrateToCs() {
         defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null },
       },
       {
-        blockType: "text_heading",
-        defaultData: { text: "事務所介紹", level: "h2" },
-      },
-      {
-        blockType: "text_body",
-        defaultData: { html: "" },
-      },
-      {
-        blockType: "image",
-        defaultData: { imageKey: "", alt: "", caption: "" },
+        blockType: "profile_card",
+        defaultData: { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" },
       },
       {
         blockType: "list",
-        defaultData: { title: "專業資格", style: "check", items: [] },
+        defaultData: { title: "特色", style: "numbered", items: [] },
+      },
+      {
+        blockType: "two_column_list",
+        defaultData: { leftTitle: "資歷", leftItems: [], leftStyle: "check", rightTitle: "經驗", rightItems: [], rightStyle: "circle-check" },
+      },
+      {
+        blockType: "list",
+        defaultData: { title: "專長領域", style: "tag", items: [] },
       },
     ]);
 
@@ -334,13 +334,8 @@ export function migrateToCs() {
         defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null },
       },
       {
-        blockType: "contact_form",
-        defaultData: { title: "諮詢表單" },
-      },
-      { blockType: "contact_info", defaultData: { title: "聯絡資訊" } },
-      {
-        blockType: "map_embed",
-        defaultData: { title: "", address: "", embedUrl: "" },
+        blockType: "contact_layout",
+        defaultData: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" },
       },
     ]);
 
@@ -451,52 +446,35 @@ export function migrateToCs() {
         },
       },
       {
-        blockType: "text_heading",
-        data: { text: "事務所介紹", level: "h2" },
-      },
-      {
-        blockType: "text_body",
-        data: { html: about.introduction },
-      },
-      {
-        blockType: "text_heading",
-        data: { text: "服務理念", level: "h2" },
-      },
-      {
-        blockType: "text_body",
-        data: { html: about.philosophy },
-      },
-      {
-        blockType: "image",
+        blockType: "profile_card",
         data: {
+          introduction: about.introduction,
+          quote: about.philosophy,
           imageKey: "scrivener_photo",
-          alt: settings.scrivenerName ?? "代書照片",
-          caption: settings.scrivenerName ?? "",
+          imageName: `${settings.scrivenerName ?? ""} 地政士`,
+          imageSubtitle: settings.licenseNumber ?? "",
         },
       },
       {
         blockType: "list",
-        data: { title: "事務所特色", style: "check", items: about.features },
+        data: { title: "事務所特色", style: "numbered", items: about.features },
+        config: { bgVariant: "gray" },
       },
       {
-        blockType: "list",
+        blockType: "two_column_list",
         data: {
-          title: "現任資歷",
-          style: "check",
-          items: about.qualifications,
-        },
-      },
-      {
-        blockType: "list",
-        data: {
-          title: "過去工作經驗",
-          style: "check",
-          items: about.experience,
+          leftTitle: "現任資歷",
+          leftItems: about.qualifications,
+          leftStyle: "check",
+          rightTitle: "過去工作經驗",
+          rightItems: about.experience,
+          rightStyle: "circle-check",
         },
       },
       {
         blockType: "list",
         data: { title: "專長領域", style: "tag", items: about.specialties },
+        config: { bgVariant: "gray" },
       },
     ]);
 
@@ -639,19 +617,12 @@ export function migrateToCs() {
         },
       },
       {
-        blockType: "contact_form",
-        data: { title: "諮詢表單" },
-      },
-      {
-        blockType: "contact_info",
-        data: { title: "聯絡資訊" },
-      },
-      {
-        blockType: "map_embed",
+        blockType: "contact_layout",
         data: {
-          title: "",
-          address: settings.address ?? "",
-          embedUrl: settings.googleMapEmbed ?? "",
+          formTitle: "諮詢表單",
+          infoTitle: "聯絡資訊",
+          mapAddress: settings.address ?? "",
+          mapEmbedUrl: settings.googleMapEmbed ?? "",
         },
       },
     ]);

@@ -14,7 +14,10 @@ export type BlockType =
   | "contact_info"
   | "cta_section"
   | "stats_strip"
-  | "custom_html";
+  | "custom_html"
+  | "profile_card"
+  | "two_column_list"
+  | "contact_layout";
 
 export type PageStatus = "published" | "draft";
 export type HeroMode = "default" | "image" | "color";
@@ -157,6 +160,30 @@ export interface StatsStripData {
 
 export interface CustomHtmlData {
   html: string;
+}
+
+export interface ProfileCardData {
+  introduction: string;
+  quote: string;
+  imageKey: string;
+  imageName: string;
+  imageSubtitle: string;
+}
+
+export interface TwoColumnListData {
+  leftTitle: string;
+  leftItems: string[];
+  leftStyle: "check" | "bullet";
+  rightTitle: string;
+  rightItems: string[];
+  rightStyle: "check" | "bullet" | "circle-check";
+}
+
+export interface ContactLayoutData {
+  formTitle: string;
+  infoTitle: string;
+  mapAddress: string;
+  mapEmbedUrl: string;
 }
 
 // Nav item for dynamic navigation
