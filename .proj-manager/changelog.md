@@ -1,5 +1,32 @@
 # Changelog
 
+## [fix: 前端動態設定、PNG 透明、Admin 圖片 UX] - 2026-07-30T12:00:00Z
+
+### 變更類型
+
+修復 + 增強
+
+### 變更摘要
+
+修正圖片管理與前端顯示的多項問題。前端 Header/Footer/HeroSection/AboutPreview 從硬編碼改為動態讀取 DB settings。PNG 裁切保留透明背景。Admin 佔位符邏輯修正（上傳後不再重複顯示、刪除後正確恢復）。Logo SSR hydration 競態修正。新增 Logo 大小設定與自由裁切。移除 admin UI 中的 key: xxx 技術資訊。
+
+### 改動
+
+- Header/Footer/HeroSection/AboutPreview 改為動態讀取 settings（名稱、電話）
+- layout.tsx 傳入 siteName/phone/logoSize 到 Header
+- AdminClient: PNG 偵測與保留、imageTimestamps 初始化與刪除清除、佔位符條件修正、移除 key 顯示、logoSize UI、裁切比例選擇器、自由裁切
+- Header: useCallback ref 修正 SSR hydration、LOGO_SIZES 對應
+- default-data.ts: SiteSettings 新增 logoSize
+- images/[key]/route.ts: Cache-Control 加 must-revalidate
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-012
+- 破壞性變更: No
+
+---
+
 ## [feat: 圖片庫 + 使用手冊 + 編輯器提示] - 2026-07-30T00:00:00Z
 
 ### 變更類型
