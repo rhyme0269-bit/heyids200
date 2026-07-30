@@ -18,109 +18,31 @@ export const defaultCalculators: CalcSeed[] = [
       inputs: [
         { id: "house_value", label: "房屋評定現值（元）", type: "number", placeholder: "例：3,000,000" },
         { id: "land_value", label: "土地公告現值（元）", type: "number", placeholder: "例：5,000,000" },
-        { id: "first_time", label: "是否為首購族", type: "checkbox" },
+        { id: "need_loan", label: "是否需要貸款", type: "checkbox" },
+        { id: "loan_amount", label: "貸款金額（元）", type: "number", placeholder: "例：8,000,000" },
       ],
       formulas: [
         { id: "deed_tax", expr: ["*", "$house_value", 0.06] },
         { id: "stamp_tax", expr: ["*", ["+", "$house_value", "$land_value"], 0.001] },
         { id: "reg_fee", expr: ["*", ["+", "$house_value", "$land_value"], 0.001] },
         { id: "agent_fee", expr: 14000 },
-        { id: "total", expr: ["+", "$deed_tax", "$stamp_tax", "$reg_fee", "$agent_fee"] },
+        { id: "loan_setup_fee", expr: ["if", "$need_loan", 5000, 0] },
+        { id: "loan_reg_fee", expr: ["if", "$need_loan", ["*", "$loan_amount", 0.0012], 0] },
+        { id: "total", expr: ["+", "$deed_tax", "$stamp_tax", "$reg_fee", "$agent_fee", "$loan_setup_fee", "$loan_reg_fee"] },
       ],
       results: [
         { id: "deed_tax", label: "契稅（房屋現值 × 6%）", suffix: "元" },
         { id: "stamp_tax", label: "印花稅（總現值 × 0.1%）", suffix: "元" },
         { id: "reg_fee", label: "登記規費（總現值 × 0.1%）", suffix: "元" },
         { id: "agent_fee", label: "代書費估算", suffix: "元" },
+        { id: "loan_setup_fee", label: "貸款設定費", suffix: "元", showIf: "$need_loan" },
+        { id: "loan_reg_fee", label: "設定規費（貸款金額 × 1.2‰）", suffix: "元", showIf: "$need_loan" },
       ],
       total: { id: "total", label: "預估總費用", suffix: "元" },
       notes: [
-        { condition: "$first_time", text: "＊首購族可能享有契稅或貸款利率優惠，實際依各主管機關規定。" },
+        { condition: 1, text: "※ 費用僅供參考，實際金額可能因筆棟數、案件繁複度及主管機關規定而有所不同。" },
+        { condition: 1, text: "※ 貸款另有貸款手續費及火險地震險等，依各家銀行收費為準。" },
       ],
-    },
-  },
-  {
-    slug: "land_value_increment",
-    title: "土地增值稅試算",
-    icon: "📈",
-    description: "依漲價總額與持有年數試算土地增值稅",
-    definition: {
-      inputs: [
-        { id: "prev_value", label: "前次移轉現值（元）", type: "number", placeholder: "例：2,000,000" },
-        { id: "curr_value", label: "本次申報現值（元）", type: "number", placeholder: "例：5,000,000" },
-        { id: "years_held", label: "持有年數", type: "number", placeholder: "例：15" },
-      ],
-      formulas: [
-        { id: "increment", expr: ["max", ["-", "$curr_value", "$prev_value"], 0] },
-        { id: "tax_before_discount", expr: ["tiered", "$prev_value", "$increment", [[1.0, 0.20], [1.0, 0.30], [null, 0.40]]] },
-        { id: "discount_rate", expr: ["if", [">", "$years_held", 40], 0.4, ["if", [">", "$years_held", 30], 0.3, ["if", [">", "$years_held", 20], 0.2, 0]]] },
-        { id: "discount", expr: ["*", "$tax_before_discount", "$discount_rate"] },
-        { id: "tax", expr: ["-", "$tax_before_discount", "$discount"] },
-      ],
-      results: [
-        { id: "increment", label: "漲價總額", suffix: "元" },
-        { id: "tax_before_discount", label: "稅額（折扣前）", suffix: "元" },
-        { id: "discount", label: "長期持有減徵", suffix: "元", prefix: "-", showIf: [">", "$discount", 0] },
-      ],
-      total: { id: "tax", label: "預估土地增值稅", suffix: "元" },
-    },
-  },
-  {
-    slug: "combined_income_tax",
-    title: "房地合一稅試算",
-    icon: "🏘️",
-    description: "依出售價格、成本及持有期間試算房地合一稅",
-    definition: {
-      inputs: [
-        { id: "selling_price", label: "出售價格（元）", type: "number", placeholder: "例：15,000,000" },
-        { id: "cost", label: "取得成本（元）", type: "number", placeholder: "例：10,000,000" },
-        { id: "expenses", label: "相關費用（元）", type: "number", placeholder: "例：500,000" },
-        {
-          id: "holding_period", label: "持有期間", type: "select",
-          defaultValue: "0.45",
-          options: [
-            { value: "0.45", label: "未滿 2 年（45%）" },
-            { value: "0.35", label: "2～5 年（35%）" },
-            { value: "0.20", label: "5～10 年（20%）" },
-            { value: "0.15", label: "超過 10 年（15%）" },
-          ],
-        },
-      ],
-      formulas: [
-        { id: "taxable_income", expr: ["max", ["-", "$selling_price", "$cost", "$expenses"], 0] },
-        { id: "rate", expr: "$holding_period" },
-        { id: "tax", expr: ["*", "$taxable_income", "$rate"] },
-      ],
-      results: [
-        { id: "taxable_income", label: "課稅所得", suffix: "元" },
-        { id: "rate_display", label: "適用稅率", suffix: "%" },
-      ],
-      total: { id: "tax", label: "預估房地合一稅", suffix: "元" },
-    },
-  },
-  {
-    slug: "mortgage",
-    title: "房貸試算表",
-    icon: "🏦",
-    description: "輸入貸款金額、利率和年限，試算每月還款金額",
-    definition: {
-      inputs: [
-        { id: "loan_amount", label: "貸款金額（元）", type: "number", placeholder: "例：8,000,000" },
-        { id: "annual_rate", label: "年利率（%）", type: "number", defaultValue: "2.0", step: "0.1", placeholder: "例：2.0" },
-        { id: "loan_years", label: "貸款年限（年）", type: "number", defaultValue: "30", placeholder: "例：30" },
-      ],
-      formulas: [
-        { id: "r", expr: ["/", ["/", "$annual_rate", 100], 12] },
-        { id: "n", expr: ["*", "$loan_years", 12] },
-        { id: "monthly_payment", expr: ["/", ["*", "$loan_amount", ["*", "$r", ["pow", ["+", 1, "$r"], "$n"]]], ["-", ["pow", ["+", 1, "$r"], "$n"], 1]] },
-        { id: "total_payment", expr: ["*", "$monthly_payment", "$n"] },
-        { id: "total_interest", expr: ["-", "$total_payment", "$loan_amount"] },
-      ],
-      results: [
-        { id: "monthly_payment", label: "每月還款金額", suffix: "元" },
-        { id: "total_payment", label: "還款總金額", suffix: "元" },
-      ],
-      total: { id: "total_interest", label: "利息總額", suffix: "元" },
     },
   },
   {
@@ -154,6 +76,31 @@ export const defaultCalculators: CalcSeed[] = [
     },
   },
   {
+    slug: "mortgage",
+    title: "房貸試算表",
+    icon: "🏦",
+    description: "輸入貸款金額、利率和年限，試算每月還款金額",
+    definition: {
+      inputs: [
+        { id: "loan_amount", label: "貸款金額（元）", type: "number", placeholder: "例：8,000,000" },
+        { id: "annual_rate", label: "年利率（%）", type: "number", defaultValue: "2.0", step: "0.1", placeholder: "例：2.0" },
+        { id: "loan_years", label: "貸款年限（年）", type: "number", defaultValue: "30", placeholder: "例：30" },
+      ],
+      formulas: [
+        { id: "r", expr: ["/", ["/", "$annual_rate", 100], 12] },
+        { id: "n", expr: ["*", "$loan_years", 12] },
+        { id: "monthly_payment", expr: ["/", ["*", "$loan_amount", ["*", "$r", ["pow", ["+", 1, "$r"], "$n"]]], ["-", ["pow", ["+", 1, "$r"], "$n"], 1]] },
+        { id: "total_payment", expr: ["*", "$monthly_payment", "$n"] },
+        { id: "total_interest", expr: ["-", "$total_payment", "$loan_amount"] },
+      ],
+      results: [
+        { id: "monthly_payment", label: "每月還款金額", suffix: "元" },
+        { id: "total_payment", label: "還款總金額", suffix: "元" },
+      ],
+      total: { id: "total_interest", label: "利息總額", suffix: "元" },
+    },
+  },
+  {
     slug: "loan_affordability",
     title: "貸款負擔能力試算",
     icon: "💰",
@@ -177,6 +124,61 @@ export const defaultCalculators: CalcSeed[] = [
         { id: "max_loan", label: "最高可貸金額", suffix: "元" },
       ],
       total: { id: "estimated_property", label: "可負擔房價估算（8 成貸款）", suffix: "元" },
+    },
+  },
+  {
+    slug: "combined_income_tax",
+    title: "房地合一稅試算",
+    icon: "🏘️",
+    description: "依出售價格、成本及持有期間試算房地合一稅",
+    definition: {
+      inputs: [
+        { id: "selling_price", label: "出售價格（元）", type: "number", placeholder: "例：15,000,000" },
+        { id: "cost", label: "取得成本（元）", type: "number", placeholder: "例：10,000,000" },
+        {
+          id: "holding_period", label: "持有期間", type: "select",
+          defaultValue: "0.45",
+          options: [
+            { value: "0.45", label: "未滿 2 年（45%）" },
+            { value: "0.35", label: "2～5 年（35%）" },
+            { value: "0.20", label: "5～10 年（20%）" },
+            { value: "0.15", label: "超過 10 年（15%）" },
+          ],
+        },
+      ],
+      formulas: [
+        { id: "expenses", expr: ["min", ["*", "$selling_price", 0.03], 300000] },
+        { id: "taxable_income", expr: ["max", ["-", "$selling_price", "$cost", "$expenses"], 0] },
+        { id: "rate", expr: "$holding_period" },
+        { id: "tax", expr: ["*", "$taxable_income", "$rate"] },
+      ],
+      results: [
+        { id: "expenses", label: "推計費用（售價 × 3%，上限 30 萬）", suffix: "元" },
+        { id: "taxable_income", label: "課稅所得", suffix: "元" },
+        { id: "rate_display", label: "適用稅率", suffix: "%" },
+      ],
+      total: { id: "tax", label: "預估房地合一稅", suffix: "元" },
+      notes: [
+        { condition: 1, text: "※ 欲精準計算可至財政部稅額試算：https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
+        { condition: 1, text: "※ 或洽詢地政士協助計算。" },
+      ],
+    },
+  },
+  {
+    slug: "land_value_increment",
+    title: "土地增值稅試算",
+    icon: "📈",
+    description: "提供政府官方土地增值稅試算連結",
+    definition: {
+      inputs: [],
+      formulas: [],
+      results: [],
+      total: { id: "", label: "", suffix: "" },
+      links: [
+        { label: "全台 — 財政部稅額試算", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
+        { label: "新北市 — 地政局試算", url: "https://i.land.ntpc.gov.tw/iland/index.php/land-value/vatcal" },
+        { label: "台北市 — 地政雲試算", url: "https://cloud.land.gov.taipei/cloud/map/index.html?fun=g21" },
+      ],
     },
   },
 ];

@@ -163,6 +163,22 @@ const SECTIONS: Section[] = [
         ),
       },
       {
+        id: "pages-faq-links",
+        title: "FAQ 答案加入連結",
+        content: (
+          <>
+            <p>在常見問題（FAQ）區塊中，答案文字支援加入可點擊的連結。使用方式：</p>
+            <StepBox steps={[
+              "在 FAQ 答案的文字中，用 <code>[顯示文字](網址)</code> 的格式加入連結",
+              "例如：<code>請參考本所[收費標準](/services)頁面</code>",
+              "或外部連結：<code>歡迎加入我們的[官方 LINE 帳號](https://line.me/R/ti/p/@240mvtlq)</code>",
+              "儲存後，前台會把 <code>[收費標準]</code> 顯示為可點擊的橘色連結",
+            ]} />
+            <TipBox type="info">站內連結用 <code>/路徑</code>（例如 <code>/services</code>），外部連結用完整網址（例如 <code>https://line.me/...</code>）。外部連結會在新分頁中開啟。</TipBox>
+          </>
+        ),
+      },
+      {
         id: "pages-blocks",
         title: "區塊類型總覽",
         content: (
@@ -184,7 +200,7 @@ const SECTIONS: Section[] = [
                   <tr><td className="py-2 pr-4 font-medium">列表</td><td className="py-2">條列式內容（圓點、編號、勾選、標籤）</td></tr>
                   <tr><td className="py-2 pr-4 font-medium">項目列表</td><td className="py-2">帶標題和說明的項目卡片，可加 emoji 圖示</td></tr>
                   <tr><td className="py-2 pr-4 font-medium">表格</td><td className="py-2">有欄位標題的表格，適合收費標準等</td></tr>
-                  <tr><td className="py-2 pr-4 font-medium">常見問題</td><td className="py-2">點擊問題展開答案的 FAQ 區塊</td></tr>
+                  <tr><td className="py-2 pr-4 font-medium">常見問題</td><td className="py-2">點擊問題展開答案的 FAQ 區塊（答案支援連結語法）</td></tr>
                   <tr><td className="py-2 pr-4 font-medium">步驟流程</td><td className="py-2">有順序的流程圖，適合服務流程說明</td></tr>
                   <tr><td className="py-2 pr-4 font-medium">聯絡表單</td><td className="py-2">讓訪客填寫的聯絡表單</td></tr>
                   <tr><td className="py-2 pr-4 font-medium">地圖嵌入</td><td className="py-2">Google 地圖</td></tr>
@@ -297,6 +313,26 @@ const SECTIONS: Section[] = [
           </>
         ),
       },
+      {
+        id: "calc-features",
+        title: "計算器特殊功能",
+        content: (
+          <>
+            <h4>連結型計算器</h4>
+            <p>有些稅額試算過於複雜（例如土地增值稅），可以設定為「連結型」計算器。這類計算器不顯示輸入欄位和公式，改為顯示外部試算連結，引導訪客前往政府官方網站計算。</p>
+            <TipBox type="info">連結型計算器的設定方式：將輸入欄位和公式都清空，並在「外部連結」欄位填入連結文字和網址。</TipBox>
+
+            <h4>條件顯示欄位</h4>
+            <p>結果欄位可以設定「顯示條件」，只在特定情況下才顯示。例如購屋總費用試算中的「貸款設定費」和「設定規費」，只有在勾選「是否需要貸款」時才會顯示。</p>
+
+            <h4>自動推算欄位</h4>
+            <p>某些欄位不需要訪客手動輸入，系統會根據公式自動推算。例如房地合一稅試算中的「推計費用」會自動以售價 × 3%（上限 30 萬）計算，訪客只需要看結果即可。</p>
+
+            <h4>備註與連結</h4>
+            <p>計算結果下方可以加入備註文字。備註中如果包含網址（<code>https://...</code>），會自動顯示為可點擊的「前往試算」連結，方便訪客前往政府網站做更精確的計算。</p>
+          </>
+        ),
+      },
     ],
   },
   {
@@ -334,6 +370,7 @@ const QUICK_LINKS: { emoji: string; label: string; target: string; desc: string 
   { emoji: "🎯", label: "改背景圖", target: "images-hero", desc: "設定頁面頂部背景" },
   { emoji: "📞", label: "改聯絡資訊", target: "settings-edit", desc: "更新電話、地址等" },
   { emoji: "🧮", label: "管理計算器", target: "calc-overview", desc: "編輯前台試算工具" },
+  { emoji: "❓", label: "FAQ 加連結", target: "pages-faq-links", desc: "在 FAQ 答案中加入連結" },
 ];
 
 function QuickIndex({ onSelect }: { onSelect: (id: string) => void }) {

@@ -227,7 +227,7 @@ export const defaultFaqs: Faq[] = [
     _id: "faq-3",
     question: "地政士費用怎麼計算？",
     answer:
-      "費用依案件類型而定，請參考本所收費標準頁面。實際費用會在了解您的案件內容後提供正式報價，絕不額外加價。",
+      "費用依案件類型而定，請參考本所[收費標準](/services)頁面。實際費用會在了解您的案件內容後提供正式報價，絕不額外加價。",
   },
   {
     _id: "faq-4",
@@ -245,7 +245,7 @@ export const defaultFaqs: Faq[] = [
     _id: "faq-6",
     question: "可以用 LINE 諮詢嗎？",
     answer:
-      "當然可以！歡迎加入我們的官方 LINE 帳號（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
+      "當然可以！歡迎加入我們的[官方 LINE 帳號](https://line.me/R/ti/p/@240mvtlq)（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
   },
   {
     _id: "faq-7",

@@ -42,12 +42,18 @@ export interface CalcNote {
   text: string;
 }
 
+export interface CalcLink {
+  label: string;
+  url: string;
+}
+
 export interface CalcDefinition {
   inputs: CalcInput[];
   formulas: CalcFormula[];
   results: CalcResult[];
   total: CalcTotal;
   notes?: CalcNote[];
+  links?: CalcLink[];
 }
 
 export interface Calculator {

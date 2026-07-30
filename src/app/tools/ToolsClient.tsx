@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Calculator, CalcInput, CalcResult, CalcTotal, CalcNote } from "@/lib/calc-types";
+import type { Calculator, CalcInput, CalcResult } from "@/lib/calc-types";
 import { evaluate, evaluateAll } from "@/lib/calc-engine";
 
 function fmt(n: number): string {
@@ -75,9 +75,59 @@ function ResultRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function NoteText({ text }: { text: string }) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return (
+    <p className="mt-2 text-xs text-stone-500">
+      {parts.map((part, i) =>
+        urlRegex.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-amber-700 underline break-all">
+            前往試算
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </p>
+  );
+}
+
+function LinkCard({ calc }: { calc: Calculator }) {
+  const { links } = calc.definition;
+  if (!links) return null;
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+      <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-stone-800">
+        <span className="text-xl">{calc.icon}</span>
+        {calc.title}
+      </h2>
+      <p className="mb-4 text-sm text-stone-500">{calc.description}</p>
+      <div className="flex flex-col gap-2">
+        {links.map((link, i) => (
+          <a
+            key={i}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-medium text-stone-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800"
+          >
+            {link.label}
+            <span className="text-stone-400">↗</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DynamicCalculator({ calc }: { calc: Calculator }) {
   const { definition } = calc;
-  const { inputs, formulas, results, total, notes } = definition;
+  const { inputs, formulas, results, total, notes, links } = definition;
+
+  if (links && links.length > 0 && inputs.length === 0) {
+    return <LinkCard calc={calc} />;
+  }
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -160,7 +210,7 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
             </div>
             {notes?.map((note, i) =>
               evaluate(note.condition, computed) ? (
-                <p key={i} className="mt-2 text-xs text-stone-500">{note.text}</p>
+                <NoteText key={i} text={note.text} />
               ) : null
             )}
           </div>

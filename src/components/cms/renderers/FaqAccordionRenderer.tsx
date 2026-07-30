@@ -3,6 +3,33 @@
 import { useState } from "react";
 import type { FaqAccordionData } from "@/lib/cms-types";
 
+function RichAnswer({ text }: { text: string }) {
+  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: Array<{ type: "text"; value: string } | { type: "link"; label: string; url: string }> = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = mdLinkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
+    parts.push({ type: "link", label: match[1], url: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push({ type: "text", value: text.slice(lastIndex) });
+  if (parts.length === 0) return <>{text}</>;
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.type === "link" ? (
+          <a key={i} href={p.url} target="_blank" rel="noopener noreferrer" className="text-amber-700 underline hover:text-amber-900">
+            {p.label}
+          </a>
+        ) : (
+          <span key={i}>{p.value}</span>
+        )
+      )}
+    </>
+  );
+}
+
 export default function FaqAccordionRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as FaqAccordionData;
   const items = d.items ?? [];
@@ -36,7 +63,9 @@ export default function FaqAccordionRenderer({ data }: { data: Record<string, un
               </button>
               {isOpen && (
                 <div className="px-6 pb-4 bg-stone-50 border-t border-stone-100">
-                  <p className="text-stone-600 leading-relaxed pt-4">{item.answer}</p>
+                  <p className="text-stone-600 leading-relaxed pt-4">
+                    <RichAnswer text={item.answer} />
+                  </p>
                 </div>
               )}
             </div>
