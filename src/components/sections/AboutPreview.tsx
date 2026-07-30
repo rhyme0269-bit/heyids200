@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { getAbout } from "@/lib/db";
+import { getAbout, getSettings } from "@/lib/db";
 
 export default function AboutPreview() {
   const about = getAbout();
+  const settings = getSettings();
 
   return (
     <section className="bg-stone-50">
@@ -16,7 +17,7 @@ export default function AboutPreview() {
               <div className="h-px w-8 bg-stone-300" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-stone-800">
-              關於合一地政士事務所
+              關於{settings.name}
             </h2>
           </div>
 

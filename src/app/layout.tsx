@@ -58,14 +58,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = getSettings();
   const navItems = isCmsInitialized() ? getNavItems() : fallbackNav;
 
   return (
     <html lang="zh-TW" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <StructuredData data={generateLocalBusinessSchema(getSettings())} />
+        <StructuredData data={generateLocalBusinessSchema(settings)} />
         <PreviewBanner />
-        <Header navItems={navItems} />
+        <Header navItems={navItems} siteName={settings.name} phone={settings.phone} logoSize={settings.logoSize} />
         <main className="flex-1">{children}</main>
         <Footer />
         <FloatingLine />

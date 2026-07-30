@@ -24,7 +24,7 @@ export default function Footer() {
           {/* 事務所資訊 */}
           <div>
             <h3 className="text-stone-200 text-base font-bold mb-4">
-              合一地政士事務所
+              {settings.name}
             </h3>
             <p className="text-stone-500 text-sm leading-relaxed mb-4">
               逾 26 年專業經驗，提供不動產買賣過戶、繼承登記、贈與登記、抵押權設定、節稅規劃等全方位服務。
@@ -185,7 +185,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-stone-800 text-center">
           <p className="text-stone-600 text-xs">
-            &copy; 2026 合一地政士事務所. All rights reserved.
+            &copy; {new Date().getFullYear()} {settings.name}. All rights reserved.
           </p>
         </div>
       </div>

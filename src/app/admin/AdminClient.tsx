@@ -24,6 +24,7 @@ interface SettingsData {
   googleMapEmbed: string;
   scrivenerName: string;
   licenseNumber: string;
+  logoSize: string;
 }
 
 
@@ -173,6 +174,7 @@ export default function AdminClient() {
     googleMapEmbed: "",
     scrivenerName: "",
     licenseNumber: "",
+    logoSize: "medium",
   });
 
   const [imageGroups, setImageGroups] = useState<ImageGroup[]>([]);
@@ -200,6 +202,7 @@ export default function AdminClient() {
     imageUrl: string;
     key: string;
     aspect: number;
+    mimeType: string;
   } | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -319,6 +322,11 @@ export default function AdminClient() {
               const imgData = await imgRes.json();
               setImageGroups(imgData.groups || []);
               setImageSlots(imgData.slots || []);
+              if (imgData.images?.length) {
+                const ts: Record<string, number> = {};
+                for (const img of imgData.images) ts[img.key] = new Date(img.updated_at).getTime() || Date.now();
+                setImageTimestamps((prev) => ({ ...ts, ...prev }));
+              }
             }
             if (heroRes.ok) {
               const heroData = await heroRes.json();
@@ -462,7 +470,11 @@ export default function AdminClient() {
       }
 
       showToast("圖片刪除成功", "success");
-      setImageTimestamps((prev) => ({ ...prev, [key]: Date.now() }));
+      setImageTimestamps((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     } catch {
       showToast("圖片刪除失敗", "error");
     }
@@ -471,9 +483,14 @@ export default function AdminClient() {
   const openCropper = (file: File, key: string) => {
     const url = URL.createObjectURL(file);
     const slot = imageSlots.find(s => s.key === key);
-    const parts = (slot?.aspectRatio || "3:4").split(":").map(Number);
-    const aspect = parts.length === 2 && parts[1] ? parts[0] / parts[1] : 3 / 4;
-    setCropState({ imageUrl: url, key, aspect });
+    const ratioStr = slot?.aspectRatio || "3:4";
+    let aspect: number | undefined;
+    if (ratioStr !== "free") {
+      const parts = ratioStr.split(":").map(Number);
+      aspect = parts.length === 2 && parts[1] ? parts[0] / parts[1] : 3 / 4;
+    }
+    const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+    setCropState({ imageUrl: url, key, aspect: aspect ?? 0, mimeType });
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     croppedAreaRef.current = null;
@@ -485,10 +502,9 @@ export default function AdminClient() {
 
   const handleCropConfirm = async () => {
     if (!cropState || !croppedAreaRef.current) return;
-    const { imageUrl, key } = cropState;
+    const { imageUrl, key, mimeType } = cropState;
     const area = croppedAreaRef.current;
 
-    // Draw cropped image on canvas
     const image = new Image();
     image.src = imageUrl;
     await new Promise((resolve) => { image.onload = resolve; });
@@ -499,14 +515,16 @@ export default function AdminClient() {
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
 
+    const isPng = mimeType === "image/png";
     const blob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9)
+      canvas.toBlob((b) => resolve(b!), isPng ? "image/png" : "image/jpeg", isPng ? undefined : 0.9)
     );
 
     URL.revokeObjectURL(imageUrl);
     setCropState(null);
 
-    const file = new File([blob], `${key}.jpg`, { type: "image/jpeg" });
+    const ext = isPng ? "png" : "jpg";
+    const file = new File([blob], `${key}.${ext}`, { type: mimeType });
     await handleImageUpload(key, file);
   };
 
@@ -627,6 +645,19 @@ export default function AdminClient() {
     } else {
       const data = await res.json();
       showToast(data.error || "刪除失敗", "error");
+    }
+  };
+
+  const handleUpdateSlotAspect = async (key: string, aspectRatio: string) => {
+    const res = await fetch("/api/admin/image-slots", {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ key, aspectRatio }),
+    });
+    if (res.ok) {
+      setImageSlots((prev) => prev.map((s) => s.key === key ? { ...s, aspectRatio } : s));
+    } else {
+      showToast("比例更新失敗", "error");
     }
   };
 
@@ -849,6 +880,23 @@ export default function AdminClient() {
                     ))}
                   </div>
 
+                  <div className="mt-6 pt-6 border-t border-stone-200">
+                    <label className="mb-2 block text-sm font-medium text-stone-700">Logo 顯示大小</label>
+                    <div className="flex gap-2">
+                      {([["small", "小"], ["medium", "中"], ["large", "大"], ["xlarge", "特大"]] as const).map(([val, lbl]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setSettings((prev) => ({ ...prev, logoSize: val }))}
+                          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${settings.logoSize === val ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+                        >
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-stone-400">調整網站左上角 Logo 圖片的顯示大小</p>
+                  </div>
+
                 </div>
               )}
 
@@ -969,7 +1017,23 @@ export default function AdminClient() {
                                   )}
                                 </div>
                                 <p className="mb-1 text-xs text-stone-400">{slot.hint}</p>
-                                <p className="mb-3 text-xs text-stone-300">key: {slot.key}</p>
+                                <div className="mb-3 flex items-center gap-1">
+                                  <select
+                                    value={slot.aspectRatio}
+                                    onChange={(e) => handleUpdateSlotAspect(slot.key, e.target.value)}
+                                    className="rounded border border-stone-200 px-1.5 py-0.5 text-xs text-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-800"
+                                    title="裁切比例"
+                                  >
+                                    <option value="1:1">1:1</option>
+                                    <option value="3:4">3:4</option>
+                                    <option value="4:3">4:3</option>
+                                    <option value="16:9">16:9</option>
+                                    <option value="16:6">16:6</option>
+                                    <option value="2:1">2:1</option>
+                                    <option value="free">自由</option>
+                                  </select>
+                                  <span className="text-[10px] text-stone-300">裁切比例</span>
+                                </div>
 
                                 {isBg && (
                                   <div className="mb-3">
@@ -1025,7 +1089,7 @@ export default function AdminClient() {
                                   {isBg && mode === "default" && (
                                     <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50"><span className="text-sm font-bold text-stone-600">{slot.label}</span></div>
                                   )}
-                                  {!DEFAULT_IMAGES[slot.key] && !isBg && (
+                                  {!DEFAULT_IMAGES[slot.key] && !isBg && !imageTimestamps[slot.key] && (
                                     <div className="flex flex-col items-center justify-center text-stone-400">
                                       <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                       <span className="text-xs">尚無圖片</span>
@@ -1080,6 +1144,8 @@ export default function AdminClient() {
                                   <option value="1:1">1:1（正方形）</option>
                                   <option value="16:9">16:9（寬螢幕）</option>
                                   <option value="16:6">16:6（橫幅背景）</option>
+                                  <option value="2:1">2:1（寬橫式）</option>
+                                  <option value="free">自由裁切</option>
                                 </select>
                               </div>
                             </div>
@@ -1194,7 +1260,7 @@ export default function AdminClient() {
                 image={cropState.imageUrl}
                 crop={crop}
                 zoom={zoom}
-                aspect={cropState.aspect}
+                aspect={cropState.aspect || undefined}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={handleCropComplete}

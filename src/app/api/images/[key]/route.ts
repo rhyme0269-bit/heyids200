@@ -22,7 +22,7 @@ export async function GET(
   return new NextResponse(new Uint8Array(image.data), {
     headers: {
       "Content-Type": mimeType,
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, must-revalidate",
       "ETag": `"${image.updated_at}"`,
       "X-Content-Type-Options": "nosniff",
       "Content-Disposition": "inline",
