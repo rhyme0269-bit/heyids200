@@ -179,6 +179,39 @@ const SECTIONS: Section[] = [
         ),
       },
       {
+        id: "pages-google-form",
+        title: "使用 Google 表單",
+        content: (
+          <>
+            <p>如果你已經有 Google 表單，可以直接嵌入到聯絡頁面中取代內建表單：</p>
+            <StepBox steps={[
+              "到<strong>頁面管理</strong> → 找到「聯絡我們」頁面 → 點擊<strong>「編輯」</strong>",
+              "找到「聯絡雙欄」或「聯絡表單」區塊",
+              "在區塊編輯器中找到 <strong>「Google 表單網址」</strong> 欄位",
+              "貼上你的 Google 表單網址（例如 <code>https://docs.google.com/forms/d/e/.../viewform?embedded=true</code>）",
+              "儲存後前台就會顯示 Google 表單取代內建的聯絡表單",
+            ]} />
+            <TipBox>如果把 Google 表單網址欄位清空，就會恢復使用內建表單。建議使用 Google 表單的「嵌入」版本網址（網址末尾加 <code>?embedded=true</code>）效果更好。</TipBox>
+          </>
+        ),
+      },
+      {
+        id: "pages-links",
+        title: "實用連結頁面",
+        content: (
+          <>
+            <p>「實用連結」頁面使用「項目列表」區塊來展示外部連結卡片。每個項目可以設定連結網址：</p>
+            <StepBox steps={[
+              "到<strong>頁面管理</strong> → 找到「實用連結」頁面 → 點擊<strong>「編輯」</strong>",
+              "找到「項目列表」區塊，每個項目下方有一個<strong>「連結網址」</strong>欄位",
+              "填入完整網址（例如 <code>https://lvr.land.moi.gov.tw/</code>）",
+              "有連結的項目在前台會變成可點擊的卡片，右上角顯示 ↗ 箭頭",
+            ]} />
+            <TipBox type="info">連結網址是選填的。沒填連結的項目會顯示為普通卡片（帶序號）。這個功能可以在任何使用「項目列表」的頁面使用，不限於實用連結頁面。</TipBox>
+          </>
+        ),
+      },
+      {
         id: "pages-blocks",
         title: "區塊類型總覽",
         content: (
@@ -333,6 +366,22 @@ const SECTIONS: Section[] = [
           </>
         ),
       },
+      {
+        id: "calc-reorder",
+        title: "調整計算器順序",
+        content: (
+          <>
+            <p>前台的計算器顯示順序，可以在小工具列表中直接調整：</p>
+            <StepBox steps={[
+              "到<strong>小工具</strong>頁籤，會看到所有計算器的列表",
+              "每個計算器左邊都有 <strong>▲▼</strong> 箭頭按鈕",
+              "點擊 <strong>▲</strong> 將該計算器上移一格，點擊 <strong>▼</strong> 下移一格",
+              "排序會<strong>即時儲存</strong>，前台會立刻反映新順序",
+            ]} />
+            <TipBox type="info">最上面的計算器無法再上移，最下面的無法再下移（按鈕會變灰色）。</TipBox>
+          </>
+        ),
+      },
     ],
   },
   {
@@ -371,6 +420,9 @@ const QUICK_LINKS: { emoji: string; label: string; target: string; desc: string 
   { emoji: "📞", label: "改聯絡資訊", target: "settings-edit", desc: "更新電話、地址等" },
   { emoji: "🧮", label: "管理計算器", target: "calc-overview", desc: "編輯前台試算工具" },
   { emoji: "❓", label: "FAQ 加連結", target: "pages-faq-links", desc: "在 FAQ 答案中加入連結" },
+  { emoji: "↕️", label: "計算器排序", target: "calc-reorder", desc: "調整計算器顯示順序" },
+  { emoji: "📋", label: "Google 表單", target: "pages-google-form", desc: "嵌入 Google 表單到聯絡頁" },
+  { emoji: "🔗", label: "實用連結", target: "pages-links", desc: "管理外部連結卡片" },
 ];
 
 function QuickIndex({ onSelect }: { onSelect: (id: string) => void }) {

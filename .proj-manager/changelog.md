@@ -1,5 +1,32 @@
 # Changelog
 
+## [feat: 計算器排序 (#13) + Google 表單 (#14) + 實用連結 (#16)] - 2026-07-31T01:00:00Z
+
+### 變更類型
+
+新增功能
+
+### 變更摘要
+
+依 GitHub Issues 完成三項功能：#13 計算器排序 UI（▲▼ 箭頭即時重排）、#14 Google 表單嵌入（聯絡表單/聯絡雙欄支援 googleFormUrl）、#16 實用連結頁面（/links seed + 項目列表 url 欄位支援連結卡片）。更新使用手冊新增三項功能的操作說明。修正 KeyValueListRenderer eyebrow 文字依內容動態切換。
+
+### 改動
+
+- CalcEditor.tsx: 新增 `handleMove` + ▲▼ 按鈕
+- cms-types.ts: KeyValueListData items 新增 `url`、ContactFormData 新增 `googleFormUrl`
+- ContactFormRenderer.tsx / ContactLayoutRenderer.tsx: 支援 Google Form iframe
+- PageBuilder.tsx: 新增 Google Form URL 和項目連結 URL 編輯欄位
+- KeyValueListRenderer.tsx: 提取 ItemCard 元件，支援連結卡片，eyebrow 動態切換
+- cms-db.ts: 新增「實用連結」seed 頁面（6 個政府連結）
+- ManualContent.tsx: 新增計算器排序、Google 表單、實用連結操作說明
+
+### 影響評估
+- 風險等級: Low
+- 受影響功能: feature-015, feature-017, feature-018, feature-019
+- 破壞性變更: No
+
+---
+
 ## [feat: 計算器改良 (#10-13) + FAQ 連結 (#15) + 使用手冊更新] - 2026-07-30T23:30:00Z
 
 ### 變更類型

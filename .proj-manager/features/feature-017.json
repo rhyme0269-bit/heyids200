@@ -1,0 +1,13 @@
+{
+  "feature_id": "feature-017",
+  "name": "計算器排序 UI",
+  "description": "在後台小工具頁籤的計算器列表中加入 ▲▼ 箭頭按鈕，可即時調整計算器顯示順序。使用既有的 PUT /api/admin/calculators 重排序 API。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/app/admin/CalcEditor.tsx"
+  ],
+  "dependencies": ["feature-015"],
+  "api_endpoints": [],
+  "data_model": []
+}
