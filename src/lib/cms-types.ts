@@ -107,7 +107,7 @@ export interface ListData {
 
 export interface KeyValueListData {
   title: string;
-  items: Array<{ label: string; value: string }>;
+  items: Array<{ label: string; value: string; icon?: string }>;
 }
 
 export interface TableData {

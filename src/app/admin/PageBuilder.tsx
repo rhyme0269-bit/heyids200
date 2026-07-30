@@ -952,15 +952,23 @@ function BlockEditor({
           <Field label="標題" value={data.title as string} onChange={(v) => set("title", v)} />
           <ArrayEditor
             label="項目"
-            items={(data.items as Array<{ label: string; value: string }>) || []}
+            items={(data.items as Array<{ label: string; value: string; icon?: string }>) || []}
             renderItem={(item, i, update) => (
               <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={item.icon || ""}
+                  onChange={(e) => update({ ...item, icon: e.target.value })}
+                  placeholder="😀"
+                  title="圖示（emoji）"
+                  className="w-12 rounded-lg border border-stone-200 px-2 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                />
                 <input
                   type="text"
                   value={item.label}
                   onChange={(e) => update({ ...item, label: e.target.value })}
                   placeholder="標題"
-                  className="w-1/3 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  className="w-1/4 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
                 />
                 <input
                   type="text"
@@ -971,7 +979,7 @@ function BlockEditor({
                 />
               </div>
             )}
-            newItem={() => ({ label: "", value: "" })}
+            newItem={() => ({ label: "", value: "", icon: "" })}
             onChange={(items) => set("items", items)}
           />
         </div>
