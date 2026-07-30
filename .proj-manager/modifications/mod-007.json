@@ -1,0 +1,35 @@
+{
+  "modification_id": "mod-007",
+  "feature_id": "feature-015",
+  "type": "enhancement",
+  "status": "applied",
+  "description": "計算器改良：購屋總費用新增貸款設定費/設定規費、土地增值稅改為連結型、房地合一稅自動推算推計費用、計算器重新排序。對應 GitHub Issues #10-13。",
+  "created_at": "2026-07-30T23:30:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": false,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "src/lib/calc-types.ts",
+        "change_type": "modified",
+        "diff_summary": "新增 CalcLink interface 和 CalcDefinition.links 欄位"
+      },
+      {
+        "path": "src/lib/calc-seed.ts",
+        "change_type": "modified",
+        "diff_summary": "重寫 home_purchase（貸款欄位）、land_value_increment（連結型）、combined_income_tax（自動推算費用）、重新排序"
+      },
+      {
+        "path": "src/app/tools/ToolsClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "新增 NoteText（備註連結）和 LinkCard（連結型計算器）元件"
+      }
+    ]
+  },
+  "git_reference": {
+    "head": "3a27f5a"
+  }
+}

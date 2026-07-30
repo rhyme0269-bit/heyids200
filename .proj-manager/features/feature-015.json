@@ -1,7 +1,7 @@
 {
   "feature_id": "feature-015",
   "name": "DB 驅動計算器系統",
-  "description": "將 6 個硬編碼試算器轉為 SQLite + JSON blob 驅動的動態系統。新增 S-expression 公式引擎（支援四則運算、pow、round、abs、min/max、if/比較、tiered 累進稅率）。前端 ToolsClient 從 505 行硬編碼改為 ~170 行泛用渲染器。後台新增「小工具」tab 提供完整 CRUD 管理介面。",
+  "description": "將 6 個硬編碼試算器轉為 SQLite + JSON blob 驅動的動態系統。新增 S-expression 公式引擎（支援四則運算、pow、round、abs、min/max、if/比較、tiered 累進稅率）。前端 ToolsClient 從 505 行硬編碼改為 ~240 行泛用渲染器。後台新增「小工具」tab 提供完整 CRUD 管理介面。支援連結型計算器（CalcLink）、條件顯示欄位（showIf）、自動推算欄位、備註內嵌連結。",
   "status": "completed",
   "created_at": "2026-07-30T00:00:00Z",
   "files": [

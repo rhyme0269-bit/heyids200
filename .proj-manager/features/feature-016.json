@@ -1,0 +1,14 @@
+{
+  "feature_id": "feature-016",
+  "name": "FAQ 答案 Markdown 連結",
+  "description": "常見問題（FAQ）區塊的答案文字支援 Markdown 風格連結語法 [顯示文字](網址)。RichAnswer 元件解析連結並渲染為可點擊的橘色超連結，外部連結在新分頁開啟。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/components/cms/renderers/FaqAccordionRenderer.tsx",
+    "src/lib/default-data.ts"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": []
+}

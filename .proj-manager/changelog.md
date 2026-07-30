@@ -1,5 +1,31 @@
 # Changelog
 
+## [feat: 計算器改良 (#10-13) + FAQ 連結 (#15) + 使用手冊更新] - 2026-07-30T23:30:00Z
+
+### 變更類型
+
+功能修改 + 新增功能
+
+### 變更摘要
+
+依 GitHub Issues #10-13 改良計算器：購屋總費用新增貸款相關欄位（設定費、設定規費）、土地增值稅改為連結型計算器、房地合一稅自動推算推計費用、計算器重新排序。依 #15 為 FAQ 答案加入 Markdown 連結語法支援。更新使用手冊新增計算器特殊功能和 FAQ 連結操作說明。
+
+### 改動
+
+- calc-types.ts: 新增 `CalcLink` interface 和 `links` 欄位
+- calc-seed.ts: 重寫購屋總費用（貸款欄位）、土地增值稅（連結型）、房地合一稅（自動推算）、重新排序
+- ToolsClient.tsx: 新增 `NoteText`、`LinkCard` 元件，支援連結型計算器和備註連結
+- FaqAccordionRenderer.tsx: 新增 `RichAnswer` 元件，解析 `[text](url)` 語法
+- default-data.ts: FAQ Q3/Q6 答案加入連結語法
+- ManualContent.tsx: 新增「計算器特殊功能」和「FAQ 答案加入連結」章節
+
+### 影響評估
+- 風險等級: Low
+- 受影響功能: feature-015, feature-016
+- 破壞性變更: No
+
+---
+
 ## [feat: CMS 自動 seed + 孤兒程式碼清理] - 2026-07-30T22:00:00Z
 
 ### 變更類型
