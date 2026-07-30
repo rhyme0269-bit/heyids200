@@ -54,6 +54,28 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   contact_layout: "聯絡雙欄",
 };
 
+const BLOCK_TYPE_HINTS: Record<BlockType, string> = {
+  hero_banner: "頁面最頂部的大圖橫幅，含標題、副標題和背景圖",
+  text_heading: "獨立標題，可選 H1/H2/H3 層級，用於分隔章節",
+  text_body: "內文段落，適合放置詳細說明或描述",
+  image: "單張圖片，需指定圖片庫中的 Key",
+  image_gallery: "多張圖片的網格展示，適合環境照或作品集",
+  list: "項目列表，支援圓點、編號、勾選、標籤四種樣式",
+  key_value_list: "帶標題的項目清單，適合服務介紹或特色說明",
+  table: "自訂欄位的表格，適合收費標準或比較表",
+  faq_accordion: "可展開的問答手風琴，適合常見問題頁面",
+  steps_flow: "步驟流程圖，展示服務流程或操作步驟",
+  contact_form: "訪客聯絡諮詢表單，提交後寄送通知信",
+  map_embed: "嵌入 Google 地圖，可指定地址或嵌入網址",
+  contact_info: "自動讀取基本資訊中的聯絡資料並展示",
+  cta_section: "行動呼籲區塊，含標題和按鈕，引導用戶行動",
+  stats_strip: "數據指標展示條，適合年資、案件數等數字",
+  custom_html: "自訂 HTML，可插入任意程式碼（進階用途）",
+  profile_card: "個人簡介卡片，含照片、介紹和引言",
+  two_column_list: "左右兩組並排清單，適合資歷與經驗展示",
+  contact_layout: "聯絡頁專用雙欄：左側表單、右側資訊與地圖",
+};
+
 const ALL_BLOCK_TYPES = Object.keys(BLOCK_TYPE_LABELS) as BlockType[];
 
 function moveItem<T>(arr: T[], index: number, delta: number): T[] {
@@ -432,14 +454,15 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
           {showAddBlock && (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
               <p className="mb-3 text-sm font-medium text-stone-700">選擇區塊類型：</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                 {ALL_BLOCK_TYPES.map((type) => (
                   <button
                     key={type}
                     onClick={() => addBlock(type)}
-                    className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-left text-sm text-stone-700 hover:border-amber-400 hover:bg-amber-50 transition"
+                    className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-left hover:border-amber-400 hover:bg-amber-50 transition"
                   >
-                    {BLOCK_TYPE_LABELS[type]}
+                    <span className="text-sm font-medium text-stone-700">{BLOCK_TYPE_LABELS[type]}</span>
+                    <p className="mt-0.5 text-xs text-stone-400 line-clamp-1">{BLOCK_TYPE_HINTS[type]}</p>
                   </button>
                 ))}
               </div>
@@ -464,6 +487,14 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                     </span>
                     <span className="text-sm font-semibold text-stone-700">
                       {BLOCK_TYPE_LABELS[block.blockType]}
+                    </span>
+                    <span className="relative group/tip">
+                      <svg className="w-4 h-4 text-stone-400 cursor-help" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                      </svg>
+                      <span className="absolute left-6 top-0 z-50 hidden group-hover/tip:block w-56 p-2 rounded-lg bg-stone-800 text-white text-xs shadow-lg leading-relaxed">
+                        {BLOCK_TYPE_HINTS[block.blockType]}
+                      </span>
                     </span>
                   </div>
                   <div className="flex gap-1">

@@ -6,6 +6,7 @@ import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
 import PageBuilder from "./PageBuilder";
+import ManualContent from "./ManualContent";
 
 /* ============================================================
    Types
@@ -34,44 +35,28 @@ const TABS = [
   { key: "pages", label: "頁面管理" },
   { key: "settings", label: "基本資訊" },
   { key: "images", label: "圖片管理" },
+  { key: "manual", label: "使用手冊" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
-const IMAGE_GROUPS = [
-  {
-    group: "網站通用",
-    slots: [
-      { key: "logo", label: "Logo", hint: "顯示於網站左上角" },
-      { key: "scrivener_photo", label: "代書照片", hint: "顯示於關於我們頁面" },
-    ],
-  },
-  {
-    group: "首頁事務所照片",
-    description: "首頁「事務所環境」區塊展示的照片。留空則使用預設照片。",
-    slots: [
-      { key: "office_interior", label: "內部環境", hint: "事務所內部環境照" },
-      { key: "office_exterior", label: "外觀", hint: "事務所外觀照" },
-      { key: "office_sign", label: "招牌", hint: "事務所招牌照" },
-    ],
-  },
-  {
-    group: "頁面背景圖",
-    description: "各頁面頂部橫幅背景，建議尺寸 1920×600 以上。留空則使用預設圖片。",
-    slots: [
-      { key: "hero_bg", label: "首頁", hint: "首頁大圖橫幅背景", pageUrl: "/" },
-      { key: "about_bg", label: "關於我們", hint: "關於我們頁面頂部背景", pageUrl: "/about" },
-      { key: "services_bg", label: "服務項目", hint: "服務項目頁面頂部背景", pageUrl: "/services" },
-      { key: "contact_bg", label: "聯絡我們", hint: "聯絡我們頁面頂部背景", pageUrl: "/contact" },
-      { key: "faq_bg", label: "常見問題", hint: "常見問題頁面頂部背景", pageUrl: "/faq" },
-      { key: "tools_bg", label: "小工具", hint: "小工具頁面頂部背景", pageUrl: "/tools" },
-    ],
-  },
-] as const;
+interface ImageGroup {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+}
 
-const IMAGE_SLOTS = IMAGE_GROUPS.flatMap((g) =>
-  g.slots.map((s) => ({ key: s.key, label: s.label, hint: s.hint }))
-);
+interface ImageSlot {
+  key: string;
+  groupId: string;
+  label: string;
+  hint: string;
+  sortOrder: number;
+  isSystem: boolean;
+  aspectRatio: string;
+  slotType: string;
+}
 
 const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "name", label: "名稱" },
@@ -190,12 +175,26 @@ export default function AdminClient() {
     licenseNumber: "",
   });
 
+  const [imageGroups, setImageGroups] = useState<ImageGroup[]>([]);
+  const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
   const [imageTimestamps, setImageTimestamps] = useState<
     Record<string, number>
   >({});
   const [heroConfigs, setHeroConfigs] = useState<
     Record<string, { mode: string; color: string }>
   >({});
+  const [showAddGroup, setShowAddGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDesc, setNewGroupDesc] = useState("");
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDesc, setEditGroupDesc] = useState("");
+  const [showAddSlot, setShowAddSlot] = useState<string | null>(null);
+  const [newSlotKey, setNewSlotKey] = useState("");
+  const [newSlotLabel, setNewSlotLabel] = useState("");
+  const [newSlotHint, setNewSlotHint] = useState("");
+  const [newSlotAspect, setNewSlotAspect] = useState("3:4");
+  const [newSlotType, setNewSlotType] = useState("general");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [cropState, setCropState] = useState<{
     imageUrl: string;
@@ -305,21 +304,30 @@ export default function AdminClient() {
         let url = "";
         switch (tab) {
           case "pages":
+          case "manual":
             setLoading(false);
             return;
           case "settings":
             url = "/api/admin/settings";
             break;
-          case "images":
-            fetch("/api/admin/hero-config", { headers: authHeaders() })
-              .then((r) => r.ok ? r.json() : {})
-              .then((data) => {
-                setHeroConfigs(data);
-                savedSnapshots.current["heroConfigs"] = JSON.stringify(data);
-              })
-              .catch(() => {});
+          case "images": {
+            const [imgRes, heroRes] = await Promise.all([
+              fetch("/api/admin/images", { headers: authHeaders() }),
+              fetch("/api/admin/hero-config", { headers: authHeaders() }),
+            ]);
+            if (imgRes.ok) {
+              const imgData = await imgRes.json();
+              setImageGroups(imgData.groups || []);
+              setImageSlots(imgData.slots || []);
+            }
+            if (heroRes.ok) {
+              const heroData = await heroRes.json();
+              setHeroConfigs(heroData);
+              savedSnapshots.current["heroConfigs"] = JSON.stringify(heroData);
+            }
             setLoading(false);
             return;
+          }
         }
 
         const res = await fetch(url, { headers: authHeaders() });
@@ -462,8 +470,10 @@ export default function AdminClient() {
 
   const openCropper = (file: File, key: string) => {
     const url = URL.createObjectURL(file);
-    const isBg = key.endsWith("_bg");
-    setCropState({ imageUrl: url, key, aspect: isBg ? 16 / 6 : 3 / 4 });
+    const slot = imageSlots.find(s => s.key === key);
+    const parts = (slot?.aspectRatio || "3:4").split(":").map(Number);
+    const aspect = parts.length === 2 && parts[1] ? parts[0] / parts[1] : 3 / 4;
+    setCropState({ imageUrl: url, key, aspect });
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     croppedAreaRef.current = null;
@@ -512,6 +522,111 @@ export default function AdminClient() {
       setPreviewUrl(pageUrl);
     } catch {
       showToast("預覽暫存失敗", "error");
+    }
+  };
+
+  const refreshImageLibrary = async () => {
+    const res = await fetch("/api/admin/images", { headers: authHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      setImageGroups(data.groups || []);
+      setImageSlots(data.slots || []);
+    }
+  };
+
+  const handleAddGroup = async () => {
+    if (!newGroupName.trim()) return;
+    const res = await fetch("/api/admin/image-groups", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ name: newGroupName.trim(), description: newGroupDesc.trim() }),
+    });
+    if (res.ok) {
+      showToast("群組新增成功", "success");
+      setNewGroupName("");
+      setNewGroupDesc("");
+      setShowAddGroup(false);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "新增失敗", "error");
+    }
+  };
+
+  const handleUpdateGroup = async (id: string) => {
+    const res = await fetch("/api/admin/image-groups", {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ id, name: editGroupName.trim(), description: editGroupDesc.trim() }),
+    });
+    if (res.ok) {
+      showToast("群組更新成功", "success");
+      setEditingGroup(null);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "更新失敗", "error");
+    }
+  };
+
+  const handleDeleteGroup = async (id: string, name: string) => {
+    if (!confirm(`確定要刪除群組「${name}」嗎？其中所有自訂圖片欄位和圖片都會被一併刪除。`)) return;
+    const res = await fetch("/api/admin/image-groups", {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      showToast("群組刪除成功", "success");
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "刪除失敗", "error");
+    }
+  };
+
+  const handleAddSlot = async (groupId: string) => {
+    if (!newSlotKey.trim() || !newSlotLabel.trim()) return;
+    const res = await fetch("/api/admin/image-slots", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        key: newSlotKey.trim().toLowerCase(),
+        groupId,
+        label: newSlotLabel.trim(),
+        hint: newSlotHint.trim(),
+        aspectRatio: newSlotAspect,
+        slotType: newSlotType,
+      }),
+    });
+    if (res.ok) {
+      showToast("圖片欄位新增成功", "success");
+      setNewSlotKey("");
+      setNewSlotLabel("");
+      setNewSlotHint("");
+      setNewSlotAspect("3:4");
+      setNewSlotType("general");
+      setShowAddSlot(null);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "新增失敗", "error");
+    }
+  };
+
+  const handleDeleteSlot = async (key: string, label: string) => {
+    if (!confirm(`確定要刪除圖片欄位「${label}」嗎？對應的圖片也會被刪除。`)) return;
+    const res = await fetch("/api/admin/image-slots", {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ key }),
+    });
+    if (res.ok) {
+      showToast("圖片欄位刪除成功", "success");
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "刪除失敗", "error");
     }
   };
 
@@ -742,176 +857,248 @@ export default function AdminClient() {
                   ============================ */}
               {activeTab === "images" && (
                 <div className="space-y-8">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    圖片管理
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-stone-800">圖片庫</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddGroup(true)}
+                      className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900 transition"
+                    >
+                      + 新增群組
+                    </button>
+                  </div>
 
-                  {IMAGE_GROUPS.map((group) => (
-                    <div key={group.group}>
-                      <div className="mb-4">
-                        <h3 className="text-base font-bold text-stone-700">{group.group}</h3>
-                        {"description" in group && group.description && (
-                          <p className="mt-1 text-sm text-stone-500">{group.description}</p>
-                        )}
+                  {/* Add Group Form */}
+                  {showAddGroup && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-stone-700">新增圖片群組</h4>
+                      <input
+                        type="text"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="群組名稱"
+                        className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      />
+                      <input
+                        type="text"
+                        value={newGroupDesc}
+                        onChange={(e) => setNewGroupDesc(e.target.value)}
+                        placeholder="群組說明（選填）"
+                        className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={handleAddGroup} className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900">確認</button>
+                        <button type="button" onClick={() => { setShowAddGroup(false); setNewGroupName(""); setNewGroupDesc(""); }} className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        {group.slots.map((slot) => {
-                          const isBg = slot.key.endsWith("_bg");
-                          const cfg = heroConfigs[slot.key];
-                          const mode = cfg?.mode || "default";
-                          const color = cfg?.color || "#44403c";
-                          return (
-                            <div
-                              key={slot.key}
-                              className="rounded-lg border border-stone-200 p-4"
-                            >
-                              <h4 className="mb-1 text-sm font-semibold text-stone-700">
-                                {slot.label}
-                              </h4>
-                              <p className="mb-3 text-xs text-stone-400">{slot.hint}</p>
-
-                              {/* Mode selector for bg slots */}
-                              {isBg && (
-                                <div className="mb-3">
-                                  <label className="mb-1.5 block text-xs font-medium text-stone-600">顯示模式</label>
-                                  <div className="flex gap-1">
-                                    {([
-                                      ["default", "預設漸層"],
-                                      ["image", "背景圖"],
-                                      ["color", "純色"],
-                                    ] as const).map(([val, label]) => (
-                                      <button
-                                        key={val}
-                                        type="button"
-                                        onClick={() => {
-                                          const updated = { ...heroConfigs, [slot.key]: { mode: val, color } };
-                                          setHeroConfigs(updated);
-                                        }}
-                                        className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition ${
-                                          mode === val
-                                            ? "bg-amber-800 text-white"
-                                            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                                        }`}
-                                      >
-                                        {label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
+                  {imageGroups.map((group) => {
+                    const groupSlots = imageSlots.filter(s => s.groupId === group.id);
+                    const hasSystemSlots = groupSlots.some(s => s.isSystem);
+                    return (
+                      <div key={group.id}>
+                        <div className="mb-4">
+                          {editingGroup === group.id ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editGroupName}
+                                onChange={(e) => setEditGroupName(e.target.value)}
+                                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                              <input
+                                type="text"
+                                value={editGroupDesc}
+                                onChange={(e) => setEditGroupDesc(e.target.value)}
+                                placeholder="群組說明（選填）"
+                                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => handleUpdateGroup(group.id)} className="rounded-lg bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-900">儲存</button>
+                                <button type="button" onClick={() => setEditingGroup(null)} className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-base font-bold text-stone-700">{group.name}</h3>
+                              <button
+                                type="button"
+                                onClick={() => { setEditingGroup(group.id); setEditGroupName(group.name); setEditGroupDesc(group.description); }}
+                                className="rounded px-2 py-0.5 text-xs text-stone-400 hover:text-amber-800 hover:bg-stone-100"
+                                title="編輯群組"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+                              </button>
+                              {!hasSystemSlots && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGroup(group.id, group.name)}
+                                  className="rounded px-2 py-0.5 text-xs text-stone-400 hover:text-red-600 hover:bg-red-50"
+                                  title="刪除群組"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                </button>
                               )}
+                            </div>
+                          )}
+                          {group.description && editingGroup !== group.id && (
+                            <p className="mt-1 text-sm text-stone-500">{group.description}</p>
+                          )}
+                        </div>
 
-                              {/* Color picker for color mode */}
-                              {isBg && mode === "color" && (
-                                <div className="mb-3 flex items-center gap-2">
-                                  <label className="text-xs font-medium text-stone-600">背景色</label>
-                                  <input
-                                    type="color"
-                                    value={color}
-                                    onChange={(e) => {
-                                      const updated = { ...heroConfigs, [slot.key]: { mode: "color", color: e.target.value } };
-                                      setHeroConfigs(updated);
-                                    }}
-                                    className="h-8 w-10 cursor-pointer rounded border border-stone-300"
-                                  />
-                                  <span className="text-xs text-stone-500">{color}</span>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                          {groupSlots.map((slot) => {
+                            const isBg = slot.slotType === "background";
+                            const cfg = heroConfigs[slot.key];
+                            const mode = cfg?.mode || "default";
+                            const color = cfg?.color || "#44403c";
+                            return (
+                              <div key={slot.key} className="rounded-lg border border-stone-200 p-4">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className="text-sm font-semibold text-stone-700">{slot.label}</h4>
+                                  {!slot.isSystem && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteSlot(slot.key, slot.label)}
+                                      className="rounded p-1 text-stone-400 hover:text-red-600 hover:bg-red-50"
+                                      title="刪除欄位"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                  )}
                                 </div>
-                              )}
+                                <p className="mb-1 text-xs text-stone-400">{slot.hint}</p>
+                                <p className="mb-3 text-xs text-stone-300">key: {slot.key}</p>
 
-                              {/* Preview */}
-                              <div className={`mb-3 flex items-center justify-center overflow-hidden rounded-lg ${
-                                isBg
-                                  ? mode === "color"
-                                    ? "relative h-32"
-                                    : "relative h-32 bg-stone-800"
-                                  : "h-40 bg-stone-100"
-                              }`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
-                                {/* Show image preview (all modes except color for bg) */}
-                                {(!isBg || mode !== "color") && (() => {
-                                  const ts = imageTimestamps[slot.key];
-                                  const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
-                                  const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
-                                  return (
-                                    <>
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        key={`${slot.key}-${ts || 0}`}
-                                        src={dbSrc}
-                                        alt={slot.label}
-                                        className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
-                                        onError={(e) => {
-                                          const img = e.target as HTMLImageElement;
-                                          if (defaultSrc && !img.dataset.fallback) {
-                                            img.dataset.fallback = "1";
-                                            img.src = defaultSrc;
-                                          } else {
-                                            img.style.display = "none";
-                                          }
-                                        }}
-                                        onLoad={(e) => {
-                                          (e.target as HTMLImageElement).style.display = "block";
-                                        }}
-                                      />
-                                    </>
-                                  );
-                                })()}
-                                {/* Overlay + label for bg */}
-                                {isBg && (mode === "image" || mode === "color") && (
-                                  <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center">
-                                    <span className="text-white text-sm font-bold">{slot.label}</span>
+                                {isBg && (
+                                  <div className="mb-3">
+                                    <label className="mb-1.5 block text-xs font-medium text-stone-600">顯示模式</label>
+                                    <div className="flex gap-1">
+                                      {([["default", "預設漸層"], ["image", "背景圖"], ["color", "純色"]] as const).map(([val, lbl]) => (
+                                        <button
+                                          key={val}
+                                          type="button"
+                                          onClick={() => { setHeroConfigs({ ...heroConfigs, [slot.key]: { mode: val, color } }); }}
+                                          className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition ${mode === val ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+                                        >
+                                          {lbl}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
-                                {/* Default state placeholder */}
-                                {isBg && mode === "default" && (
-                                  <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50">
-                                    <span className="text-sm font-bold text-stone-600">{slot.label}</span>
+
+                                {isBg && mode === "color" && (
+                                  <div className="mb-3 flex items-center gap-2">
+                                    <label className="text-xs font-medium text-stone-600">背景色</label>
+                                    <input type="color" value={color} onChange={(e) => { setHeroConfigs({ ...heroConfigs, [slot.key]: { mode: "color", color: e.target.value } }); }} className="h-8 w-10 cursor-pointer rounded border border-stone-300" />
+                                    <span className="text-xs text-stone-500">{color}</span>
                                   </div>
                                 )}
-                                {/* Fallback placeholder — only show when no default image exists */}
-                                {!DEFAULT_IMAGES[slot.key] && (
-                                  <div className="flex flex-col items-center justify-center text-stone-400">
-                                    <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="text-xs">尚無圖片</span>
+
+                                <div className={`mb-3 flex items-center justify-center overflow-hidden rounded-lg ${isBg ? mode === "color" ? "relative h-32" : "relative h-32 bg-stone-800" : "h-40 bg-stone-100"}`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
+                                  {(!isBg || mode !== "color") && (() => {
+                                    const ts = imageTimestamps[slot.key];
+                                    const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
+                                    const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
+                                    return (
+                                      <>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          key={`${slot.key}-${ts || 0}`}
+                                          src={dbSrc}
+                                          alt={slot.label}
+                                          className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
+                                          onError={(e) => {
+                                            const img = e.target as HTMLImageElement;
+                                            if (defaultSrc && !img.dataset.fallback) { img.dataset.fallback = "1"; img.src = defaultSrc; } else { img.style.display = "none"; }
+                                          }}
+                                          onLoad={(e) => { (e.target as HTMLImageElement).style.display = "block"; }}
+                                        />
+                                      </>
+                                    );
+                                  })()}
+                                  {isBg && (mode === "image" || mode === "color") && (
+                                    <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center"><span className="text-white text-sm font-bold">{slot.label}</span></div>
+                                  )}
+                                  {isBg && mode === "default" && (
+                                    <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50"><span className="text-sm font-bold text-stone-600">{slot.label}</span></div>
+                                  )}
+                                  {!DEFAULT_IMAGES[slot.key] && !isBg && (
+                                    <div className="flex flex-col items-center justify-center text-stone-400">
+                                      <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                      <span className="text-xs">尚無圖片</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {(!isBg || mode !== "color") && (
+                                  <div className="flex gap-2">
+                                    <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
+                                      上傳圖片
+                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) openCropper(file, slot.key); e.target.value = ""; }} />
+                                    </label>
+                                    <button type="button" onClick={() => handleImageDelete(slot.key)} className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">刪除</button>
                                   </div>
                                 )}
                               </div>
+                            );
+                          })}
 
-                              {/* Upload + Delete (show for non-bg, or bg in non-color mode) */}
-                              {(!isBg || mode !== "color") && (
-                                <div className="flex gap-2">
-                                  <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
-                                    上傳圖片
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          openCropper(file, slot.key);
-                                        }
-                                        e.target.value = "";
-                                      }}
-                                    />
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleImageDelete(slot.key)}
-                                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
-                                  >
-                                    刪除
-                                  </button>
-                                </div>
-                              )}
+                          {/* Add Slot button */}
+                          <div
+                            className="flex items-center justify-center rounded-lg border-2 border-dashed border-stone-200 p-4 cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition"
+                            onClick={() => { setShowAddSlot(group.id); setNewSlotKey(""); setNewSlotLabel(""); setNewSlotHint(""); setNewSlotAspect("3:4"); setNewSlotType("general"); }}
+                          >
+                            <span className="text-sm text-stone-400">+ 新增圖片欄位</span>
+                          </div>
+                        </div>
 
+                        {/* Add Slot Form */}
+                        {showAddSlot === group.id && (
+                          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                            <h4 className="text-sm font-semibold text-stone-700">新增圖片欄位到「{group.name}」</h4>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">Key（英文小寫、數字、底線）</label>
+                                <input type="text" value={newSlotKey} onChange={(e) => setNewSlotKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="例如: custom_photo" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">顯示名稱</label>
+                                <input type="text" value={newSlotLabel} onChange={(e) => setNewSlotLabel(e.target.value)} placeholder="例如: 自訂照片" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">提示文字（選填）</label>
+                                <input type="text" value={newSlotHint} onChange={(e) => setNewSlotHint(e.target.value)} placeholder="說明這張圖的用途" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">裁切比例</label>
+                                <select value={newSlotAspect} onChange={(e) => setNewSlotAspect(e.target.value)} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800">
+                                  <option value="3:4">3:4（直式）</option>
+                                  <option value="4:3">4:3（橫式）</option>
+                                  <option value="1:1">1:1（正方形）</option>
+                                  <option value="16:9">16:9（寬螢幕）</option>
+                                  <option value="16:6">16:6（橫幅背景）</option>
+                                </select>
+                              </div>
                             </div>
-                          );
-                        })}
+                            <div>
+                              <label className="mb-1 block text-xs font-medium text-stone-600">類型</label>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => setNewSlotType("general")} className={`rounded-md px-3 py-1.5 text-xs font-medium ${newSlotType === "general" ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600"}`}>一般圖片</button>
+                                <button type="button" onClick={() => setNewSlotType("background")} className={`rounded-md px-3 py-1.5 text-xs font-medium ${newSlotType === "background" ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600"}`}>背景圖（含模式選擇）</button>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => handleAddSlot(group.id)} className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900">新增</button>
+                              <button type="button" onClick={() => setShowAddSlot(null)} className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Action buttons */}
                   <div className="mt-6">
@@ -924,6 +1111,13 @@ export default function AdminClient() {
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* ============================
+                  Tab: 使用手冊
+                  ============================ */}
+              {activeTab === "manual" && (
+                <ManualContent />
               )}
             </>
           )}
