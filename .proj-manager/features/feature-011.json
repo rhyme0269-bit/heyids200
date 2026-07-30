@@ -16,7 +16,6 @@
     "src/app/api/admin/cms/pages/[id]/blocks/route.ts",
     "src/app/api/admin/cms/pages/reorder/route.ts",
     "src/app/api/admin/cms/templates/route.ts",
-    "src/app/api/admin/cms/migrate/route.ts",
     "src/app/api/admin/cms/nav-links/route.ts"
   ],
   "dependencies": [],
@@ -30,7 +29,6 @@
     { "method": "PUT", "path": "/api/admin/cms/pages/[id]/blocks", "description": "更新頁面區塊" },
     { "method": "PUT", "path": "/api/admin/cms/pages/reorder", "description": "調整頁面排序" },
     { "method": "GET", "path": "/api/admin/cms/templates", "description": "列出頁面範本" },
-    { "method": "POST", "path": "/api/admin/cms/migrate", "description": "從舊資料遷移到 CMS" },
     { "method": "GET", "path": "/api/admin/cms/nav-links", "description": "列出自訂導覽連結" },
     { "method": "POST", "path": "/api/admin/cms/nav-links", "description": "建立自訂導覽連結" },
     { "method": "PUT", "path": "/api/admin/cms/nav-links", "description": "更新自訂導覽連結" },

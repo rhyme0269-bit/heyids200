@@ -1,5 +1,35 @@
 # Changelog
 
+## [feat: CMS 自動 seed + 孤兒程式碼清理] - 2026-07-30T22:00:00Z
+
+### 變更類型
+
+新增功能 + 程式碼清理
+
+### 變更摘要
+
+新增 CMS 頁面自動 seed 機制：首次部署時自動建立 6 個預設頁面（首頁、關於我們、服務項目、常見問題、聯絡我們、小工具）及 5 個頁面模板，使用 default-data.ts 的預設內容。同時清理被 CMS 取代的舊程式碼：刪除 6 個孤兒 API 路由（about、services、faqs、fees、flow、cms/migrate）、刪除 migrate-to-cms.ts、移除 db.ts 中 10 個不再使用的函式。
+
+### 改動
+
+- cms-db.ts: 新增 `seedCmsPages()` 函式（含模板 seed + 6 頁面含區塊 seed）
+- db.ts: 在 `getDb()` 中呼叫 `seedCmsPages()`
+- db.ts: 移除 `updateAbout`, `replaceServices`, `replaceServiceFlow`, `replaceFaqs`, `replaceFees`, `replaceFeeNotes`, `getServiceFlow`, `getFaqs`, `getFees`, `getFeeNotes`
+- 刪除 `src/lib/migrate-to-cms.ts`
+- 刪除 `src/app/api/admin/about/route.ts`
+- 刪除 `src/app/api/admin/services/route.ts`
+- 刪除 `src/app/api/admin/faqs/route.ts`
+- 刪除 `src/app/api/admin/fees/route.ts`
+- 刪除 `src/app/api/admin/flow/route.ts`
+- 刪除 `src/app/api/admin/cms/migrate/route.ts`
+
+### 影響評估
+- 風險等級: Medium
+- 受影響功能: feature-004, feature-011
+- 破壞性變更: Yes（移除 6 個 API endpoint，但均為孤兒未被前端呼叫）
+
+---
+
 ## [feat: DB 驅動計算器系統] - 2026-07-30T18:00:00Z
 
 ### 變更類型

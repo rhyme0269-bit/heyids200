@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
-import { initCmsTables } from "./cms-db";
+import { initCmsTables, seedCmsPages } from "./cms-db";
 import { initCalcTables, seedCalculators } from "./calc-db";
 import {
   defaultSiteSettings,
@@ -15,9 +15,6 @@ import {
   type SiteSettings,
   type About,
   type Service,
-  type ServiceFlow,
-  type Faq,
-  type FeeItem,
 } from "./default-data";
 
 // DB file location
@@ -42,6 +39,7 @@ function getDb(): Database.Database {
   seedIfEmpty(_db);
   seedImageLibrary(_db);
   initCmsTables(_db);
+  seedCmsPages(_db);
   initCalcTables(_db);
   seedCalculators(_db);
 
@@ -343,47 +341,6 @@ export function getServices(): Service[] {
   }));
 }
 
-export function getServiceFlow(): ServiceFlow[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      "SELECT id, step_name, step_description FROM service_flow ORDER BY sort_order"
-    )
-    .all() as { id: number; step_name: string; step_description: string }[];
-  return rows.map((r) => ({
-    _id: `flow-${r.id}`,
-    stepName: r.step_name,
-    stepDescription: r.step_description,
-  }));
-}
-
-export function getFaqs(): Faq[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT id, question, answer FROM faqs ORDER BY sort_order")
-    .all() as { id: number; question: string; answer: string }[];
-  return rows.map((r) => ({
-    _id: `faq-${r.id}`,
-    question: r.question,
-    answer: r.answer,
-  }));
-}
-
-export function getFees(): FeeItem[] {
-  const db = getDb();
-  return db
-    .prepare("SELECT id, service, fee, payer, note FROM fees ORDER BY id")
-    .all() as FeeItem[];
-}
-
-export function getFeeNotes(): string[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT note FROM fee_notes ORDER BY sort_order")
-    .all() as { note: string }[];
-  return rows.map((r) => r.note);
-}
-
 export function getImage(
   key: string
 ): { data: Buffer; mime_type: string; updated_at: string } | null {
@@ -454,84 +411,6 @@ export function updateSettings(data: Partial<SiteSettings>) {
     }
   });
   update();
-}
-
-export function updateAbout(data: Partial<About>) {
-  const db = getDb();
-  const current = getAbout();
-  db.prepare(
-    `UPDATE about SET introduction = ?, philosophy = ?, features = ?,
-     qualifications = ?, experience = ?, specialties = ? WHERE id = 1`
-  ).run(
-    data.introduction ?? current.introduction,
-    data.philosophy ?? current.philosophy,
-    JSON.stringify(data.features ?? current.features),
-    JSON.stringify(data.qualifications ?? current.qualifications),
-    JSON.stringify(data.experience ?? current.experience),
-    JSON.stringify(data.specialties ?? current.specialties)
-  );
-}
-
-export function replaceServices(services: { title: string; description: string }[]) {
-  const db = getDb();
-  const replace = db.transaction(() => {
-    db.prepare("DELETE FROM services").run();
-    const insert = db.prepare(
-      "INSERT INTO services (title, description, sort_order) VALUES (?, ?, ?)"
-    );
-    services.forEach((s, i) => insert.run(s.title, s.description, i));
-  });
-  replace();
-}
-
-export function replaceServiceFlow(
-  flow: { stepName: string; stepDescription: string }[]
-) {
-  const db = getDb();
-  const replace = db.transaction(() => {
-    db.prepare("DELETE FROM service_flow").run();
-    const insert = db.prepare(
-      "INSERT INTO service_flow (step_name, step_description, sort_order) VALUES (?, ?, ?)"
-    );
-    flow.forEach((f, i) => insert.run(f.stepName, f.stepDescription, i));
-  });
-  replace();
-}
-
-export function replaceFaqs(faqs: { question: string; answer: string }[]) {
-  const db = getDb();
-  const replace = db.transaction(() => {
-    db.prepare("DELETE FROM faqs").run();
-    const insert = db.prepare(
-      "INSERT INTO faqs (question, answer, sort_order) VALUES (?, ?, ?)"
-    );
-    faqs.forEach((f, i) => insert.run(f.question, f.answer, i));
-  });
-  replace();
-}
-
-export function replaceFees(fees: Omit<FeeItem, "id">[], ids?: number[]) {
-  const db = getDb();
-  const replace = db.transaction(() => {
-    db.prepare("DELETE FROM fees").run();
-    const insert = db.prepare(
-      "INSERT INTO fees (id, service, fee, payer, note) VALUES (?, ?, ?, ?, ?)"
-    );
-    fees.forEach((f, i) => insert.run(ids?.[i] ?? i + 1, f.service, f.fee, f.payer, f.note));
-  });
-  replace();
-}
-
-export function replaceFeeNotes(notes: string[]) {
-  const db = getDb();
-  const replace = db.transaction(() => {
-    db.prepare("DELETE FROM fee_notes").run();
-    const insert = db.prepare(
-      "INSERT INTO fee_notes (note, sort_order) VALUES (?, ?)"
-    );
-    notes.forEach((n, i) => insert.run(n, i));
-  });
-  replace();
 }
 
 export function upsertImage(key: string, data: Buffer, mimeType: string) {
