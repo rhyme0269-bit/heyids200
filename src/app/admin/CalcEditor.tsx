@@ -495,6 +495,18 @@ export default function CalcEditor() {
     }
   };
 
+  const handleResetCalc = async (id: string) => {
+    if (!confirm("確定要還原此計算器為預設值？你的修改將被覆蓋。")) return;
+    const res = await fetch(`/api/admin/calculators/${id}/reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      await fetchCalcs();
+      setEditing(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("確定要刪除此計算器？")) return;
     await fetch(`/api/admin/calculators/${id}`, {
@@ -595,6 +607,14 @@ export default function CalcEditor() {
                 >
                   編輯
                 </button>
+                {calc.isSystem && (
+                  <button
+                    onClick={() => handleResetCalc(calc.id)}
+                    className="text-xs text-stone-500 hover:text-amber-800 px-2 py-1 rounded border border-stone-200"
+                  >
+                    還原預設
+                  </button>
+                )}
                 {!calc.isSystem && (
                   <button
                     onClick={() => handleDelete(calc.id)}

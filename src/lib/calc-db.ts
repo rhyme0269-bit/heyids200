@@ -74,9 +74,9 @@ export function initCalcTables(db?: Database.Database) {
   const cols = d.prepare("PRAGMA table_info(calculators)").all() as { name: string }[];
   if (!cols.some(c => c.name === "seed_hash")) {
     d.exec("ALTER TABLE calculators ADD COLUMN seed_hash TEXT DEFAULT NULL");
-    const rows = d.prepare("SELECT id, definition FROM calculators WHERE is_system = 1").all() as { id: string; definition: string }[];
-    for (const r of rows) {
-      d.prepare("UPDATE calculators SET seed_hash = ? WHERE id = ?").run(hashDef(r.definition), r.id);
+    for (const calc of defaultCalculators) {
+      const defJson = JSON.stringify(calc.definition);
+      d.prepare("UPDATE calculators SET seed_hash = ? WHERE slug = ? AND is_system = 1").run(hashDef(defJson), calc.slug);
     }
   }
 }
@@ -183,6 +183,20 @@ export function deleteCalculator(id: string): { success: boolean; error?: string
   if (!calc) return { success: false, error: "計算器不存在" };
   if (calc.isSystem) return { success: false, error: "無法刪除系統預設計算器" };
   db.prepare("DELETE FROM calculators WHERE id = ?").run(id);
+  return { success: true };
+}
+
+export function resetCalculatorToSeed(id: string): { success: boolean; error?: string } {
+  const db = getDb();
+  const row = db.prepare("SELECT slug, is_system FROM calculators WHERE id = ?").get(id) as { slug: string; is_system: number } | undefined;
+  if (!row) return { success: false, error: "計算器不存在" };
+  if (!row.is_system) return { success: false, error: "只有系統預設計算器可以還原" };
+  const seed = defaultCalculators.find(c => c.slug === row.slug);
+  if (!seed) return { success: false, error: "找不到預設資料" };
+  const defJson = JSON.stringify(seed.definition);
+  db.prepare(
+    "UPDATE calculators SET title = ?, icon = ?, description = ?, definition = ?, seed_hash = ?, updated_at = datetime('now') WHERE id = ?"
+  ).run(seed.title, seed.icon, seed.description, defJson, hashDef(defJson), id);
   return { success: true };
 }
 

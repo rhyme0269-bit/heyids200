@@ -118,11 +118,16 @@ export function initCmsTables(db?: Database.Database) {
   const blockCols = d.prepare("PRAGMA table_info(blocks)").all() as { name: string }[];
   if (!blockCols.some((c) => c.name === "seed_hash")) {
     d.exec("ALTER TABLE blocks ADD COLUMN seed_hash TEXT DEFAULT NULL");
-    const sysPageIds = d.prepare("SELECT id FROM pages WHERE is_system = 1").all() as { id: string }[];
-    for (const p of sysPageIds) {
-      const blocks = d.prepare("SELECT id, data FROM blocks WHERE page_id = ?").all(p.id) as { id: string; data: string }[];
-      for (const b of blocks) {
-        d.prepare("UPDATE blocks SET seed_hash = ? WHERE id = ?").run(hashData(b.data), b.id);
+    const seedPages = getSeedPages();
+    for (const sp of seedPages) {
+      const page = d.prepare("SELECT id FROM pages WHERE seed_key = ?").get(sp.opts.seedKey) as { id: string } | undefined;
+      if (!page) continue;
+      const blocks = d.prepare("SELECT id, block_type, sort_order FROM blocks WHERE page_id = ? ORDER BY sort_order").all(page.id) as { id: string; block_type: string; sort_order: number }[];
+      for (let i = 0; i < sp.blocks.length; i++) {
+        const row = blocks.find(b => b.sort_order === i && b.block_type === sp.blocks[i].blockType);
+        if (row) {
+          d.prepare("UPDATE blocks SET seed_hash = ? WHERE id = ?").run(hashData(JSON.stringify(sp.blocks[i].data)), row.id);
+        }
       }
     }
   }
@@ -904,4 +909,22 @@ export function seedCmsPages(db?: Database.Database) {
       }
     }
   })();
+}
+
+export function resetPageToSeed(pageId: string): { success: boolean; error?: string } {
+  const db = getDb();
+  const page = db.prepare("SELECT id, seed_key, is_system FROM pages WHERE id = ?").get(pageId) as { id: string; seed_key: string | null; is_system: number } | undefined;
+  if (!page) return { success: false, error: "頁面不存在" };
+  if (!page.is_system || !page.seed_key) return { success: false, error: "只有系統預設頁面可以還原" };
+  const seedPage = getSeedPages().find(sp => sp.opts.seedKey === page.seed_key);
+  if (!seedPage) return { success: false, error: "找不到預設資料" };
+
+  db.transaction(() => {
+    db.prepare("DELETE FROM blocks WHERE page_id = ?").run(pageId);
+    insertSeedBlocks(db, pageId, seedPage.blocks);
+    db.prepare(
+      "UPDATE pages SET title = ?, subtitle = ?, updated_at = datetime('now') WHERE id = ?"
+    ).run(seedPage.title, seedPage.subtitle, pageId);
+  })();
+  return { success: true };
 }

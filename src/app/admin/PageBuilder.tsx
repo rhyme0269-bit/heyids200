@@ -300,6 +300,26 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
     }
   };
 
+  const handleResetPage = async (pageId: string) => {
+    if (!confirm("確定要還原此頁面為預設值？你的修改將被覆蓋。")) return;
+    try {
+      const res = await fetch(`/api/admin/cms/pages/${pageId}/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        showToast(data.error || "還原失敗", "error");
+        return;
+      }
+      showToast("已還原為預設值", "success");
+      fetchPages();
+      setEditingPage(null);
+    } catch {
+      showToast("還原失敗", "error");
+    }
+  };
+
   const addBlock = (blockType: BlockType) => {
     const newBlock: CmsBlock = {
       id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -348,13 +368,23 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
               <span className="rounded bg-stone-200 px-2 py-0.5 text-xs text-stone-500">系統頁面</span>
             )}
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-lg bg-amber-800 px-6 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
-          >
-            {saving ? "儲存中..." : "儲存頁面"}
-          </button>
+          <div className="flex items-center gap-2">
+            {editingPage.isSystem && (
+              <button
+                onClick={() => handleResetPage(editingPage.id)}
+                className="rounded-lg border border-stone-200 px-4 py-2 text-sm text-stone-500 hover:text-amber-800 hover:border-amber-200"
+              >
+                還原預設
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-lg bg-amber-800 px-6 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
+            >
+              {saving ? "儲存中..." : "儲存頁面"}
+            </button>
+          </div>
         </div>
 
         {/* Page metadata */}
