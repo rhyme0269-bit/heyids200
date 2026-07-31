@@ -766,7 +766,7 @@ function seedHomePage(d: Database.Database) {
     },
     {
       blockType: "key_value_list",
-      data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
+      data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"][i] || "" })) },
     },
     {
       blockType: "cta_section",
@@ -814,7 +814,7 @@ function seedServicesPage(d: Database.Database) {
     },
     {
       blockType: "key_value_list",
-      data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
+      data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"][i] || "" })) },
     },
     {
       blockType: "table",
