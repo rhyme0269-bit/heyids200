@@ -29,7 +29,8 @@ src/
 ├── app/                  # Next.js App Router 頁面
 │   ├── page.tsx          # 首頁（靜態）
 │   ├── layout.tsx        # 全站 Layout（動態導覽列）
-│   ├── [slug]/           # CMS 動態頁面路由（取代舊靜態頁面）
+│   ├── [slug]/           # CMS 系統頁面路由（is_system=1 的頁面）
+│   ├── p/[slug]/         # CMS 使用者頁面路由（/p/ 前綴，非系統頁面）
 │   ├── tools/            # 小工具（6 個試算器，靜態）
 │   ├── admin/            # 後台管理介面（頁面管理、基本資訊、圖片庫、使用手冊）
 │   └── api/              # API 路由
@@ -72,9 +73,13 @@ src/
 ### CMS 架構
 
 - 三層模型：PageTemplate → Page → Block
-- 前台 `[slug]` 動態路由渲染所有 CMS 頁面（home 和 tools 除外）
-- 導覽列由 `getNavItems()` 整合頁面 nav + 自訂連結，按 navOrder 排序
+- 頁面分為系統頁面（`is_system=1`, `seed_key` 非 null）和使用者頁面
+- 系統頁面走 `[slug]` 路由（頂層 URL），使用者頁面走 `p/[slug]` 路由（`/p/` 前綴）
+- `seedCmsPages()` 為遞增式：依 `seed_key` 檢查缺少哪些系統頁面，僅建立缺少的
+- 使用者建立頁面時驗證 RESERVED_SLUGS（防止佔用 home、admin、api 等路徑）
+- 導覽列由 `getNavItems()` 整合頁面 nav + 自訂連結，按 navOrder 排序，URL 依 is_system 區分
 - FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料
+- Sitemap 從 DB 動態生成，系統頁面用頂層 URL、使用者頁面用 `/p/` 前綴
 
 ### 環境變數
 

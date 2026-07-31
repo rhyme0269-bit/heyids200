@@ -65,6 +65,7 @@ export function initCmsTables(db?: Database.Database) {
       hero_mode TEXT NOT NULL DEFAULT 'default',
       hero_color TEXT NOT NULL DEFAULT '#44403c',
       is_system INTEGER NOT NULL DEFAULT 0,
+      seed_key TEXT DEFAULT NULL,
       show_in_nav INTEGER NOT NULL DEFAULT 1,
       nav_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'published',
@@ -97,6 +98,16 @@ export function initCmsTables(db?: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_blocks_page_order ON blocks(page_id, sort_order);
     CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages(slug);
   `);
+
+  // Migration: add seed_key column for existing DBs
+  const cols = d.prepare("PRAGMA table_info(pages)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "seed_key")) {
+    d.exec("ALTER TABLE pages ADD COLUMN seed_key TEXT DEFAULT NULL");
+    d.exec("UPDATE pages SET seed_key = slug WHERE is_system = 1");
+  }
+  d.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_seed_key ON pages(seed_key) WHERE seed_key IS NOT NULL"
+  );
 }
 
 // ===== Row → Object Mappers =====
@@ -111,6 +122,7 @@ interface PageRow {
   hero_mode: string;
   hero_color: string;
   is_system: number;
+  seed_key: string | null;
   show_in_nav: number;
   nav_order: number;
   status: string;
@@ -129,6 +141,7 @@ function rowToPage(row: PageRow): Page {
     heroMode: row.hero_mode as HeroMode,
     heroColor: row.hero_color,
     isSystem: row.is_system === 1,
+    seedKey: row.seed_key,
     showInNav: row.show_in_nav === 1,
     navOrder: row.nav_order,
     status: row.status as PageStatus,
@@ -189,6 +202,11 @@ export function getPageBySlug(slug: string): Page | null {
   return row ? rowToPage(row) : null;
 }
 
+const RESERVED_SLUGS = new Set([
+  "home", "about", "services", "tools", "faq", "contact", "links",
+  "admin", "api", "p", "_next",
+]);
+
 export function createPage(data: {
   slug: string;
   title: string;
@@ -201,6 +219,9 @@ export function createPage(data: {
   navOrder?: number;
   status?: PageStatus;
 }): Page {
+  if (RESERVED_SLUGS.has(data.slug)) {
+    throw new Error(`網址路徑「${data.slug}」為系統保留，請使用其他名稱`);
+  }
   const db = getDb();
   const id = uuid();
   db.prepare(
@@ -595,13 +616,13 @@ export function getNavItems(): NavItem[] {
   const db = getDb();
   const pageRows = db
     .prepare(
-      "SELECT slug, title, nav_order FROM pages WHERE show_in_nav = 1 AND status = 'published' ORDER BY nav_order"
+      "SELECT slug, title, nav_order, is_system FROM pages WHERE show_in_nav = 1 AND status = 'published' ORDER BY nav_order"
     )
-    .all() as { slug: string; title: string; nav_order: number }[];
+    .all() as { slug: string; title: string; nav_order: number; is_system: number }[];
   const pageItems: NavItem[] = pageRows.map((r) => ({
     slug: r.slug,
     title: r.title,
-    href: r.slug === "home" ? "/" : `/${r.slug}`,
+    href: r.slug === "home" ? "/" : r.is_system === 1 ? `/${r.slug}` : `/p/${r.slug}`,
     navOrder: r.nav_order,
   }));
 
@@ -647,12 +668,13 @@ function insertSeedPage(
     heroColor?: string;
     navOrder: number;
     isSystem?: boolean;
+    seedKey?: string;
   }
 ) {
   db.prepare(
     `INSERT INTO pages (id, template_id, slug, title, subtitle, hero_mode, hero_color,
-     is_system, show_in_nav, nav_order, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'published')`
+     is_system, seed_key, show_in_nav, nav_order, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'published')`
   ).run(
     id,
     opts.templateId ?? null,
@@ -662,6 +684,7 @@ function insertSeedPage(
     opts.heroMode ?? "default",
     opts.heroColor ?? "#44403c",
     opts.isSystem !== false ? 1 : 0,
+    opts.seedKey ?? null,
     opts.navOrder
   );
 }
@@ -684,210 +707,235 @@ function insertSeedBlocks(
   });
 }
 
+function seedTemplates(d: Database.Database) {
+  const insertTpl = d.prepare(
+    "INSERT OR IGNORE INTO page_templates (id, name, description, default_blocks) VALUES (?, ?, ?, ?)"
+  );
+  insertTpl.run("blank", "空白頁面", "從零開始建立頁面", JSON.stringify([
+    { blockType: "text_heading", defaultData: { text: "新頁面", level: "h1" } },
+    { blockType: "text_body", defaultData: { html: "在這裡編輯內容..." } },
+  ]));
+  insertTpl.run("about", "關於我們", "介紹頁面模板", JSON.stringify([
+    { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
+    { blockType: "profile_card", defaultData: { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" } },
+    { blockType: "list", defaultData: { title: "特色", style: "numbered", items: [] } },
+    { blockType: "two_column_list", defaultData: { leftTitle: "資歷", leftItems: [], leftStyle: "check", rightTitle: "經驗", rightItems: [], rightStyle: "circle-check" } },
+    { blockType: "list", defaultData: { title: "專長領域", style: "tag", items: [] } },
+  ]));
+  insertTpl.run("services", "服務項目", "服務項目 + 收費 + 流程模板", JSON.stringify([
+    { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
+    { blockType: "key_value_list", defaultData: { title: "服務項目", items: [] } },
+    { blockType: "table", defaultData: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: [], footerNotes: [] } },
+    { blockType: "steps_flow", defaultData: { title: "服務流程", steps: [] } },
+  ]));
+  insertTpl.run("faq", "常見問題", "FAQ 頁面模板", JSON.stringify([
+    { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
+    { blockType: "faq_accordion", defaultData: { title: "常見問題", items: [] } },
+  ]));
+  insertTpl.run("contact", "聯絡我們", "聯絡頁面模板", JSON.stringify([
+    { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
+    { blockType: "contact_layout", defaultData: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" } },
+  ]));
+}
+
+function seedHomePage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "home", "首頁", "", { navOrder: 0, seedKey: "home" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "合一地政士事務所", subtitle: "專業、誠信、效率", bgMode: "default", bgColor: "#44403c", bgImageKey: "hero_bg" },
+    },
+    {
+      blockType: "text_body",
+      data: { html: defaultAbout.introduction },
+      config: { bgVariant: "gray" },
+    },
+    {
+      blockType: "list",
+      data: { title: "事務所特色", style: "check", items: defaultAbout.features },
+      config: { bgVariant: "gray" },
+    },
+    {
+      blockType: "stats_strip",
+      data: { items: [{ value: "26+", label: "專業執業年資" }, { value: "10+", label: "房仲品牌合作" }, { value: "全台", label: "服務範圍涵蓋" }] },
+    },
+    {
+      blockType: "image_gallery",
+      data: { title: "事務所環境", images: [{ imageKey: "office_interior", alt: "內部環境" }, { imageKey: "office_exterior", alt: "外觀" }, { imageKey: "office_sign", alt: "招牌" }] },
+    },
+    {
+      blockType: "key_value_list",
+      data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
+    },
+    {
+      blockType: "cta_section",
+      data: { title: "需要不動產登記服務？", subtitle: "歡迎來電或填寫表單，我們將盡快與您聯繫", primaryLabel: "填寫諮詢表單", primaryHref: "/contact", secondaryLabel: "02-2282-6600", secondaryHref: "tel:02-2282-6600" },
+    },
+  ]);
+}
+
+function seedAboutPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "about", "關於我們", "認識合一地政士事務所", { templateId: "about", navOrder: 1, seedKey: "about" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "關於我們", subtitle: "認識合一地政士事務所", bgMode: "default", bgColor: "#44403c", bgImageKey: "about_bg" },
+    },
+    {
+      blockType: "profile_card",
+      data: { introduction: defaultAbout.introduction, quote: defaultAbout.philosophy, imageKey: "scrivener_photo", imageName: `${defaultSiteSettings.scrivenerName} 地政士`, imageSubtitle: defaultSiteSettings.licenseNumber },
+    },
+    {
+      blockType: "list",
+      data: { title: "事務所特色", style: "numbered", items: defaultAbout.features },
+      config: { bgVariant: "gray" },
+    },
+    {
+      blockType: "two_column_list",
+      data: { leftTitle: "現任資歷", leftItems: defaultAbout.qualifications, leftStyle: "check", rightTitle: "過去工作經驗", rightItems: defaultAbout.experience, rightStyle: "circle-check" },
+    },
+    {
+      blockType: "list",
+      data: { title: "專長領域", style: "tag", items: defaultAbout.specialties },
+      config: { bgVariant: "gray" },
+    },
+  ]);
+}
+
+function seedServicesPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "services", "服務項目", "全方位不動產登記服務", { templateId: "services", navOrder: 2, seedKey: "services" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" },
+    },
+    {
+      blockType: "key_value_list",
+      data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
+    },
+    {
+      blockType: "table",
+      data: {
+        title: "收費標準",
+        columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }],
+        rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })),
+        footerNotes: defaultFeeNotes,
+      },
+    },
+    {
+      blockType: "steps_flow",
+      data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) },
+    },
+    {
+      blockType: "cta_section",
+      data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
+    },
+  ]);
+}
+
+function seedFaqPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "faq", "常見問題", "您想了解的常見問題", { templateId: "faq", navOrder: 5, seedKey: "faq" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "常見問題", subtitle: "您想了解的常見問題", bgMode: "default", bgColor: "#44403c", bgImageKey: "faq_bg" },
+    },
+    {
+      blockType: "faq_accordion",
+      data: { title: "常見問題", items: defaultFaqs.map(f => ({ question: f.question, answer: f.answer })) },
+    },
+    {
+      blockType: "cta_section",
+      data: { title: "還有其他問題？", subtitle: "歡迎來電或透過 LINE 諮詢，我們會盡快回覆", primaryLabel: "聯絡我們", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
+    },
+  ]);
+}
+
+function seedContactPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "contact", "聯絡我們", "歡迎來電、來訊或填寫表單，我們將盡快回覆", { templateId: "contact", navOrder: 6, seedKey: "contact" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#44403c", bgImageKey: "contact_bg" },
+    },
+    {
+      blockType: "contact_layout",
+      data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed },
+    },
+  ]);
+}
+
+function seedToolsPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "tools", "小工具", "實用的不動產計算工具", { navOrder: 4, seedKey: "tools" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "小工具", subtitle: "實用的不動產計算工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "tools_bg" },
+    },
+    {
+      blockType: "custom_html",
+      data: { html: "__TOOLS_PAGE__" },
+    },
+  ]);
+}
+
+function seedLinksPage(d: Database.Database) {
+  const id = uuid();
+  insertSeedPage(d, id, "links", "實用連結", "常用不動產相關網站與查詢工具", { navOrder: 5, seedKey: "links" });
+  insertSeedBlocks(d, id, [
+    {
+      blockType: "hero_banner",
+      data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" },
+    },
+    {
+      blockType: "key_value_list",
+      data: {
+        title: "政府查詢工具",
+        items: [
+          { label: "實價登錄", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
+          { label: "地籍圖資查詢", value: "內政部地政司地籍圖資網路便民服務", icon: "🗺️", url: "https://easymap.land.moi.gov.tw/" },
+          { label: "土地增值稅試算", value: "財政部線上稅額試算服務", icon: "📈", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
+          { label: "房地合一稅試算", value: "財政部房地合一稅預繳稅額試算", icon: "🧾", url: "https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
+          { label: "公告土地現值查詢", value: "各縣市地政局公告現值查詢", icon: "📊", url: "https://www.land.moi.gov.tw/ngis/" },
+          { label: "建物謄本查詢", value: "全國地政電子謄本系統", icon: "📋", url: "https://ep.land.nat.gov.tw/" },
+        ],
+      },
+    },
+  ]);
+}
+
 export function seedCmsPages(db?: Database.Database) {
   const d = db ?? getDb();
 
-  const count = d.prepare("SELECT COUNT(*) as c FROM pages").get() as { c: number };
-  if (count.c > 0) return;
+  seedTemplates(d);
 
-  const seed = d.transaction(() => {
-    // Seed templates
-    const insertTpl = d.prepare(
-      "INSERT OR IGNORE INTO page_templates (id, name, description, default_blocks) VALUES (?, ?, ?, ?)"
-    );
-    insertTpl.run("blank", "空白頁面", "從零開始建立頁面", JSON.stringify([
-      { blockType: "text_heading", defaultData: { text: "新頁面", level: "h1" } },
-      { blockType: "text_body", defaultData: { html: "在這裡編輯內容..." } },
-    ]));
-    insertTpl.run("about", "關於我們", "介紹頁面模板", JSON.stringify([
-      { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
-      { blockType: "profile_card", defaultData: { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" } },
-      { blockType: "list", defaultData: { title: "特色", style: "numbered", items: [] } },
-      { blockType: "two_column_list", defaultData: { leftTitle: "資歷", leftItems: [], leftStyle: "check", rightTitle: "經驗", rightItems: [], rightStyle: "circle-check" } },
-      { blockType: "list", defaultData: { title: "專長領域", style: "tag", items: [] } },
-    ]));
-    insertTpl.run("services", "服務項目", "服務項目 + 收費 + 流程模板", JSON.stringify([
-      { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
-      { blockType: "key_value_list", defaultData: { title: "服務項目", items: [] } },
-      { blockType: "table", defaultData: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: [], footerNotes: [] } },
-      { blockType: "steps_flow", defaultData: { title: "服務流程", steps: [] } },
-    ]));
-    insertTpl.run("faq", "常見問題", "FAQ 頁面模板", JSON.stringify([
-      { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
-      { blockType: "faq_accordion", defaultData: { title: "常見問題", items: [] } },
-    ]));
-    insertTpl.run("contact", "聯絡我們", "聯絡頁面模板", JSON.stringify([
-      { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null } },
-      { blockType: "contact_layout", defaultData: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" } },
-    ]));
+  const existingKeys = new Set(
+    (d.prepare("SELECT seed_key FROM pages WHERE seed_key IS NOT NULL").all() as { seed_key: string }[])
+      .map((r) => r.seed_key)
+  );
 
-    // Seed pages with default content
+  const seeds: { key: string; fn: () => void }[] = [
+    { key: "home", fn: () => seedHomePage(d) },
+    { key: "about", fn: () => seedAboutPage(d) },
+    { key: "services", fn: () => seedServicesPage(d) },
+    { key: "tools", fn: () => seedToolsPage(d) },
+    { key: "faq", fn: () => seedFaqPage(d) },
+    { key: "contact", fn: () => seedContactPage(d) },
+    { key: "links", fn: () => seedLinksPage(d) },
+  ];
 
-    // Home
-    const homeId = uuid();
-    insertSeedPage(d, homeId, "home", "首頁", "", { navOrder: 0 });
-    insertSeedBlocks(d, homeId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "合一地政士事務所", subtitle: "專業、誠信、效率", bgMode: "default", bgColor: "#44403c", bgImageKey: "hero_bg" },
-      },
-      {
-        blockType: "text_body",
-        data: { html: defaultAbout.introduction },
-        config: { bgVariant: "gray" },
-      },
-      {
-        blockType: "list",
-        data: { title: "事務所特色", style: "check", items: defaultAbout.features },
-        config: { bgVariant: "gray" },
-      },
-      {
-        blockType: "stats_strip",
-        data: { items: [{ value: "26+", label: "專業執業年資" }, { value: "10+", label: "房仲品牌合作" }, { value: "全台", label: "服務範圍涵蓋" }] },
-      },
-      {
-        blockType: "image_gallery",
-        data: { title: "事務所環境", images: [{ imageKey: "office_interior", alt: "內部環境" }, { imageKey: "office_exterior", alt: "外觀" }, { imageKey: "office_sign", alt: "招牌" }] },
-      },
-      {
-        blockType: "key_value_list",
-        data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
-      },
-      {
-        blockType: "cta_section",
-        data: { title: "需要不動產登記服務？", subtitle: "歡迎來電或填寫表單，我們將盡快與您聯繫", primaryLabel: "填寫諮詢表單", primaryHref: "/contact", secondaryLabel: "02-2282-6600", secondaryHref: "tel:02-2282-6600" },
-      },
-    ]);
+  const missing = seeds.filter((s) => !existingKeys.has(s.key));
+  if (missing.length === 0) return;
 
-    // About
-    const aboutId = uuid();
-    insertSeedPage(d, aboutId, "about", "關於我們", "認識合一地政士事務所", { templateId: "about", navOrder: 1 });
-    insertSeedBlocks(d, aboutId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "關於我們", subtitle: "認識合一地政士事務所", bgMode: "default", bgColor: "#44403c", bgImageKey: "about_bg" },
-      },
-      {
-        blockType: "profile_card",
-        data: { introduction: defaultAbout.introduction, quote: defaultAbout.philosophy, imageKey: "scrivener_photo", imageName: `${defaultSiteSettings.scrivenerName} 地政士`, imageSubtitle: defaultSiteSettings.licenseNumber },
-      },
-      {
-        blockType: "list",
-        data: { title: "事務所特色", style: "numbered", items: defaultAbout.features },
-        config: { bgVariant: "gray" },
-      },
-      {
-        blockType: "two_column_list",
-        data: { leftTitle: "現任資歷", leftItems: defaultAbout.qualifications, leftStyle: "check", rightTitle: "過去工作經驗", rightItems: defaultAbout.experience, rightStyle: "circle-check" },
-      },
-      {
-        blockType: "list",
-        data: { title: "專長領域", style: "tag", items: defaultAbout.specialties },
-        config: { bgVariant: "gray" },
-      },
-    ]);
-
-    // Services
-    const servicesId = uuid();
-    insertSeedPage(d, servicesId, "services", "服務項目", "全方位不動產登記服務", { templateId: "services", navOrder: 2 });
-    insertSeedBlocks(d, servicesId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" },
-      },
-      {
-        blockType: "key_value_list",
-        data: { title: "服務項目", items: defaultServices.map(s => ({ label: s.title, value: s.description })) },
-      },
-      {
-        blockType: "table",
-        data: {
-          title: "收費標準",
-          columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }],
-          rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })),
-          footerNotes: defaultFeeNotes,
-        },
-      },
-      {
-        blockType: "steps_flow",
-        data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) },
-      },
-      {
-        blockType: "cta_section",
-        data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
-      },
-    ]);
-
-    // FAQ
-    const faqId = uuid();
-    insertSeedPage(d, faqId, "faq", "常見問題", "您想了解的常見問題", { templateId: "faq", navOrder: 5 });
-    insertSeedBlocks(d, faqId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "常見問題", subtitle: "您想了解的常見問題", bgMode: "default", bgColor: "#44403c", bgImageKey: "faq_bg" },
-      },
-      {
-        blockType: "faq_accordion",
-        data: { title: "常見問題", items: defaultFaqs.map(f => ({ question: f.question, answer: f.answer })) },
-      },
-      {
-        blockType: "cta_section",
-        data: { title: "還有其他問題？", subtitle: "歡迎來電或透過 LINE 諮詢，我們會盡快回覆", primaryLabel: "聯絡我們", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
-      },
-    ]);
-
-    // Contact
-    const contactId = uuid();
-    insertSeedPage(d, contactId, "contact", "聯絡我們", "歡迎來電、來訊或填寫表單，我們將盡快回覆", { templateId: "contact", navOrder: 6 });
-    insertSeedBlocks(d, contactId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#44403c", bgImageKey: "contact_bg" },
-      },
-      {
-        blockType: "contact_layout",
-        data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed },
-      },
-    ]);
-
-    // Tools
-    const toolsId = uuid();
-    insertSeedPage(d, toolsId, "tools", "小工具", "實用的不動產計算工具", { navOrder: 4 });
-    insertSeedBlocks(d, toolsId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "小工具", subtitle: "實用的不動產計算工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "tools_bg" },
-      },
-      {
-        blockType: "custom_html",
-        data: { html: "__TOOLS_PAGE__" },
-      },
-    ]);
-
-    // Links
-    const linksId = uuid();
-    insertSeedPage(d, linksId, "links", "實用連結", "常用不動產相關網站與查詢工具", { navOrder: 5 });
-    insertSeedBlocks(d, linksId, [
-      {
-        blockType: "hero_banner",
-        data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" },
-      },
-      {
-        blockType: "key_value_list",
-        data: {
-          title: "政府查詢工具",
-          items: [
-            { label: "實價登錄", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
-            { label: "地籍圖資查詢", value: "內政部地政司地籍圖資網路便民服務", icon: "🗺️", url: "https://easymap.land.moi.gov.tw/" },
-            { label: "土地增值稅試算", value: "財政部線上稅額試算服務", icon: "📈", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
-            { label: "房地合一稅試算", value: "財政部房地合一稅預繳稅額試算", icon: "🧾", url: "https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
-            { label: "公告土地現值查詢", value: "各縣市地政局公告現值查詢", icon: "📊", url: "https://www.land.moi.gov.tw/ngis/" },
-            { label: "建物謄本查詢", value: "全國地政電子謄本系統", icon: "📋", url: "https://ep.land.nat.gov.tw/" },
-          ],
-        },
-      },
-    ]);
-  });
-
-  seed();
+  d.transaction(() => {
+    for (const s of missing) {
+      s.fn();
+    }
+  })();
 }

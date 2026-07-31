@@ -1,5 +1,32 @@
 # Changelog
 
+## [feat: 系統頁面與使用者頁面分離] - 2026-07-31T03:00:00Z
+
+### 變更類型
+
+架構改進
+
+### 變更摘要
+
+解決兩個問題：(1) seed 邏輯從「全有全無」改為遞增式，新增 `seed_key` 欄位追蹤每個系統預設頁面，既有 DB 升級時可自動新增缺少的系統頁面；(2) 使用者建立的頁面 URL 改用 `/p/{slug}` 前綴，與系統頁面（頂層 `/{slug}`）隔離，防止 slug 衝突。同時新增保留 slug 驗證（admin、api、p 等），sitemap 改為從 DB 動態生成。
+
+### 改動
+
+- cms-types.ts: Page interface 新增 `seedKey: string | null`
+- cms-db.ts: pages 表新增 `seed_key` 欄位 + 遷移邏輯、`seedCmsPages()` 改為遞增式（每個頁面獨立 seed 函式）、`getNavItems()` 依 is_system 產生不同 URL、`createPage()` 新增 RESERVED_SLUGS 驗證
+- [slug]/page.tsx: 加 `!page.isSystem` guard，僅服務系統頁面
+- p/[slug]/page.tsx: 新增使用者頁面路由，僅服務非系統頁面
+- PageBuilder.tsx: 建立 modal 顯示 `/p/` 前綴、頁面列表區分系統/使用者路徑、保留 slug 驗證提示
+- API routes: 新增保留 slug 400 錯誤處理
+- sitemap.ts: 改為動態查詢 DB 生成，正確區分系統/使用者頁面 URL
+
+### 影響評估
+- 風險等級: Medium
+- 受影響功能: feature-020
+- 破壞性變更: 使用者頁面 URL 從 `/{slug}` 變為 `/p/{slug}`（上線前可接受）
+
+---
+
 ## [feat: 計算器排序 (#13) + Google 表單 (#14) + 實用連結 (#16)] - 2026-07-31T01:00:00Z
 
 ### 變更類型

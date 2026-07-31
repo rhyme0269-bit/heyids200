@@ -32,6 +32,7 @@ export interface Page {
   heroMode: HeroMode;
   heroColor: string;
   isSystem: boolean;
+  seedKey: string | null;
   showInNav: boolean;
   navOrder: number;
   status: PageStatus;

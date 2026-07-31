@@ -385,7 +385,7 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                 {editingPage.isSystem && <span className="ml-1 text-stone-400">（系統頁面不可修改）</span>}
               </label>
               <div className="flex items-center gap-1">
-                <span className="text-sm text-stone-400">/</span>
+                <span className="text-sm text-stone-400">{editingPage.isSystem ? "/" : "/p/"}</span>
                 <input
                   type="text"
                   value={editingPage.slug}
@@ -604,7 +604,7 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-stone-500">/{page.slug}</td>
+                  <td className="px-4 py-3 text-stone-500">{page.isSystem ? (page.slug === "home" ? "/" : `/${page.slug}`) : `/p/${page.slug}`}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
                       page.status === "published"
@@ -749,7 +749,7 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
               <div>
                 <label className="mb-1 block text-sm font-medium text-stone-700">網址路徑 (slug)</label>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm text-stone-400">/</span>
+                  <span className="text-sm text-stone-400">/p/</span>
                   <input
                     type="text"
                     value={newPageSlug}
@@ -758,6 +758,9 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
                     className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
                   />
                 </div>
+                {["home","about","services","tools","faq","contact","links","admin","api","p"].includes(newPageSlug) && (
+                  <p className="mt-1 text-xs text-red-500">此網址路徑為系統保留，請使用其他名稱</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-stone-700">使用模板</label>
@@ -781,7 +784,7 @@ export default function PageBuilder({ showToast }: PageBuilderProps) {
               </button>
               <button
                 onClick={handleCreatePage}
-                disabled={!newPageSlug || !newPageTitle}
+                disabled={!newPageSlug || !newPageTitle || ["home","about","services","tools","faq","contact","links","admin","api","p"].includes(newPageSlug)}
                 className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
               >
                 建立

@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(page, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("系統保留")) {
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
     if (msg.includes("UNIQUE constraint")) {
       return NextResponse.json({ error: "此 slug 已存在" }, { status: 409 });
     }

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (SKIP_SLUGS.has(slug) || !isCmsInitialized()) return {};
 
   const page = getPageBySlug(slug);
-  if (!page) return {};
+  if (!page || !page.isSystem) return {};
 
   return {
     title: page.title,
@@ -53,6 +53,7 @@ export default async function CmsPage({ params }: Props) {
 
   const page = getPageBySlug(slug);
   if (!page || page.status !== "published") notFound();
+  if (!page.isSystem) notFound();
 
   const blocks = getBlocksForPage(page.id);
   const faqSchema = buildFaqSchema(blocks);
