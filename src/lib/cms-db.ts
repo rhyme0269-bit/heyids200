@@ -45,6 +45,10 @@ function uuid(): string {
 
 // ===== Schema =====
 
+function hashData(json: string): string {
+  return crypto.createHash("sha256").update(json).digest("hex").slice(0, 16);
+}
+
 export function initCmsTables(db?: Database.Database) {
   const d = db ?? getDb();
   d.exec(`
@@ -81,6 +85,7 @@ export function initCmsTables(db?: Database.Database) {
       sort_order INTEGER NOT NULL DEFAULT 0,
       data TEXT NOT NULL DEFAULT '{}',
       config TEXT NOT NULL DEFAULT '{}',
+      seed_hash TEXT DEFAULT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
@@ -108,6 +113,19 @@ export function initCmsTables(db?: Database.Database) {
   d.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_seed_key ON pages(seed_key) WHERE seed_key IS NOT NULL"
   );
+
+  // Migration: add seed_hash column to blocks for existing DBs
+  const blockCols = d.prepare("PRAGMA table_info(blocks)").all() as { name: string }[];
+  if (!blockCols.some((c) => c.name === "seed_hash")) {
+    d.exec("ALTER TABLE blocks ADD COLUMN seed_hash TEXT DEFAULT NULL");
+    const sysPageIds = d.prepare("SELECT id FROM pages WHERE is_system = 1").all() as { id: string }[];
+    for (const p of sysPageIds) {
+      const blocks = d.prepare("SELECT id, data FROM blocks WHERE page_id = ?").all(p.id) as { id: string; data: string }[];
+      for (const b of blocks) {
+        d.prepare("UPDATE blocks SET seed_hash = ? WHERE id = ?").run(hashData(b.data), b.id);
+      }
+    }
+  }
 }
 
 // ===== Row → Object Mappers =====
@@ -699,11 +717,12 @@ function insertSeedBlocks(
   }>
 ) {
   const stmt = db.prepare(
-    `INSERT INTO blocks (id, page_id, block_type, sort_order, data, config)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO blocks (id, page_id, block_type, sort_order, data, config, seed_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
   blocks.forEach((b, i) => {
-    stmt.run(uuid(), pageId, b.blockType, i, JSON.stringify(b.data), JSON.stringify(b.config ?? {}));
+    const dataJson = JSON.stringify(b.data);
+    stmt.run(uuid(), pageId, b.blockType, i, dataJson, JSON.stringify(b.config ?? {}), hashData(dataJson));
   });
 }
 
@@ -738,176 +757,127 @@ function seedTemplates(d: Database.Database) {
   ]));
 }
 
-function seedHomePage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "home", "首頁", "", { navOrder: 0, seedKey: "home" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "合一地政士事務所", subtitle: "專業、誠信、效率", bgMode: "default", bgColor: "#44403c", bgImageKey: "hero_bg" },
-    },
-    {
-      blockType: "text_body",
-      data: { html: defaultAbout.introduction },
-      config: { bgVariant: "gray" },
-    },
-    {
-      blockType: "list",
-      data: { title: "事務所特色", style: "check", items: defaultAbout.features },
-      config: { bgVariant: "gray" },
-    },
-    {
-      blockType: "stats_strip",
-      data: { items: [{ value: "26+", label: "專業執業年資" }, { value: "10+", label: "房仲品牌合作" }, { value: "全台", label: "服務範圍涵蓋" }] },
-    },
-    {
-      blockType: "image_gallery",
-      data: { title: "事務所環境", images: [{ imageKey: "office_interior", alt: "內部環境" }, { imageKey: "office_exterior", alt: "外觀" }, { imageKey: "office_sign", alt: "招牌" }] },
-    },
-    {
-      blockType: "key_value_list",
-      data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"][i] || "" })) },
-    },
-    {
-      blockType: "cta_section",
-      data: { title: "需要不動產登記服務？", subtitle: "歡迎來電或填寫表單，我們將盡快與您聯繫", primaryLabel: "填寫諮詢表單", primaryHref: "/contact", secondaryLabel: "02-2282-6600", secondaryHref: "tel:02-2282-6600" },
-    },
-  ]);
-}
+type SeedBlock = { blockType: BlockType; data: Record<string, unknown>; config?: BlockConfig };
+type SeedPageDef = {
+  slug: string; title: string; subtitle: string;
+  opts: { templateId?: string; heroMode?: string; heroColor?: string; navOrder: number; isSystem?: boolean; seedKey: string };
+  blocks: SeedBlock[];
+};
 
-function seedAboutPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "about", "關於我們", "認識合一地政士事務所", { templateId: "about", navOrder: 1, seedKey: "about" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "關於我們", subtitle: "認識合一地政士事務所", bgMode: "default", bgColor: "#44403c", bgImageKey: "about_bg" },
-    },
-    {
-      blockType: "profile_card",
-      data: { introduction: defaultAbout.introduction, quote: defaultAbout.philosophy, imageKey: "scrivener_photo", imageName: `${defaultSiteSettings.scrivenerName} 地政士`, imageSubtitle: defaultSiteSettings.licenseNumber },
-    },
-    {
-      blockType: "list",
-      data: { title: "事務所特色", style: "numbered", items: defaultAbout.features },
-      config: { bgVariant: "gray" },
-    },
-    {
-      blockType: "two_column_list",
-      data: { leftTitle: "現任資歷", leftItems: defaultAbout.qualifications, leftStyle: "check", rightTitle: "過去工作經驗", rightItems: defaultAbout.experience, rightStyle: "circle-check" },
-    },
-    {
-      blockType: "list",
-      data: { title: "專長領域", style: "tag", items: defaultAbout.specialties },
-      config: { bgVariant: "gray" },
-    },
-  ]);
-}
+const SERVICE_ICONS = ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"];
 
-function seedServicesPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "services", "服務項目", "全方位不動產登記服務", { templateId: "services", navOrder: 2, seedKey: "services" });
-  insertSeedBlocks(d, id, [
+function getSeedPages(): SeedPageDef[] {
+  return [
     {
-      blockType: "hero_banner",
-      data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" },
+      slug: "home", title: "首頁", subtitle: "",
+      opts: { navOrder: 0, seedKey: "home" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "合一地政士事務所", subtitle: "專業、誠信、效率", bgMode: "default", bgColor: "#44403c", bgImageKey: "hero_bg" } },
+        { blockType: "text_body", data: { html: defaultAbout.introduction }, config: { bgVariant: "gray" } },
+        { blockType: "list", data: { title: "事務所特色", style: "check", items: defaultAbout.features }, config: { bgVariant: "gray" } },
+        { blockType: "stats_strip", data: { items: [{ value: "26+", label: "專業執業年資" }, { value: "10+", label: "房仲品牌合作" }, { value: "全台", label: "服務範圍涵蓋" }] } },
+        { blockType: "image_gallery", data: { title: "事務所環境", images: [{ imageKey: "office_interior", alt: "內部環境" }, { imageKey: "office_exterior", alt: "外觀" }, { imageKey: "office_sign", alt: "招牌" }] } },
+        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "" })) } },
+        { blockType: "cta_section", data: { title: "需要不動產登記服務？", subtitle: "歡迎來電或填寫表單，我們將盡快與您聯繫", primaryLabel: "填寫諮詢表單", primaryHref: "/contact", secondaryLabel: "02-2282-6600", secondaryHref: "tel:02-2282-6600" } },
+      ],
     },
     {
-      blockType: "key_value_list",
-      data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"][i] || "" })) },
+      slug: "about", title: "關於我們", subtitle: "認識合一地政士事務所",
+      opts: { templateId: "about", navOrder: 1, seedKey: "about" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "關於我們", subtitle: "認識合一地政士事務所", bgMode: "default", bgColor: "#44403c", bgImageKey: "about_bg" } },
+        { blockType: "profile_card", data: { introduction: defaultAbout.introduction, quote: defaultAbout.philosophy, imageKey: "scrivener_photo", imageName: `${defaultSiteSettings.scrivenerName} 地政士`, imageSubtitle: defaultSiteSettings.licenseNumber } },
+        { blockType: "list", data: { title: "事務所特色", style: "numbered", items: defaultAbout.features }, config: { bgVariant: "gray" } },
+        { blockType: "two_column_list", data: { leftTitle: "現任資歷", leftItems: defaultAbout.qualifications, leftStyle: "check", rightTitle: "過去工作經驗", rightItems: defaultAbout.experience, rightStyle: "circle-check" } },
+        { blockType: "list", data: { title: "專長領域", style: "tag", items: defaultAbout.specialties }, config: { bgVariant: "gray" } },
+      ],
     },
     {
-      blockType: "table",
-      data: {
-        title: "收費標準",
-        columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }],
-        rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })),
-        footerNotes: defaultFeeNotes,
-      },
+      slug: "services", title: "服務項目", subtitle: "全方位不動產登記服務",
+      opts: { templateId: "services", navOrder: 2, seedKey: "services" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" } },
+        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "" })) } },
+        { blockType: "table", data: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })), footerNotes: defaultFeeNotes } },
+        { blockType: "steps_flow", data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) } },
+        { blockType: "cta_section", data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" } },
+      ],
     },
     {
-      blockType: "steps_flow",
-      data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) },
+      slug: "faq", title: "常見問題", subtitle: "您想了解的常見問題",
+      opts: { templateId: "faq", navOrder: 4, seedKey: "faq" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "常見問題", subtitle: "您想了解的常見問題", bgMode: "default", bgColor: "#44403c", bgImageKey: "faq_bg" } },
+        { blockType: "faq_accordion", data: { title: "常見問題", items: defaultFaqs.map(f => ({ question: f.question, answer: f.answer })) } },
+        { blockType: "cta_section", data: { title: "還有其他問題？", subtitle: "歡迎來電或透過 LINE 諮詢，我們會盡快回覆", primaryLabel: "聯絡我們", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" } },
+      ],
     },
     {
-      blockType: "cta_section",
-      data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
-    },
-  ]);
-}
-
-function seedFaqPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "faq", "常見問題", "您想了解的常見問題", { templateId: "faq", navOrder: 4, seedKey: "faq" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "常見問題", subtitle: "您想了解的常見問題", bgMode: "default", bgColor: "#44403c", bgImageKey: "faq_bg" },
+      slug: "contact", title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆",
+      opts: { templateId: "contact", navOrder: 6, seedKey: "contact" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#44403c", bgImageKey: "contact_bg" } },
+        { blockType: "contact_layout", data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed } },
+      ],
     },
     {
-      blockType: "faq_accordion",
-      data: { title: "常見問題", items: defaultFaqs.map(f => ({ question: f.question, answer: f.answer })) },
+      slug: "tools", title: "小工具", subtitle: "實用的不動產計算工具",
+      opts: { navOrder: 3, seedKey: "tools" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "小工具", subtitle: "實用的不動產計算工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "tools_bg" } },
+        { blockType: "custom_html", data: { html: "__TOOLS_PAGE__" } },
+      ],
     },
     {
-      blockType: "cta_section",
-      data: { title: "還有其他問題？", subtitle: "歡迎來電或透過 LINE 諮詢，我們會盡快回覆", primaryLabel: "聯絡我們", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" },
-    },
-  ]);
-}
-
-function seedContactPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "contact", "聯絡我們", "歡迎來電、來訊或填寫表單，我們將盡快回覆", { templateId: "contact", navOrder: 6, seedKey: "contact" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#44403c", bgImageKey: "contact_bg" },
-    },
-    {
-      blockType: "contact_layout",
-      data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed },
-    },
-  ]);
-}
-
-function seedToolsPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "tools", "小工具", "實用的不動產計算工具", { navOrder: 3, seedKey: "tools" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "小工具", subtitle: "實用的不動產計算工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "tools_bg" },
-    },
-    {
-      blockType: "custom_html",
-      data: { html: "__TOOLS_PAGE__" },
-    },
-  ]);
-}
-
-function seedLinksPage(d: Database.Database) {
-  const id = uuid();
-  insertSeedPage(d, id, "links", "實用連結", "常用不動產相關網站與查詢工具", { navOrder: 5, seedKey: "links" });
-  insertSeedBlocks(d, id, [
-    {
-      blockType: "hero_banner",
-      data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" },
-    },
-    {
-      blockType: "key_value_list",
-      data: {
-        title: "政府查詢工具",
-        items: [
+      slug: "links", title: "實用連結", subtitle: "常用不動產相關網站與查詢工具",
+      opts: { navOrder: 5, seedKey: "links" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
+        { blockType: "key_value_list", data: { title: "政府查詢工具", items: [
           { label: "實價登錄", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
           { label: "地籍圖資查詢", value: "內政部地政司地籍圖資網路便民服務", icon: "🗺️", url: "https://easymap.land.moi.gov.tw/" },
           { label: "土地增值稅試算", value: "財政部線上稅額試算服務", icon: "📈", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
           { label: "房地合一稅試算", value: "財政部房地合一稅預繳稅額試算", icon: "🧾", url: "https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
           { label: "公告土地現值查詢", value: "各縣市地政局公告現值查詢", icon: "📊", url: "https://www.land.moi.gov.tw/ngis/" },
           { label: "建物謄本查詢", value: "全國地政電子謄本系統", icon: "📋", url: "https://ep.land.nat.gov.tw/" },
-        ],
-      },
+        ] } },
+      ],
     },
-  ]);
+  ];
+}
+
+function updateSeedBlocks(
+  db: Database.Database,
+  pageId: string,
+  seedBlocks: SeedBlock[]
+) {
+  const existing = db.prepare(
+    "SELECT id, block_type, sort_order, data, seed_hash FROM blocks WHERE page_id = ? ORDER BY sort_order"
+  ).all(pageId) as { id: string; block_type: string; sort_order: number; data: string; seed_hash: string | null }[];
+
+  const updateStmt = db.prepare(
+    "UPDATE blocks SET data = ?, seed_hash = ?, updated_at = datetime('now') WHERE id = ?"
+  );
+  const updateHashStmt = db.prepare(
+    "UPDATE blocks SET seed_hash = ? WHERE id = ?"
+  );
+
+  for (let i = 0; i < seedBlocks.length; i++) {
+    const seed = seedBlocks[i];
+    const row = existing.find(r => r.sort_order === i && r.block_type === seed.blockType);
+    if (!row) continue;
+
+    const seedJson = JSON.stringify(seed.data);
+    const newHash = hashData(seedJson);
+    if (row.seed_hash === newHash) continue;
+
+    const currentHash = hashData(row.data);
+    if (currentHash === row.seed_hash || !row.seed_hash) {
+      updateStmt.run(seedJson, newHash, row.id);
+    } else {
+      updateHashStmt.run(newHash, row.id);
+    }
+  }
 }
 
 export function seedCmsPages(db?: Database.Database) {
@@ -915,27 +885,23 @@ export function seedCmsPages(db?: Database.Database) {
 
   seedTemplates(d);
 
-  const existingKeys = new Set(
-    (d.prepare("SELECT seed_key FROM pages WHERE seed_key IS NOT NULL").all() as { seed_key: string }[])
-      .map((r) => r.seed_key)
+  const existingPages = new Map(
+    (d.prepare("SELECT id, seed_key FROM pages WHERE seed_key IS NOT NULL").all() as { id: string; seed_key: string }[])
+      .map((r) => [r.seed_key, r.id])
   );
 
-  const seeds: { key: string; fn: () => void }[] = [
-    { key: "home", fn: () => seedHomePage(d) },
-    { key: "about", fn: () => seedAboutPage(d) },
-    { key: "services", fn: () => seedServicesPage(d) },
-    { key: "tools", fn: () => seedToolsPage(d) },
-    { key: "faq", fn: () => seedFaqPage(d) },
-    { key: "contact", fn: () => seedContactPage(d) },
-    { key: "links", fn: () => seedLinksPage(d) },
-  ];
-
-  const missing = seeds.filter((s) => !existingKeys.has(s.key));
-  if (missing.length === 0) return;
+  const seedPages = getSeedPages();
 
   d.transaction(() => {
-    for (const s of missing) {
-      s.fn();
+    for (const page of seedPages) {
+      const existingPageId = existingPages.get(page.opts.seedKey);
+      if (!existingPageId) {
+        const id = uuid();
+        insertSeedPage(d, id, page.slug, page.title, page.subtitle, page.opts);
+        insertSeedBlocks(d, id, page.blocks);
+      } else {
+        updateSeedBlocks(d, existingPageId, page.blocks);
+      }
     }
   })();
 }
