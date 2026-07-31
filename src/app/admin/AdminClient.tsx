@@ -310,6 +310,7 @@ export default function AdminClient() {
         switch (tab) {
           case "pages":
           case "manual":
+          case "calculators":
             setLoading(false);
             return;
           case "settings":
