@@ -49,6 +49,10 @@ function rowToCalc(row: CalcRow): Calculator {
   };
 }
 
+function hashDef(json: string): string {
+  return crypto.createHash("sha256").update(json).digest("hex").slice(0, 16);
+}
+
 export function initCalcTables(db?: Database.Database) {
   const d = db ?? getDb();
   d.exec(`
@@ -62,30 +66,60 @@ export function initCalcTables(db?: Database.Database) {
       is_system INTEGER NOT NULL DEFAULT 0,
       is_visible INTEGER NOT NULL DEFAULT 1,
       definition TEXT NOT NULL DEFAULT '{}',
+      seed_hash TEXT DEFAULT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  const cols = d.prepare("PRAGMA table_info(calculators)").all() as { name: string }[];
+  if (!cols.some(c => c.name === "seed_hash")) {
+    d.exec("ALTER TABLE calculators ADD COLUMN seed_hash TEXT DEFAULT NULL");
+    const rows = d.prepare("SELECT id, definition FROM calculators WHERE is_system = 1").all() as { id: string; definition: string }[];
+    for (const r of rows) {
+      d.prepare("UPDATE calculators SET seed_hash = ? WHERE id = ?").run(hashDef(r.definition), r.id);
+    }
+  }
 }
 
 export function seedCalculators(db?: Database.Database) {
   const d = db ?? getDb();
 
-  const existingSlugs = new Map(
-    (d.prepare("SELECT slug, definition FROM calculators WHERE is_system = 1").all() as { slug: string; definition: string }[])
-      .map((r) => [r.slug, r.definition])
+  const existing = new Map(
+    (d.prepare("SELECT slug, definition, seed_hash FROM calculators WHERE is_system = 1").all() as { slug: string; definition: string; seed_hash: string | null }[])
+      .map((r) => [r.slug, { definition: r.definition, seedHash: r.seed_hash }])
   );
 
   const insert = d.prepare(
-    `INSERT INTO calculators (id, slug, title, icon, description, sort_order, is_system, is_visible, definition)
-     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)`
+    `INSERT INTO calculators (id, slug, title, icon, description, sort_order, is_system, is_visible, definition, seed_hash)
+     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?, ?)`
+  );
+  const update = d.prepare(
+    `UPDATE calculators SET title = ?, icon = ?, description = ?, definition = ?, seed_hash = ?, updated_at = datetime('now')
+     WHERE slug = ? AND is_system = 1`
+  );
+  const updateHashOnly = d.prepare(
+    `UPDATE calculators SET seed_hash = ? WHERE slug = ? AND is_system = 1`
   );
 
   d.transaction(() => {
     defaultCalculators.forEach((calc, i) => {
       const defJson = JSON.stringify(calc.definition);
-      if (!existingSlugs.has(calc.slug)) {
-        insert.run(crypto.randomUUID(), calc.slug, calc.title, calc.icon, calc.description, i, defJson);
+      const newHash = hashDef(defJson);
+      const row = existing.get(calc.slug);
+
+      if (!row) {
+        insert.run(crypto.randomUUID(), calc.slug, calc.title, calc.icon, calc.description, i, defJson, newHash);
+      } else if (row.seedHash === newHash) {
+        // seed 沒變，不動
+      } else {
+        const currentHash = hashDef(row.definition);
+        if (currentHash === row.seedHash || !row.seedHash) {
+          // 使用者沒有手動修改（或首次遷移），跟著 seed 更新
+          update.run(calc.title, calc.icon, calc.description, defJson, newHash, calc.slug);
+        } else {
+          // 使用者有手動修改，只更新 seed_hash 不覆蓋 definition
+          updateHashOnly.run(newHash, calc.slug);
+        }
       }
     });
   })();
