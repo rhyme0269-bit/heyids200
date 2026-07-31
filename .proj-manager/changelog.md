@@ -1,5 +1,42 @@
 # Changelog
 
+## [feat: 後台使用手冊 TPEX 風格改版] - 2026-07-31T06:00:00Z
+
+### 變更類型
+
+功能改進
+
+### 變更摘要
+
+參考 TPEX 前端使用說明界面，重新設計後台使用手冊：新增歡迎橫幅、5 步驟快速入門時間軸、注意事項側欄卡片、可點擊跳轉其他頁籤的 TabLink 元件。所有原有操作說明內容保留。
+
+### 改動
+
+- ManualContent.tsx: 完整改版，新增 WelcomeBanner、TimelineGuide、NoticeCard、TabLink 元件
+- AdminClient.tsx: 傳入 onNavigate={setActiveTab} 讓手冊內連結可跳轉頁籤
+
+---
+
+## [fix: 服務項目預設 emoji icon] - 2026-07-31T05:30:00Z
+
+### 變更類型
+
+Bug 修復
+
+### 變更摘要
+
+修復服務項目 key_value_list 區塊 seed 資料缺少 icon 欄位的問題。新部署時服務項目卡片會帶有預設 emoji 圖示（🏠🌳🤲🔐🧾⚖️🏛📈💬）。
+
+### 改動
+
+- cms-db.ts: 兩處 seedHomePage/seedServicesPage 的 defaultServices.map 加入 icon 欄位
+
+### 關閉 Issues
+
+- #17 後台管理（項目增加圖示後並未顯示）
+
+---
+
 ## [fix: 計算器遞增式 seed + 定義自動更新] - 2026-07-31T04:00:00Z
 
 ### 變更類型
