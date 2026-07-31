@@ -70,28 +70,33 @@ export function initCalcTables(db?: Database.Database) {
 
 export function seedCalculators(db?: Database.Database) {
   const d = db ?? getDb();
-  const count = d.prepare("SELECT COUNT(*) as c FROM calculators").get() as { c: number };
-  if (count.c > 0) return;
+
+  const existingSlugs = new Map(
+    (d.prepare("SELECT slug, definition FROM calculators WHERE is_system = 1").all() as { slug: string; definition: string }[])
+      .map((r) => [r.slug, r.definition])
+  );
 
   const insert = d.prepare(
     `INSERT INTO calculators (id, slug, title, icon, description, sort_order, is_system, is_visible, definition)
      VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)`
   );
+  const update = d.prepare(
+    `UPDATE calculators SET title = ?, icon = ?, description = ?, definition = ?, updated_at = datetime('now')
+     WHERE slug = ? AND is_system = 1`
+  );
 
-  const seed = d.transaction(() => {
+  d.transaction(() => {
     defaultCalculators.forEach((calc, i) => {
-      insert.run(
-        crypto.randomUUID(),
-        calc.slug,
-        calc.title,
-        calc.icon,
-        calc.description,
-        i,
-        JSON.stringify(calc.definition)
-      );
+      const defJson = JSON.stringify(calc.definition);
+      const existing = existingSlugs.get(calc.slug);
+
+      if (existing === undefined) {
+        insert.run(crypto.randomUUID(), calc.slug, calc.title, calc.icon, calc.description, i, defJson);
+      } else if (existing !== defJson) {
+        update.run(calc.title, calc.icon, calc.description, defJson, calc.slug);
+      }
     });
-  });
-  seed();
+  })();
 }
 
 export function listCalculators(visibleOnly = false): Calculator[] {
