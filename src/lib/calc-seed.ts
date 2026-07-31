@@ -19,7 +19,7 @@ export const defaultCalculators: CalcSeed[] = [
         { id: "house_value", label: "房屋評定現值（元）", type: "number", placeholder: "例：3,000,000" },
         { id: "land_value", label: "土地公告現值（元）", type: "number", placeholder: "例：5,000,000" },
         { id: "need_loan", label: "是否需要貸款", type: "checkbox" },
-        { id: "loan_amount", label: "貸款金額（元）", type: "number", placeholder: "例：8,000,000" },
+        { id: "loan_amount", label: "貸款金額（元）", type: "number", placeholder: "例：8,000,000", showIf: "$need_loan" },
       ],
       formulas: [
         { id: "deed_tax", expr: ["*", "$house_value", 0.06] },

@@ -180,14 +180,24 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
         {calc.title}
       </h2>
       <div className="flex flex-col gap-3">
-        {inputs.map((input) => (
-          <InputFieldUI
-            key={input.id}
-            input={input}
-            value={values[input.id] ?? ""}
-            onChange={(v) => setValues((prev) => ({ ...prev, [input.id]: v }))}
-          />
-        ))}
+        {inputs.map((input) => {
+          if (input.showIf) {
+            const liveVars: Record<string, number> = {};
+            for (const inp of inputs) {
+              const raw = values[inp.id] ?? "";
+              liveVars[inp.id] = inp.type === "checkbox" ? (raw === "1" ? 1 : 0) : (parseFloat(raw) || 0);
+            }
+            if (!evaluate(input.showIf, liveVars)) return null;
+          }
+          return (
+            <InputFieldUI
+              key={input.id}
+              input={input}
+              value={values[input.id] ?? ""}
+              onChange={(v) => setValues((prev) => ({ ...prev, [input.id]: v }))}
+            />
+          );
+        })}
         <button
           type="button"
           onClick={handleCalc}

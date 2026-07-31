@@ -80,20 +80,12 @@ export function seedCalculators(db?: Database.Database) {
     `INSERT INTO calculators (id, slug, title, icon, description, sort_order, is_system, is_visible, definition)
      VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)`
   );
-  const update = d.prepare(
-    `UPDATE calculators SET title = ?, icon = ?, description = ?, definition = ?, updated_at = datetime('now')
-     WHERE slug = ? AND is_system = 1`
-  );
 
   d.transaction(() => {
     defaultCalculators.forEach((calc, i) => {
       const defJson = JSON.stringify(calc.definition);
-      const existing = existingSlugs.get(calc.slug);
-
-      if (existing === undefined) {
+      if (!existingSlugs.has(calc.slug)) {
         insert.run(crypto.randomUUID(), calc.slug, calc.title, calc.icon, calc.description, i, defJson);
-      } else if (existing !== defJson) {
-        update.run(calc.title, calc.icon, calc.description, defJson, calc.slug);
       }
     });
   })();

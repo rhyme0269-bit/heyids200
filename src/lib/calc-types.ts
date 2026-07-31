@@ -7,6 +7,7 @@ export interface CalcInput {
   step?: string;
   min?: string;
   options?: Array<{ value: string; label: string }>;
+  showIf?: Expr;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
