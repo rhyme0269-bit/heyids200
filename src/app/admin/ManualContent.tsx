@@ -408,6 +408,195 @@ const SECTIONS: Section[] = [
       },
     ],
   },
+  {
+    id: "troubleshooting",
+    title: "故障排查",
+    subsections: [
+      {
+        id: "ts-overview",
+        title: "遇到問題怎麼辦",
+        content: (
+          <>
+            <p>網站出問題時，先判斷問題出在哪一層，才知道該找誰處理：</p>
+            <ul>
+              <li><strong>前端問題</strong> — 畫面顯示異常、按鈕沒反應、樣式跑掉 → 用<strong>瀏覽器開發者工具</strong>檢查</li>
+              <li><strong>後端問題</strong> — 儲存失敗、資料沒更新、頁面 500 錯誤 → 用 <strong>Docker logs</strong> 檢查</li>
+              <li><strong>環境問題</strong> — 網站完全打不開、連線逾時 → 檢查 Docker 容器是否正常運行</li>
+            </ul>
+            <TipBox type="info">把錯誤訊息截圖或複製下來再回報給工程師，能大幅加快問題排查速度。</TipBox>
+          </>
+        ),
+      },
+      {
+        id: "ts-browser",
+        title: "瀏覽器開發者工具",
+        content: (
+          <>
+            <p>瀏覽器內建的開發者工具可以幫你看到前端的錯誤訊息和網路請求狀態。</p>
+
+            <h4>開啟方式</h4>
+            <StepBox steps={[
+              "在網頁上按 <strong>F12</strong>（或 Mac 按 <code>Cmd + Option + I</code>）",
+              "畫面右側或下方會出現開發者工具面板",
+              "主要會用到兩個分頁：<strong>Console（主控台）</strong>和<strong>Network（網路）</strong>",
+            ]} />
+
+            <h4>Console（主控台）— 看前端錯誤</h4>
+            <p>Console 會顯示網頁執行時的錯誤訊息。常見的有：</p>
+            <ul>
+              <li><span className="text-red-600 font-mono text-xs">紅色訊息</span> — 程式錯誤（Error），例如找不到某個元件、資料格式不對</li>
+              <li><span className="text-amber-600 font-mono text-xs">黃色訊息</span> — 警告（Warning），不影響功能但可能有潛在問題</li>
+              <li><span className="font-mono text-xs">白色/灰色訊息</span> — 一般的記錄資訊，通常可以忽略</li>
+            </ul>
+            <TipBox>如果畫面壞掉或按鈕沒反應，打開 Console 看有沒有紅色錯誤。把錯誤訊息複製起來給工程師，就能快速定位問題。</TipBox>
+
+            <h4>Network（網路）— 看 API 請求</h4>
+            <p>Network 分頁可以看到網頁對伺服器發出的所有請求。重點看：</p>
+            <ul>
+              <li><strong>狀態碼 200</strong> — 正常</li>
+              <li><strong>狀態碼 401 / 403</strong> — 登入過期或權限不足，重新登入即可</li>
+              <li><strong>狀態碼 404</strong> — 找不到資料，可能是頁面或圖片被刪除了</li>
+              <li><strong>狀態碼 500</strong> — 伺服器內部錯誤，屬於程式問題，需通知工程師</li>
+            </ul>
+            <StepBox steps={[
+              "打開 Network 分頁，然後<strong>重新操作一次</strong>出問題的動作",
+              "觀察列表中有沒有<span class='text-red-600 font-semibold'>紅色</span>的請求",
+              "點擊紅色的請求，切到 <strong>Response</strong> 分頁，可以看到伺服器回傳的錯誤細節",
+            ]} />
+          </>
+        ),
+      },
+      {
+        id: "ts-docker",
+        title: "Docker 容器日誌",
+        content: (
+          <>
+            <p>後端程式的錯誤會記錄在 Docker 容器的日誌裡。需要用指令查看：</p>
+
+            <h4>查看即時日誌</h4>
+            <p>在伺服器的專案目錄下執行：</p>
+            <pre className="bg-stone-800 text-stone-100 rounded-lg p-4 text-sm overflow-x-auto my-3"><code>docker compose logs -f app</code></pre>
+            <p>這會持續顯示最新的日誌。按 <code>Ctrl + C</code> 停止。</p>
+
+            <h4>查看最近的日誌（不持續追蹤）</h4>
+            <pre className="bg-stone-800 text-stone-100 rounded-lg p-4 text-sm overflow-x-auto my-3"><code>{`# 最近 100 行
+docker compose logs --tail 100 app
+
+# 最近 30 分鐘
+docker compose logs --since 30m app
+
+# nginx 日誌（看連線和轉發問題）
+docker compose logs --tail 50 nginx`}</code></pre>
+
+            <h4>日誌中的關鍵字</h4>
+            <ul>
+              <li><strong className="text-red-600">Error / ERR</strong> — 程式錯誤，需要處理</li>
+              <li><strong className="text-amber-600">WARN</strong> — 警告，可能需要注意</li>
+              <li><strong>GET / POST / PUT / DELETE</strong> — API 請求記錄，正常現象</li>
+              <li><strong>SQLITE_ERROR</strong> — 資料庫錯誤，可能是 DB 檔案損壞或權限問題</li>
+              <li><strong>ECONNREFUSED</strong> — 連線被拒，服務可能沒有正常啟動</li>
+            </ul>
+            <TipBox type="warning">如果日誌中大量出現 <code>SQLITE_BUSY</code> 或 <code>database is locked</code>，可能是多個程序同時寫入資料庫。重啟容器通常可以解決：<code>docker compose restart app</code></TipBox>
+          </>
+        ),
+      },
+      {
+        id: "ts-container",
+        title: "確認容器狀態",
+        content: (
+          <>
+            <p>如果網站完全打不開，先確認 Docker 容器是否正常：</p>
+            <pre className="bg-stone-800 text-stone-100 rounded-lg p-4 text-sm overflow-x-auto my-3"><code>docker compose ps</code></pre>
+            <p>正常狀態下應該看到：</p>
+            <ul>
+              <li><strong>app</strong> — 狀態為 <code>Up</code>（程式主服務）</li>
+              <li><strong>nginx</strong> — 狀態為 <code>Up</code>（反向代理，負責對外連線）</li>
+            </ul>
+
+            <h4>常見異常與處理</h4>
+            <ul>
+              <li><strong>容器狀態 Exit / Restarting</strong> — 程式崩潰，查日誌找原因：<code>docker compose logs --tail 50 app</code></li>
+              <li><strong>容器不存在</strong> — 需要啟動：<code>docker compose up -d</code></li>
+              <li><strong>nginx Up 但 app Exit</strong> — 只有反向代理活著，訪客會看到 502 錯誤。修復 app 即可</li>
+            </ul>
+
+            <h4>重啟服務</h4>
+            <pre className="bg-stone-800 text-stone-100 rounded-lg p-4 text-sm overflow-x-auto my-3"><code>{`# 重啟所有服務
+docker compose restart
+
+# 只重啟程式（不影響 nginx）
+docker compose restart app
+
+# 完全重建（程式有更新時）
+docker compose up -d --build`}</code></pre>
+            <TipBox>重啟不會丟失資料，資料庫和圖片都存在 Docker volume 裡面。</TipBox>
+          </>
+        ),
+      },
+      {
+        id: "ts-common",
+        title: "常見問題速查",
+        content: (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-stone-200">
+                    <th className="py-2 pr-4 text-left font-semibold">症狀</th>
+                    <th className="py-2 pr-4 text-left font-semibold">可能原因</th>
+                    <th className="py-2 text-left font-semibold">排查方向</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  <tr>
+                    <td className="py-2 pr-4">網站完全打不開</td>
+                    <td className="py-2 pr-4">容器未啟動、伺服器關機</td>
+                    <td className="py-2"><code>docker compose ps</code> 確認容器狀態</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">顯示 502 Bad Gateway</td>
+                    <td className="py-2 pr-4">app 容器崩潰，nginx 還在運行</td>
+                    <td className="py-2"><code>docker compose logs --tail 50 app</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">後台儲存按鈕沒反應</td>
+                    <td className="py-2 pr-4">前端 JS 錯誤、登入過期</td>
+                    <td className="py-2">瀏覽器 F12 → Console 看紅色錯誤</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">儲存後內容沒更新</td>
+                    <td className="py-2 pr-4">API 回傳 500、快取問題</td>
+                    <td className="py-2">F12 → Network 看請求狀態碼；強制重整 <code>Ctrl+Shift+R</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">圖片上傳失敗</td>
+                    <td className="py-2 pr-4">檔案太大、格式不支援、磁碟空間不足</td>
+                    <td className="py-2">確認檔案 &lt; 5MB 且為 PNG/JPG/WebP/GIF</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">新增的頁面前台看不到</td>
+                    <td className="py-2 pr-4">狀態為草稿、未加入導覽列</td>
+                    <td className="py-2">檢查頁面狀態是否為「已發布」、導覽列是否為「顯示」</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">登入後馬上被踢回登入頁</td>
+                    <td className="py-2 pr-4">Cookie 被阻擋、登入 Token 過期</td>
+                    <td className="py-2">清除瀏覽器 Cookie 後重新登入</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">計算器結果明顯不對</td>
+                    <td className="py-2 pr-4">公式設定有誤</td>
+                    <td className="py-2">後台編輯該計算器，檢查公式 JSON 格式是否正確</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <TipBox type="info">回報問題時，提供以下資訊能讓工程師最快定位問題：<br />1. 什麼時候發生的<br />2. 操作了什麼步驟<br />3. Console 紅色錯誤截圖（按 F12）<br />4. 或 <code>docker compose logs --tail 100 app</code> 的輸出</TipBox>
+          </>
+        ),
+      },
+    ],
+  },
 ];
 
 const QUICK_LINKS: { emoji: string; label: string; target: string; desc: string }[] = [
@@ -423,6 +612,7 @@ const QUICK_LINKS: { emoji: string; label: string; target: string; desc: string 
   { emoji: "↕️", label: "計算器排序", target: "calc-reorder", desc: "調整計算器顯示順序" },
   { emoji: "📋", label: "Google 表單", target: "pages-google-form", desc: "嵌入 Google 表單到聯絡頁" },
   { emoji: "🔗", label: "實用連結", target: "pages-links", desc: "管理外部連結卡片" },
+  { emoji: "🛠", label: "故障排查", target: "ts-overview", desc: "網站出問題時怎麼處理" },
 ];
 
 function QuickIndex({ onSelect }: { onSelect: (id: string) => void }) {
