@@ -78,6 +78,7 @@ src/
 - `seedCmsPages()` 為遞增式：依 `seed_key` 檢查缺少哪些系統頁面，僅建立缺少的
 - 使用者建立頁面時驗證 RESERVED_SLUGS（防止佔用 home、admin、api 等路徑）
 - 導覽列由 `getNavItems()` 整合頁面 nav + 自訂連結，按 navOrder 排序，URL 依 is_system 區分
+- 計算器 seed 為遞增式：依 `slug` 檢查是否存在，不存在則 INSERT，definition 不同則自動 UPDATE
 - FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料
 - Sitemap 從 DB 動態生成，系統頁面用頂層 URL、使用者頁面用 `/p/` 前綴
 

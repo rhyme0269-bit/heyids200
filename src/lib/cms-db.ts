@@ -838,7 +838,7 @@ function seedServicesPage(d: Database.Database) {
 
 function seedFaqPage(d: Database.Database) {
   const id = uuid();
-  insertSeedPage(d, id, "faq", "常見問題", "您想了解的常見問題", { templateId: "faq", navOrder: 5, seedKey: "faq" });
+  insertSeedPage(d, id, "faq", "常見問題", "您想了解的常見問題", { templateId: "faq", navOrder: 4, seedKey: "faq" });
   insertSeedBlocks(d, id, [
     {
       blockType: "hero_banner",
@@ -872,7 +872,7 @@ function seedContactPage(d: Database.Database) {
 
 function seedToolsPage(d: Database.Database) {
   const id = uuid();
-  insertSeedPage(d, id, "tools", "小工具", "實用的不動產計算工具", { navOrder: 4, seedKey: "tools" });
+  insertSeedPage(d, id, "tools", "小工具", "實用的不動產計算工具", { navOrder: 3, seedKey: "tools" });
   insertSeedBlocks(d, id, [
     {
       blockType: "hero_banner",
