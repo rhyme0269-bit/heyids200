@@ -1193,7 +1193,7 @@ export default function AdminClient() {
                   Tab: 使用手冊
                   ============================ */}
               {activeTab === "manual" && (
-                <ManualContent />
+                <ManualContent onNavigate={setActiveTab} />
               )}
             </>
           )}
