@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import type { BlockType } from "@/lib/cms-types";
+import IconPicker from "@/components/common/IconPicker";
 
 interface CmsPage {
   id: string;
@@ -989,14 +990,9 @@ function BlockEditor({
             renderItem={(item, i, update) => (
               <div className="space-y-1">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={item.icon || ""}
-                    onChange={(e) => update({ ...item, icon: e.target.value })}
-                    placeholder="😀"
-                    title="圖示（emoji）"
-                    className="w-12 rounded-lg border border-stone-200 px-2 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                  />
+                  <div className="w-12">
+                    <IconPicker value={item.icon || ""} onChange={(v) => update({ ...item, icon: v })} />
+                  </div>
                   <input
                     type="text"
                     value={item.label}
