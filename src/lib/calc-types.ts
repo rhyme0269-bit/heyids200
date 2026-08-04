@@ -21,6 +21,7 @@ export type Expr =
 
 export interface CalcFormula {
   id: string;
+  label?: string;
   expr: Expr;
 }
 

@@ -54,7 +54,7 @@ function nodeToExpr(node: ExprNode): Expr {
     case "num": return node.value;
     case "var": return `$${node.name}`;
     case "op": return [node.op, ...node.args.map(nodeToExpr)] as Expr;
-    case "empty": return 0;
+    case "empty": return null;
   }
 }
 
@@ -75,6 +75,85 @@ function parseExpr(s: string): Expr {
   try { return JSON.parse(trimmed); } catch { return trimmed; }
 }
 
+function EmptySlotNode({
+  onChange,
+  itemIds,
+  itemLabels = {},
+}: {
+  onChange: (n: ExprNode) => void;
+  itemIds: string[];
+  itemLabels?: Record<string, string>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const pick = (n: ExprNode) => {
+    onChange(n);
+    setOpen(false);
+  };
+
+  return (
+    <span className="relative inline-flex">
+      <span
+        className="inline-flex items-center px-3 py-1 rounded border-2 border-dashed border-stone-300 text-xs text-stone-400 cursor-pointer hover:border-amber-400 hover:text-amber-600 min-w-[3rem] justify-center"
+        onClick={() => setOpen(!open)}
+      >
+        ?
+      </span>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 z-20 mt-1 p-2 rounded-lg bg-white border border-stone-200 shadow-lg min-w-[14rem] space-y-1.5">
+            {itemIds.length > 0 && (
+              <div>
+                <span className="text-[10px] text-stone-400 block mb-0.5">欄位</span>
+                <div className="flex flex-wrap gap-1">
+                  {itemIds.map(id => (
+                    <button key={id} type="button" onClick={() => pick({ type: "var", name: id })}
+                      className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 hover:bg-emerald-100 cursor-pointer">
+                      {itemLabels[id] || id}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <span className="text-[10px] text-stone-400 block mb-0.5">值</span>
+              <button type="button" onClick={() => pick({ type: "num", value: 0 })}
+                className="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-xs font-mono text-blue-700 hover:bg-blue-100 cursor-pointer">
+                數值
+              </button>
+            </div>
+            <div>
+              <span className="text-[10px] text-stone-400 block mb-0.5">運算</span>
+              <div className="flex flex-wrap gap-1">
+                {OPS.map(op => (
+                  <button key={op.op} type="button"
+                    onClick={() => pick({ type: "op", op: op.op, args: Array(op.arity).fill(null).map(() => ({ type: "empty" as const })) })}
+                    className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 hover:bg-amber-100 cursor-pointer">
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-stone-400 block mb-0.5">比較</span>
+              <div className="flex flex-wrap gap-1">
+                {CMP_OPS.map(op => (
+                  <button key={op.op} type="button"
+                    onClick={() => pick({ type: "op", op: op.op, args: [{ type: "empty" }, { type: "empty" }] })}
+                    className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-100 cursor-pointer">
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </span>
+  );
+}
+
 function NodeEditor({
   node,
   onChange,
@@ -89,33 +168,26 @@ function NodeEditor({
   depth?: number;
 }) {
   if (node.type === "empty") {
-    return (
-      <span
-        className="inline-flex items-center px-3 py-1 rounded border-2 border-dashed border-stone-300 text-xs text-stone-400 cursor-pointer hover:border-amber-400 hover:text-amber-600 min-w-[3rem] justify-center"
-        onClick={() => onChange({ type: "num", value: 0 })}
-      >
-        ?
-      </span>
-    );
+    return <EmptySlotNode onChange={onChange} itemIds={itemIds} itemLabels={itemLabels} />;
   }
 
   if (node.type === "num") {
     return (
-      <span className="inline-flex items-center gap-0.5 group">
+      <span className="inline-flex items-center gap-0.5">
         <input
           type="number"
           value={node.value}
           onChange={e => onChange({ type: "num", value: parseFloat(e.target.value) || 0 })}
           className="w-20 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-sm text-center font-mono text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
-        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100">✕</button>
+        <button onClick={() => onChange({ type: "empty" })} className="text-stone-400 hover:text-red-400 text-xs" title="刪除">✕</button>
       </span>
     );
   }
 
   if (node.type === "var") {
     return (
-      <span className="inline-flex items-center gap-0.5 group">
+      <span className="inline-flex items-center gap-0.5">
         <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-sm font-mono text-emerald-700">
           <select
             value={node.name}
@@ -126,7 +198,7 @@ function NodeEditor({
             {!itemIds.includes(node.name) && <option value={node.name}>{itemLabels[node.name] || node.name}</option>}
           </select>
         </span>
-        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100">✕</button>
+        <button onClick={() => onChange({ type: "empty" })} className="text-stone-400 hover:text-red-400 text-xs" title="刪除">✕</button>
       </span>
     );
   }
@@ -162,7 +234,7 @@ function NodeEditor({
         <NodeEditor node={node.args[1] || { type: "empty" }} onChange={n => updateArg(1, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <span className="text-xs font-bold text-orange-600">否則</span>
         <NodeEditor node={node.args[2] || { type: "empty" }} onChange={n => updateArg(2, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
-        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
+        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs ml-1" title="刪除">✕</button>
       </span>
     );
   }
@@ -173,7 +245,7 @@ function NodeEditor({
         <NodeEditor node={node.args[0]} onChange={n => updateArg(0, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <span className="text-xs font-bold text-stone-500">{opLabel}</span>
         <NodeEditor node={node.args[1]} onChange={n => updateArg(1, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
-        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
+        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs ml-1" title="刪除">✕</button>
       </span>
     );
   }
@@ -192,7 +264,7 @@ function NodeEditor({
         {node.args.length > 2 && (
           <button onClick={removeLastArg} className="text-stone-300 hover:text-red-400 text-xs" title="移除最後一項">－</button>
         )}
-        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
+        <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs ml-1" title="刪除">✕</button>
       </span>
     );
   }
@@ -208,71 +280,63 @@ function NodeEditor({
         </span>
       ))}
       <span className="text-xs font-bold text-purple-600">)</span>
-      <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
+      <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs ml-1" title="刪除">✕</button>
     </span>
   );
 }
 
-function EmptySlotPicker({
-  itemIds,
-  itemLabels = {},
-  onPick,
+
+function ContinueButton({
+  currentNode,
+  onWrap,
 }: {
-  itemIds: string[];
-  itemLabels?: Record<string, string>;
-  onPick: (node: ExprNode) => void;
+  currentNode: ExprNode;
+  onWrap: (op: string, arity: number) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
+  if (currentNode.type === "empty") return null;
+
   return (
-    <div className="flex flex-wrap gap-1 mt-2 p-2 rounded-lg bg-stone-50 border border-stone-200">
-      <span className="text-[10px] text-stone-400 w-full mb-1">點擊插入：</span>
-      <div className="flex flex-wrap gap-1">
-        <span className="text-[10px] text-stone-400 self-center mr-1">欄位</span>
-        {itemIds.map(id => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onPick({ type: "var", name: id })}
-            className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 hover:bg-emerald-100 cursor-pointer"
-            title={id}
-          >
-            {itemLabels[id] || id}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => onPick({ type: "num", value: 0 })}
-          className="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-xs font-mono text-blue-700 hover:bg-blue-100 cursor-pointer"
-        >
-          數值
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-1 mt-1">
-        <span className="text-[10px] text-stone-400 self-center mr-1">運算</span>
-        {OPS.map(op => (
-          <button
-            key={op.op}
-            type="button"
-            onClick={() => onPick({ type: "op", op: op.op, args: Array(op.arity).fill(null).map(() => ({ type: "empty" as const })) })}
-            className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 hover:bg-amber-100 cursor-pointer"
-          >
-            {op.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-1 mt-1">
-        <span className="text-[10px] text-stone-400 self-center mr-1">比較</span>
-        {CMP_OPS.map(op => (
-          <button
-            key={op.op}
-            type="button"
-            onClick={() => onPick({ type: "op", op: op.op, args: [{ type: "empty" }, { type: "empty" }] })}
-            className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-100 cursor-pointer"
-          >
-            {op.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <span className="relative inline-flex ml-1">
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded border-2 border-dashed border-amber-300 text-xs text-amber-500 cursor-pointer hover:border-amber-500 hover:text-amber-700 hover:bg-amber-50"
+        onClick={() => setOpen(!open)}
+        title="繼續加運算"
+      >
+        …
+      </span>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 z-20 mt-1 p-2 rounded-lg bg-white border border-stone-200 shadow-lg min-w-[10rem] space-y-1.5">
+            <div>
+              <span className="text-[10px] text-stone-400 block mb-0.5">接著做…</span>
+              <div className="flex flex-wrap gap-1">
+                {OPS.filter(op => op.arity >= 2).map(op => (
+                  <button key={op.op} type="button"
+                    onClick={() => { onWrap(op.op, op.arity); setOpen(false); }}
+                    className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 hover:bg-amber-100 cursor-pointer">
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-wrap gap-1">
+                {CMP_OPS.map(op => (
+                  <button key={op.op} type="button"
+                    onClick={() => { onWrap(op.op, 2); setOpen(false); }}
+                    className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-100 cursor-pointer">
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </span>
   );
 }
 
@@ -297,6 +361,19 @@ export default function FormulaBuilder({
     const newExpr = nodeToExpr(n);
     onChange(newExpr);
     setJsonText(exprToString(newExpr));
+  }, [onChange]);
+
+  const handleWrap = useCallback((op: string, arity: number) => {
+    const restArgs = Array(arity - 1).fill(null).map(() => ({ type: "empty" as const }));
+    const wrapped: ExprNode = { type: "op", op, args: [node, ...restArgs] };
+    const newExpr = nodeToExpr(wrapped);
+    onChange(newExpr);
+    setJsonText(exprToString(newExpr));
+  }, [node, onChange]);
+
+  const handleClear = useCallback(() => {
+    onChange(null);
+    setJsonText("null");
   }, [onChange]);
 
   const handleJsonBlur = () => {
@@ -328,14 +405,22 @@ export default function FormulaBuilder({
             JSON
           </button>
         </div>
+        {mode === "visual" && node.type !== "empty" && (
+          <button type="button" onClick={handleClear} className="text-[10px] text-stone-400 hover:text-red-500">
+            清除公式
+          </button>
+        )}
       </div>
 
       {mode === "visual" ? (
         <div>
           <div className="rounded-lg border border-stone-200 bg-white p-3 min-h-[3rem] flex items-center flex-wrap gap-1">
             <NodeEditor node={node} onChange={handleNodeChange} itemIds={itemIds} itemLabels={itemLabels} />
+            <ContinueButton currentNode={node} onWrap={handleWrap} />
           </div>
-          <EmptySlotPicker itemIds={itemIds} itemLabels={itemLabels} onPick={handleNodeChange} />
+          {node.type === "empty" && (
+            <p className="text-[10px] text-stone-400 mt-1">點擊 ? 選擇欄位或運算子開始建立公式</p>
+          )}
         </div>
       ) : (
         <div>

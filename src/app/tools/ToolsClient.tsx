@@ -158,11 +158,6 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
   };
 
   const renderResultValue = (r: CalcResult, vars: Record<string, number>): string => {
-    if (r.id === "rate_display") {
-      const rateId = r.id.replace("_display", "");
-      const rateVal = vars[rateId] ?? 0;
-      return `${(rateVal * 100).toFixed(0)}%`;
-    }
     const val = vars[r.id] ?? 0;
     const prefix = r.prefix ?? "";
     return `${prefix}${fmt(val)}${r.suffix ? ` ${r.suffix}` : ""}`;
