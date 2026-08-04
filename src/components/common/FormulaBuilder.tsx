@@ -79,11 +79,13 @@ function NodeEditor({
   node,
   onChange,
   itemIds,
+  itemLabels = {},
   depth = 0,
 }: {
   node: ExprNode;
   onChange: (n: ExprNode) => void;
   itemIds: string[];
+  itemLabels?: Record<string, string>;
   depth?: number;
 }) {
   if (node.type === "empty") {
@@ -118,10 +120,10 @@ function NodeEditor({
           <select
             value={node.name}
             onChange={e => onChange({ type: "var", name: e.target.value })}
-            className="bg-transparent border-none text-sm font-mono text-emerald-700 focus:outline-none cursor-pointer"
+            className="bg-transparent border-none text-sm text-emerald-700 focus:outline-none cursor-pointer"
           >
-            {itemIds.map(id => <option key={id} value={id}>{id}</option>)}
-            {!itemIds.includes(node.name) && <option value={node.name}>{node.name}</option>}
+            {itemIds.map(id => <option key={id} value={id}>{itemLabels[id] || id}</option>)}
+            {!itemIds.includes(node.name) && <option value={node.name}>{itemLabels[node.name] || node.name}</option>}
           </select>
         </span>
         <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100">✕</button>
@@ -155,11 +157,11 @@ function NodeEditor({
     return (
       <span className={`inline-flex items-center gap-1 flex-wrap rounded border px-2 py-1 group/op ${bgClass}`}>
         <span className="text-xs font-bold text-orange-600">如果</span>
-        <NodeEditor node={node.args[0] || { type: "empty" }} onChange={n => updateArg(0, n)} itemIds={itemIds} depth={depth + 1} />
+        <NodeEditor node={node.args[0] || { type: "empty" }} onChange={n => updateArg(0, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <span className="text-xs font-bold text-orange-600">則</span>
-        <NodeEditor node={node.args[1] || { type: "empty" }} onChange={n => updateArg(1, n)} itemIds={itemIds} depth={depth + 1} />
+        <NodeEditor node={node.args[1] || { type: "empty" }} onChange={n => updateArg(1, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <span className="text-xs font-bold text-orange-600">否則</span>
-        <NodeEditor node={node.args[2] || { type: "empty" }} onChange={n => updateArg(2, n)} itemIds={itemIds} depth={depth + 1} />
+        <NodeEditor node={node.args[2] || { type: "empty" }} onChange={n => updateArg(2, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
       </span>
     );
@@ -168,9 +170,9 @@ function NodeEditor({
   if (isInfix && node.args.length === 2) {
     return (
       <span className={`inline-flex items-center gap-1 flex-wrap rounded border px-2 py-1 group/op ${bgClass}`}>
-        <NodeEditor node={node.args[0]} onChange={n => updateArg(0, n)} itemIds={itemIds} depth={depth + 1} />
+        <NodeEditor node={node.args[0]} onChange={n => updateArg(0, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <span className="text-xs font-bold text-stone-500">{opLabel}</span>
-        <NodeEditor node={node.args[1]} onChange={n => updateArg(1, n)} itemIds={itemIds} depth={depth + 1} />
+        <NodeEditor node={node.args[1]} onChange={n => updateArg(1, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         <button onClick={() => onChange({ type: "empty" })} className="text-stone-300 hover:text-red-400 text-xs opacity-0 group-hover/op:opacity-100 ml-1">✕</button>
       </span>
     );
@@ -183,7 +185,7 @@ function NodeEditor({
         {node.args.map((arg, i) => (
           <span key={i} className="inline-flex items-center gap-1">
             {i > 0 && <span className="text-xs font-bold text-stone-500">{opLabel}</span>}
-            <NodeEditor node={arg} onChange={n => updateArg(i, n)} itemIds={itemIds} depth={depth + 1} />
+            <NodeEditor node={arg} onChange={n => updateArg(i, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
           </span>
         ))}
         <button onClick={addArg} className="text-stone-300 hover:text-amber-500 text-xs" title="增加運算元">＋</button>
@@ -202,7 +204,7 @@ function NodeEditor({
       {node.args.map((arg, i) => (
         <span key={i} className="inline-flex items-center gap-1">
           {i > 0 && <span className="text-stone-400">,</span>}
-          <NodeEditor node={arg} onChange={n => updateArg(i, n)} itemIds={itemIds} depth={depth + 1} />
+          <NodeEditor node={arg} onChange={n => updateArg(i, n)} itemIds={itemIds} itemLabels={itemLabels} depth={depth + 1} />
         </span>
       ))}
       <span className="text-xs font-bold text-purple-600">)</span>
@@ -213,9 +215,11 @@ function NodeEditor({
 
 function EmptySlotPicker({
   itemIds,
+  itemLabels = {},
   onPick,
 }: {
   itemIds: string[];
+  itemLabels?: Record<string, string>;
   onPick: (node: ExprNode) => void;
 }) {
   return (
@@ -228,9 +232,10 @@ function EmptySlotPicker({
             key={id}
             type="button"
             onClick={() => onPick({ type: "var", name: id })}
-            className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+            className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+            title={id}
           >
-            {id}
+            {itemLabels[id] || id}
           </button>
         ))}
         <button
@@ -275,10 +280,12 @@ export default function FormulaBuilder({
   expr,
   onChange,
   itemIds,
+  itemLabels = {},
 }: {
   expr: Expr;
   onChange: (e: Expr) => void;
   itemIds: string[];
+  itemLabels?: Record<string, string>;
 }) {
   const [mode, setMode] = useState<"visual" | "json">("visual");
   const [jsonText, setJsonText] = useState(exprToString(expr));
@@ -326,9 +333,9 @@ export default function FormulaBuilder({
       {mode === "visual" ? (
         <div>
           <div className="rounded-lg border border-stone-200 bg-white p-3 min-h-[3rem] flex items-center flex-wrap gap-1">
-            <NodeEditor node={node} onChange={handleNodeChange} itemIds={itemIds} />
+            <NodeEditor node={node} onChange={handleNodeChange} itemIds={itemIds} itemLabels={itemLabels} />
           </div>
-          <EmptySlotPicker itemIds={itemIds} onPick={handleNodeChange} />
+          <EmptySlotPicker itemIds={itemIds} itemLabels={itemLabels} onPick={handleNodeChange} />
         </div>
       ) : (
         <div>

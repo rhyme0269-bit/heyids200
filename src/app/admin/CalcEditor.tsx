@@ -105,11 +105,13 @@ function FormulaEditor({
   onChange,
   onRemove,
   itemIds,
+  itemLabels,
 }: {
   formula: CalcFormula;
   onChange: (updated: CalcFormula) => void;
   onRemove: () => void;
   itemIds: string[];
+  itemLabels: Record<string, string>;
 }) {
   return (
     <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-2">
@@ -131,6 +133,7 @@ function FormulaEditor({
           expr={formula.expr}
           onChange={(expr) => onChange({ ...formula, expr })}
           itemIds={itemIds}
+          itemLabels={itemLabels}
         />
       </div>
     </div>
@@ -186,6 +189,9 @@ function CalcDetailEditor({
   const [def, setDef] = useState<CalcDefinition>(calc.definition);
 
   const allIds = [...def.inputs.map((i) => i.id), ...def.formulas.map((f) => f.id)];
+  const allLabels: Record<string, string> = {};
+  for (const inp of def.inputs) if (inp.label) allLabels[inp.id] = inp.label;
+  for (const f of def.formulas) allLabels[f.id] = allLabels[f.id] || f.id;
 
   const addInput = () => {
     const id = `input_${def.inputs.length + 1}`;
@@ -275,6 +281,7 @@ function CalcDetailEditor({
               key={i}
               formula={formula}
               itemIds={allIds}
+              itemLabels={allLabels}
               onChange={(updated) => {
                 const formulas = [...def.formulas];
                 formulas[i] = updated;
