@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Calculator, CalcDefinition, CalcInput, CalcFormula, CalcResult, Expr } from "@/lib/calc-types";
 import IconPicker from "@/components/common/IconPicker";
+import FormulaBuilder from "@/components/common/FormulaBuilder";
 
 const EMPTY_DEF: CalcDefinition = {
   inputs: [],
@@ -11,22 +12,6 @@ const EMPTY_DEF: CalcDefinition = {
   total: { id: "", label: "", suffix: "元" },
 };
 
-function exprToString(expr: Expr): string {
-  if (expr === null) return "null";
-  if (typeof expr === "number") return String(expr);
-  if (typeof expr === "string") return expr;
-  if (Array.isArray(expr)) return JSON.stringify(expr);
-  return String(expr);
-}
-
-function parseExpr(s: string): Expr {
-  const trimmed = s.trim();
-  if (trimmed === "null") return null;
-  if (trimmed.startsWith("$")) return trimmed;
-  const num = Number(trimmed);
-  if (!isNaN(num) && trimmed !== "") return num;
-  try { return JSON.parse(trimmed); } catch { return trimmed; }
-}
 
 function InputEditor({
   input,
@@ -126,19 +111,6 @@ function FormulaEditor({
   onRemove: () => void;
   itemIds: string[];
 }) {
-  const [exprText, setExprText] = useState(exprToString(formula.expr));
-  const [error, setError] = useState("");
-
-  const handleBlur = () => {
-    try {
-      const parsed = parseExpr(exprText);
-      onChange({ ...formula, expr: parsed });
-      setError("");
-    } catch {
-      setError("JSON 格式錯誤");
-    }
-  };
-
   return (
     <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-2">
       <div className="flex items-center justify-between">
@@ -154,17 +126,12 @@ function FormulaEditor({
         />
       </div>
       <div>
-        <label className="text-xs text-stone-500">
-          公式（可用：{itemIds.map((id) => `$${id}`).join(", ")}）
-        </label>
-        <textarea
-          className={`w-full rounded border px-2 py-1 text-sm font-mono ${error ? "border-red-400" : "border-stone-300"}`}
-          rows={2}
-          value={exprText}
-          onChange={(e) => setExprText(e.target.value)}
-          onBlur={handleBlur}
+        <label className="text-xs text-stone-500">公式</label>
+        <FormulaBuilder
+          expr={formula.expr}
+          onChange={(expr) => onChange({ ...formula, expr })}
+          itemIds={itemIds}
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     </div>
   );
