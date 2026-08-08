@@ -226,7 +226,7 @@ export function getPageBySlug(slug: string): Page | null {
 }
 
 const RESERVED_SLUGS = new Set([
-  "home", "about", "services", "tools", "faq", "contact", "links",
+  "home", "about", "services", "fees", "tools", "faq", "contact", "links",
   "admin", "api", "p", "_next",
 ]);
 
@@ -690,6 +690,7 @@ function insertSeedPage(
     heroMode?: string;
     heroColor?: string;
     navOrder: number;
+    showInNav?: boolean;
     isSystem?: boolean;
     seedKey?: string;
   }
@@ -697,7 +698,7 @@ function insertSeedPage(
   db.prepare(
     `INSERT INTO pages (id, template_id, slug, title, subtitle, hero_mode, hero_color,
      is_system, seed_key, show_in_nav, nav_order, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'published')`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published')`
   ).run(
     id,
     opts.templateId ?? null,
@@ -708,6 +709,7 @@ function insertSeedPage(
     opts.heroColor ?? "#44403c",
     opts.isSystem !== false ? 1 : 0,
     opts.seedKey ?? null,
+    opts.showInNav !== false ? 1 : 0,
     opts.navOrder
   );
 }
@@ -765,7 +767,7 @@ function seedTemplates(d: Database.Database) {
 type SeedBlock = { blockType: BlockType; data: Record<string, unknown>; config?: BlockConfig };
 type SeedPageDef = {
   slug: string; title: string; subtitle: string;
-  opts: { templateId?: string; heroMode?: string; heroColor?: string; navOrder: number; isSystem?: boolean; seedKey: string };
+  opts: { templateId?: string; heroMode?: string; heroColor?: string; navOrder: number; showInNav?: boolean; isSystem?: boolean; seedKey: string };
   blocks: SeedBlock[];
 };
 
@@ -803,8 +805,16 @@ function getSeedPages(): SeedPageDef[] {
       blocks: [
         { blockType: "hero_banner", data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" } },
         { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "" })) } },
-        { blockType: "table", data: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })), footerNotes: defaultFeeNotes } },
         { blockType: "steps_flow", data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) } },
+        { blockType: "cta_section", data: { title: "查看收費標準", subtitle: "了解各項服務的詳細收費資訊", primaryLabel: "收費標準", primaryHref: "/fees", secondaryLabel: "聯絡我們", secondaryHref: "/contact" } },
+      ],
+    },
+    {
+      slug: "fees", title: "收費標準", subtitle: "各項地政服務收費明細",
+      opts: { navOrder: 0, showInNav: false, seedKey: "fees" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "收費標準", subtitle: "各項地政服務收費明細", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
+        { blockType: "table", data: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })), footerNotes: defaultFeeNotes } },
         { blockType: "cta_section", data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" } },
       ],
     },
@@ -838,13 +848,19 @@ function getSeedPages(): SeedPageDef[] {
       opts: { navOrder: 5, seedKey: "links" },
       blocks: [
         { blockType: "hero_banner", data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
-        { blockType: "key_value_list", data: { title: "政府查詢工具", items: [
-          { label: "實價登錄", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
-          { label: "地籍圖資查詢", value: "內政部地政司地籍圖資網路便民服務", icon: "🗺️", url: "https://easymap.land.moi.gov.tw/" },
-          { label: "土地增值稅試算", value: "財政部線上稅額試算服務", icon: "📈", url: "https://www.etax.nat.gov.tw/etwmain/etw158w/51" },
-          { label: "房地合一稅試算", value: "財政部房地合一稅預繳稅額試算", icon: "🧾", url: "https://www.etax.nat.gov.tw/etwmain/online-service/tax-pre-calculation/house-land-transfer-tax" },
-          { label: "公告土地現值查詢", value: "各縣市地政局公告現值查詢", icon: "📊", url: "https://www.land.moi.gov.tw/ngis/" },
-          { label: "建物謄本查詢", value: "全國地政電子謄本系統", icon: "📋", url: "https://ep.land.nat.gov.tw/" },
+        { blockType: "key_value_list", data: { title: "政府機關", items: [
+          { label: "內政部實價登錄查詢", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
+          { label: "申請地價稅自用住宅用地稅率", value: "財政部線上申辦地價稅自用住宅優惠稅率", icon: "📋", url: "https://www.etax.nat.gov.tw/etwmain/etw109w/cases/services/OLF013008/0" },
+          { label: "地政士資料查詢", value: "內政部地政司地政士資格及開業資訊查詢", icon: "🔍", url: "https://resim.moi.gov.tw/Home/AgentIndex" },
+          { label: "中華民國內政部地政司", value: "地政法規、公告及各項地政業務資訊", icon: "🏛️", url: "https://www.land.moi.gov.tw/" },
+        ] } },
+        { blockType: "key_value_list", data: { title: "建經公司", items: [
+          { label: "第一建經", value: "不動產交易安全履約保證服務", icon: "🏗️", url: "https://www.first1.com.tw/" },
+          { label: "合泰建經", value: "成屋履約保證、預售屋價金信託", icon: "🤝", url: "https://www.hou-tai.com.tw/inquiries.aspx" },
+        ] } },
+        { blockType: "key_value_list", data: { title: "過戶服務", items: [
+          { label: "台水過戶", value: "台灣自來水公司用戶線上過戶申請", icon: "💧", url: "https://www.water.gov.tw/ch/ECounter/FeeCheck?NodeId=752&type=9&UseCertificate=0" },
+          { label: "台電過戶", value: "台灣電力公司用電過戶線上申辦", icon: "⚡", url: "https://service.taipower.com.tw/wapp/newnas/nawp2j1Rwd.aspx?r=417643208" },
         ] } },
       ],
     },
@@ -897,6 +913,10 @@ export function seedCmsPages(db?: Database.Database) {
 
   const seedPages = getSeedPages();
 
+  const needsFeeMigration = !existingPages.has("fees") && existingPages.has("services");
+  const linksPageId = existingPages.get("links");
+  const needsLinksMigration = linksPageId ? (d.prepare("SELECT COUNT(*) as cnt FROM blocks WHERE page_id = ?").get(linksPageId) as { cnt: number }).cnt === 2 : false;
+
   d.transaction(() => {
     for (const page of seedPages) {
       const existingPageId = existingPages.get(page.opts.seedKey);
@@ -907,6 +927,19 @@ export function seedCmsPages(db?: Database.Database) {
       } else {
         updateSeedBlocks(d, existingPageId, page.blocks);
       }
+    }
+
+    if (needsFeeMigration) {
+      const servicesPageId = existingPages.get("services")!;
+      const servicesBlocks = getSeedPages().find(p => p.opts.seedKey === "services")!.blocks;
+      d.prepare("DELETE FROM blocks WHERE page_id = ?").run(servicesPageId);
+      insertSeedBlocks(d, servicesPageId, servicesBlocks);
+    }
+
+    if (needsLinksMigration && linksPageId) {
+      const linksBlocks = getSeedPages().find(p => p.opts.seedKey === "links")!.blocks;
+      d.prepare("DELETE FROM blocks WHERE page_id = ?").run(linksPageId);
+      insertSeedBlocks(d, linksPageId, linksBlocks);
     }
   })();
 }

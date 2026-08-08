@@ -1,5 +1,26 @@
 # Changelog
 
+## [feat: 視覺公式建構器增強與前端硬編碼移除] - 2026-08-04T00:00:00Z
+
+### 變更類型
+
+功能增強 + Bug 修正
+
+### 變更摘要
+
+視覺公式建構器新增線性建構流程（ContinueButton `…` 按鈕）、清除公式功能、空公式提示。修正 nodeToExpr 對空節點回傳 0 的問題。移除前端 rate_display 硬編碼邏輯，改由後端公式計算。新增 rate_display 公式至 deed_tax 和 combined_income_tax seed。metadata description 改為泛用文字。
+
+### 改動
+
+- FormulaBuilder.tsx: 新增 ContinueButton、handleWrap、handleClear、空公式提示；修正 nodeToExpr empty 回傳 null
+- ToolsClient.tsx: 移除 rate_display 特殊處理邏輯
+- page.tsx (tools): metadata description 改為泛用文字
+- calc-seed.ts: 新增 rate_display 公式至 deed_tax 和 combined_income_tax
+- calc-types.ts: CalcFormula 新增 optional label 欄位
+- CalcEditor.tsx: 支援公式 label 顯示
+
+---
+
 ## [feat: 後台使用手冊 TPEX 風格改版] - 2026-07-31T06:00:00Z
 
 ### 變更類型
