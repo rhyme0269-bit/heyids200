@@ -647,7 +647,7 @@ export default function CalcEditor() {
                     ▼
                   </button>
                 </div>
-                <span className="text-xl">{calc.icon}</span>
+                <span className="text-xl emoji-icon">{calc.icon}</span>
                 <div>
                   <div className="font-medium text-stone-800">
                     {calc.title}

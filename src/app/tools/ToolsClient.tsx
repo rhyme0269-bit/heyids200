@@ -99,7 +99,7 @@ function LinkCard({ calc }: { calc: Calculator }) {
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-md">
       <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-stone-800">
-        <span className="text-xl">{calc.icon}</span>
+        <span className="text-xl emoji-icon">{calc.icon}</span>
         {calc.title}
       </h2>
       <p className="mb-4 text-sm text-stone-500">{calc.description}</p>
@@ -171,7 +171,7 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-md">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-stone-800">
-        <span className="text-xl">{calc.icon}</span>
+        <span className="text-xl emoji-icon">{calc.icon}</span>
         {calc.title}
       </h2>
       <div className="flex flex-col gap-3">
