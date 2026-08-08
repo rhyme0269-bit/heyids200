@@ -1,5 +1,32 @@
 # Changelog
 
+## [fix: Emoji 圖示跨平台渲染修復] - 2026-08-08T11:00:00Z
+
+### 變更類型
+
+Bug 修正（Issue #17）
+
+### 變更摘要
+
+CJK 字型（Noto Sans TC）會攔截 emoji codepoints，導致 Linux 等缺少 emoji 字型的系統上服務項目圖示顯示為空方框。建立 23KB 的 Noto Color Emoji 字型子集，透過 @font-face 載入為 web font，搭配系統 emoji 字型作為 fallback。所有 emoji icon 元素加上 emoji-icon CSS class。
+
+### 改動
+
+- globals.css: 新增 @font-face "Emoji" 字型宣告 + .emoji-icon class
+- KeyValueListRenderer.tsx: icon span 加上 emoji-icon class
+- ToolsClient.tsx: calculator icon span 加上 emoji-icon class
+- CalcEditor.tsx: 後台 calculator icon span 加上 emoji-icon class
+- public/fonts/emoji-subset.woff2: 23KB emoji 字型子集
+
+### Issue 更新
+
+- Issue #10（購屋總費用試算）：所有功能已在先前 commit 實作完成，已附截圖回覆
+- Issue #17（後台管理 icon）：emoji 圖示渲染修復，已附截圖回覆
+- Issue #19（實用連結）：已在先前 commit 完成，已附截圖回覆
+- Issue #20（服務項目）：已在先前 commit 完成，已附截圖回覆
+
+---
+
 ## [feat: 視覺公式建構器增強與前端硬編碼移除] - 2026-08-04T00:00:00Z
 
 ### 變更類型
