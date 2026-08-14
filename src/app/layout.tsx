@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import FloatingLine from "@/components/common/FloatingLine";
@@ -13,6 +14,18 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+// Emoji subset (23 KB, covers every icon used in the app). Loaded through
+// next/font so the URL carries basePath — a hand-written @font-face pointing at
+// /fonts/... 404s on the GitHub Pages preview, which is served under /heyids200.
+const emoji = localFont({
+  src: "./fonts/emoji-subset.woff2",
+  variable: "--font-emoji",
+  display: "swap",
+  // Default is 'Arial', which next/font would splice into the family list ahead
+  // of the system emoji fonts in .emoji-icon. Keep the chain emoji-only.
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -62,7 +75,7 @@ export default function RootLayout({
   const navItems = isCmsInitialized() ? getNavItems() : fallbackNav;
 
   return (
-    <html lang="zh-TW" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="zh-TW" className={`${geistSans.variable} ${emoji.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <StructuredData data={generateLocalBusinessSchema(settings)} />
         <PreviewBanner />

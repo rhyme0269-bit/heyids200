@@ -85,16 +85,10 @@ body {
   height: 1px;
 }
 
-/* Emoji web font subset (23 KB, covers all icons used in the app) */
-@font-face {
-  font-family: "Emoji";
-  src: url("/fonts/emoji-subset.woff2") format("woff2");
-  font-display: swap;
-}
-
-/* Emoji icon — use embedded web font with system emoji fallbacks */
+/* Emoji icon — embedded subset (declared via next/font in layout.tsx so the
+   URL carries basePath) with system emoji fallbacks */
 .emoji-icon {
-  font-family: "Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-family: var(--font-emoji), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
 /* Gradient text utility */
