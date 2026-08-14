@@ -1,0 +1,13 @@
+{
+  "feature_id": "feature-014",
+  "name": "區塊編輯器提示 Tooltip",
+  "description": "PageBuilder 的區塊選擇器和區塊標頭新增提示說明。選擇器每個按鈕下方顯示功能描述文字，區塊標頭旁加 info icon hover 顯示 CSS tooltip。涵蓋全部 19 種區塊類型。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/app/admin/PageBuilder.tsx"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": []
+}

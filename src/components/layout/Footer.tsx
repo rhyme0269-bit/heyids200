@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/db";
+import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
 
-const quickLinks = [
-  { label: "首頁", href: "/" },
-  { label: "關於我們", href: "/about" },
-  { label: "服務項目", href: "/services" },
-  { label: "收費標準", href: "/services#fees" },
-  { label: "小工具", href: "/tools" },
-  { label: "常見問題", href: "/faq" },
-  { label: "聯絡我們", href: "/contact" },
+const fallbackLinks = [
+  { label: "首頁", href: "/", isExternal: false },
+  { label: "關於我們", href: "/about", isExternal: false },
+  { label: "服務項目", href: "/services", isExternal: false },
+  { label: "小工具", href: "/tools", isExternal: false },
+  { label: "常見問題", href: "/faq", isExternal: false },
+  { label: "聯絡我們", href: "/contact", isExternal: false },
 ];
 
 export default function Footer() {
   const settings = getSettings();
+  const quickLinks = isCmsInitialized()
+    ? getNavItems().map((n) => ({ label: n.title, href: n.href, isExternal: !!n.isExternal }))
+    : fallbackLinks;
 
   return (
     <footer className="bg-stone-950 text-stone-400">
@@ -21,7 +24,7 @@ export default function Footer() {
           {/* 事務所資訊 */}
           <div>
             <h3 className="text-stone-200 text-base font-bold mb-4">
-              合一地政士事務所
+              {settings.name}
             </h3>
             <p className="text-stone-500 text-sm leading-relaxed mb-4">
               逾 26 年專業經驗，提供不動產買賣過戶、繼承登記、贈與登記、抵押權設定、節稅規劃等全方位服務。
@@ -156,12 +159,23 @@ export default function Footer() {
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-xs hover:text-amber-200 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
+                  {link.isExternal ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs hover:text-amber-200 transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-xs hover:text-amber-200 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -171,7 +185,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-stone-800 text-center">
           <p className="text-stone-600 text-xs">
-            &copy; 2026 合一地政士事務所. All rights reserved.
+            &copy; {new Date().getFullYear()} {settings.name}. All rights reserved.
           </p>
         </div>
       </div>

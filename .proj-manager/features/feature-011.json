@@ -1,0 +1,43 @@
+{
+  "feature_id": "feature-011",
+  "name": "CMS 頁面建置系統",
+  "description": "三層架構（PageTemplate → Page → Block）的 CMS 頁面建置系統。支援 16 種區塊類型、JSON blob 儲存、動態導覽列（頁面排序、顯示/隱藏、自訂連結）、FAQ 結構化資料。後台 PageBuilder 提供視覺化區塊編輯器。前台 [slug] 動態路由取代靜態頁面。",
+  "status": "completed",
+  "created_at": "2026-07-28T00:00:00Z",
+  "files": [
+    "src/lib/cms-types.ts",
+    "src/lib/cms-db.ts",
+    "src/app/[slug]/page.tsx",
+    "src/app/admin/PageBuilder.tsx",
+    "src/components/cms/BlockRenderer.tsx",
+    "src/components/cms/renderers/",
+    "src/app/api/admin/cms/pages/route.ts",
+    "src/app/api/admin/cms/pages/[id]/route.ts",
+    "src/app/api/admin/cms/pages/[id]/blocks/route.ts",
+    "src/app/api/admin/cms/pages/reorder/route.ts",
+    "src/app/api/admin/cms/templates/route.ts",
+    "src/app/api/admin/cms/nav-links/route.ts"
+  ],
+  "dependencies": [],
+  "api_endpoints": [
+    { "method": "GET", "path": "/api/admin/cms/pages", "description": "列出所有 CMS 頁面" },
+    { "method": "POST", "path": "/api/admin/cms/pages", "description": "建立新頁面" },
+    { "method": "GET", "path": "/api/admin/cms/pages/[id]", "description": "取得單一頁面" },
+    { "method": "PUT", "path": "/api/admin/cms/pages/[id]", "description": "更新頁面設定" },
+    { "method": "DELETE", "path": "/api/admin/cms/pages/[id]", "description": "刪除頁面" },
+    { "method": "GET", "path": "/api/admin/cms/pages/[id]/blocks", "description": "取得頁面區塊" },
+    { "method": "PUT", "path": "/api/admin/cms/pages/[id]/blocks", "description": "更新頁面區塊" },
+    { "method": "PUT", "path": "/api/admin/cms/pages/reorder", "description": "調整頁面排序" },
+    { "method": "GET", "path": "/api/admin/cms/templates", "description": "列出頁面範本" },
+    { "method": "GET", "path": "/api/admin/cms/nav-links", "description": "列出自訂導覽連結" },
+    { "method": "POST", "path": "/api/admin/cms/nav-links", "description": "建立自訂導覽連結" },
+    { "method": "PUT", "path": "/api/admin/cms/nav-links", "description": "更新自訂導覽連結" },
+    { "method": "DELETE", "path": "/api/admin/cms/nav-links", "description": "刪除自訂導覽連結" }
+  ],
+  "data_model": [
+    { "name": "cms_page_templates", "fields": ["id", "name", "slug", "description", "defaultBlocks"] },
+    { "name": "cms_pages", "fields": ["id", "templateId", "title", "slug", "subtitle", "metaDescription", "status", "showInNav", "navOrder"] },
+    { "name": "cms_blocks", "fields": ["id", "pageId", "blockType", "sortOrder", "data"] },
+    { "name": "nav_links", "fields": ["id", "label", "href", "navOrder", "isExternal"] }
+  ]
+}

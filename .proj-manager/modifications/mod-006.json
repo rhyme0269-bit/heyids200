@@ -1,0 +1,61 @@
+{
+  "modification_id": "mod-006",
+  "feature_id": "feature-012",
+  "type": "bugfix",
+  "status": "applied",
+  "description": "修正圖片管理與前端顯示的多項問題：(1) 前端 Header/Footer/HeroSection/AboutPreview 從硬編碼改為讀取 DB settings；(2) PNG 透明背景在裁切時被強制轉為 JPEG 的問題；(3) Admin 圖片卡片上傳圖片後仍顯示「尚無圖片」佔位符；(4) Logo 因 SSR hydration 競態導致不顯示；(5) 圖片刪除後佔位符未恢復；(6) 移除 admin UI 中對使用者無意義的 key: xxx 顯示；(7) 圖片 Cache-Control 加上 must-revalidate",
+  "created_at": "2026-07-30T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": false,
+    "affects_api": false,
+    "risk_level": "low"
+  },
+  "changes": {
+    "files": [
+      {
+        "path": "src/app/admin/AdminClient.tsx",
+        "change_type": "modified",
+        "diff_summary": "PNG 格式偵測與保留、cropState 加 mimeType、載入時從 API images 初始化 imageTimestamps、刪除時清除 timestamp、佔位符增加 !imageTimestamps 條件、移除 key: xxx 顯示改為裁切比例標籤、新增 logoSize 設定 UI 與 handleUpdateSlotAspect、新增 2:1 和自由裁切選項"
+      },
+      {
+        "path": "src/components/layout/Header.tsx",
+        "change_type": "modified",
+        "diff_summary": "改為接收 siteName/phone/logoSize props、新增 LOGO_SIZES 對應、useCallback ref 修正 SSR hydration 競態（圖片在 hydration 前載入完成時 onLoad 不觸發）"
+      },
+      {
+        "path": "src/components/layout/Footer.tsx",
+        "change_type": "modified",
+        "diff_summary": "硬編碼「合一地政士事務所」改為 settings.name、copyright 年份改為動態"
+      },
+      {
+        "path": "src/components/sections/HeroSection.tsx",
+        "change_type": "modified",
+        "diff_summary": "h1 硬編碼改為 settings.name"
+      },
+      {
+        "path": "src/components/sections/AboutPreview.tsx",
+        "change_type": "modified",
+        "diff_summary": "標題硬編碼「關於合一地政士事務所」改為「關於{settings.name}」"
+      },
+      {
+        "path": "src/app/layout.tsx",
+        "change_type": "modified",
+        "diff_summary": "getSettings() 結果傳入 Header props（siteName, phone, logoSize）"
+      },
+      {
+        "path": "src/lib/default-data.ts",
+        "change_type": "modified",
+        "diff_summary": "SiteSettings 新增 logoSize 欄位，預設值 medium"
+      },
+      {
+        "path": "src/app/api/images/[key]/route.ts",
+        "change_type": "modified",
+        "diff_summary": "Cache-Control 從 no-cache 改為 no-cache, must-revalidate"
+      }
+    ]
+  },
+  "git_reference": {
+    "baseline": "14145db",
+    "head": "3a556fa"
+  }
+}

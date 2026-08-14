@@ -1,0 +1,16 @@
+{
+  "feature_id": "feature-019",
+  "name": "實用連結頁面 + 項目列表連結",
+  "description": "項目列表（key_value_list）的每個 item 新增選填 url 欄位。有連結的項目渲染為 <a> 標籤卡片，右上角顯示 ↗ 而非序號。新增「實用連結」seed 頁面（/links），預設 6 個政府不動產相關查詢工具。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/lib/cms-types.ts",
+    "src/lib/cms-db.ts",
+    "src/app/admin/PageBuilder.tsx",
+    "src/components/cms/renderers/KeyValueListRenderer.tsx"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": []
+}

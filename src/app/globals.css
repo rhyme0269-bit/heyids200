@@ -85,6 +85,18 @@ body {
   height: 1px;
 }
 
+/* Emoji web font subset (23 KB, covers all icons used in the app) */
+@font-face {
+  font-family: "Emoji";
+  src: url("/fonts/emoji-subset.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* Emoji icon — use embedded web font with system emoji fallbacks */
+.emoji-icon {
+  font-family: "Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
 /* Gradient text utility */
 .text-gradient {
   background: linear-gradient(135deg, #78350f, #92400e, #b45309);

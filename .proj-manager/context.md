@@ -27,24 +27,27 @@
 ```
 src/
 ├── app/                  # Next.js App Router 頁面
-│   ├── page.tsx          # 首頁
-│   ├── layout.tsx        # 全站 Layout
-│   ├── about/            # 關於我們
-│   ├── services/         # 服務項目 + 收費標準
-│   ├── tools/            # 小工具（6 個試算器）
-│   ├── faq/              # 常見問題
-│   ├── contact/          # 聯絡我們
-│   ├── admin/            # 後台管理介面
+│   ├── page.tsx          # 首頁（靜態）
+│   ├── layout.tsx        # 全站 Layout（動態導覽列）
+│   ├── [slug]/           # CMS 系統頁面路由（is_system=1 的頁面）
+│   ├── p/[slug]/         # CMS 使用者頁面路由（/p/ 前綴，非系統頁面）
+│   ├── tools/            # 小工具（6 個試算器，靜態）
+│   ├── admin/            # 後台管理介面（頁面管理、基本資訊、圖片庫、使用手冊）
 │   └── api/              # API 路由
 │       ├── contact/      # 聯絡表單 POST
 │       ├── images/[key]/ # 圖片取得（BLOB from SQLite）
-│       └── admin/        # 後台 CRUD API（7 個端點）
+│       └── admin/        # 後台 CRUD API
+│           ├── cms/      # CMS API（pages, blocks, templates, nav-links, reorder, migrate）
+│           └── ...       # 其他 admin API（auth, settings, hero-config, images）
 ├── components/
+│   ├── cms/              # CMS 區塊渲染器（BlockRenderer + 19 種 renderers）
 │   ├── common/           # 共用元件
-│   ├── layout/           # Header, Footer
+│   ├── layout/           # Header（動態 nav）, Footer（動態 nav）
 │   └── sections/         # 首頁區塊元件
 └── lib/
     ├── db.ts             # SQLite 連線、Schema、CRUD、auto-seed
+    ├── cms-db.ts         # CMS 資料層（頁面、區塊、範本、導覽）
+    ├── cms-types.ts      # CMS 型別定義
     ├── default-data.ts   # 所有預設內容資料
     ├── auth.ts           # 後台驗證邏輯
     └── structured-data.ts # SEO JSON-LD
@@ -57,21 +60,27 @@ src/
 1. **首次啟動**：`db.ts` 自動建立 SQLite 資料庫，從 `default-data.ts` seed 預設資料
 2. **前台讀取**：各頁面 Server Component 從 SQLite 讀取資料渲染
 3. **後台編輯**：AdminClient.tsx 透過 `/api/admin/*` RESTful API 進行 CRUD
-4. **圖片**：以 BLOB 存入 SQLite，透過 `/api/images/[key]` 動態提供
+4. **圖片**：以 BLOB 存入 SQLite，透過 `/api/images/[key]` 動態提供。圖片庫以 image_groups/image_slots 表管理動態群組與欄位
 
-### 新增頁面
+### 新增頁面（CMS 方式）
 
-1. 在 `src/app/` 下建立目錄與 `page.tsx`
-2. 在 `Header.tsx` 新增導覽連結
-3. 在 `sitemap.ts` 新增路由
-4. 視需要在 `db.ts` 新增資料表與 CRUD 函式
+1. 後台「頁面管理」→「建立新頁面」，選擇範本
+2. 使用區塊編輯器組合頁面內容（16 種區塊類型）
+3. 設定 slug、標題、是否顯示於導覽列
+4. 導覽列順序可在頁面管理中用上下箭頭調整
+5. 自訂導覽連結（內部/外部 URL）在「自訂導覽連結」區塊管理
 
-### 新增後台管理分頁
+### CMS 架構
 
-1. 在 `src/app/api/admin/` 下建立 API route
-2. 在 `AdminClient.tsx` 新增對應 tab 與 UI
-3. 在 `db.ts` 新增資料表 Schema 與操作函式
-4. 在 `default-data.ts` 新增預設資料
+- 三層模型：PageTemplate → Page → Block
+- 頁面分為系統頁面（`is_system=1`, `seed_key` 非 null）和使用者頁面
+- 系統頁面走 `[slug]` 路由（頂層 URL），使用者頁面走 `p/[slug]` 路由（`/p/` 前綴）
+- `seedCmsPages()` 為遞增式：依 `seed_key` 檢查缺少哪些系統頁面，僅建立缺少的
+- 使用者建立頁面時驗證 RESERVED_SLUGS（防止佔用 home、admin、api 等路徑）
+- 導覽列由 `getNavItems()` 整合頁面 nav + 自訂連結，按 navOrder 排序，URL 依 is_system 區分
+- 計算器 seed 為遞增式：依 `slug` 檢查是否存在，不存在則 INSERT，definition 不同則自動 UPDATE
+- FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料
+- Sitemap 從 DB 動態生成，系統頁面用頂層 URL、使用者頁面用 `/p/` 前綴
 
 ### 環境變數
 
@@ -100,7 +109,7 @@ GitHub Pages 自動部署，每次 push 到 main 自動更新：
 
 - 登入速率限制（5 次/分鐘 per IP）
 - 聯絡表單速率限制（5 次/分鐘 per IP）
-- 圖片上傳：5MB 限制 + MIME 白名單 + key 白名單
+- 圖片上傳：5MB 限制 + MIME 白名單 + 動態 key 驗證（image_slots 表）
 - 密碼 scrypt 雜湊 + timing-safe 比對
 - httpOnly session cookie
 

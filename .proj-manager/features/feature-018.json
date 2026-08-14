@@ -1,0 +1,16 @@
+{
+  "feature_id": "feature-018",
+  "name": "Google 表單嵌入",
+  "description": "聯絡表單（contact_form）和聯絡雙欄（contact_layout）區塊新增 googleFormUrl 欄位。填入 Google 表單網址後，前台以 iframe 嵌入取代內建表單。後台 PageBuilder 提供對應的網址輸入欄位。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/lib/cms-types.ts",
+    "src/app/admin/PageBuilder.tsx",
+    "src/components/cms/renderers/ContactFormRenderer.tsx",
+    "src/components/cms/renderers/ContactLayoutRenderer.tsx"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": []
+}

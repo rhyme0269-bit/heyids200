@@ -1,0 +1,25 @@
+{
+  "feature_id": "feature-020",
+  "name": "系統頁面與使用者頁面分離",
+  "description": "新增 seed_key 欄位追蹤系統預設頁面，改為遞增式 seed 邏輯（可對既有 DB 新增系統頁面），使用者建立的頁面 URL 改用 /p/ 前綴避免與系統頁面衝突，新增保留 slug 驗證防止使用者佔用系統路徑，sitemap 改為動態生成。",
+  "status": "completed",
+  "created_at": "2026-07-31T00:00:00Z",
+  "files": [
+    "src/lib/cms-types.ts",
+    "src/lib/cms-db.ts",
+    "src/app/[slug]/page.tsx",
+    "src/app/p/[slug]/page.tsx",
+    "src/app/admin/PageBuilder.tsx",
+    "src/app/api/admin/cms/pages/route.ts",
+    "src/app/api/admin/cms/templates/route.ts",
+    "src/app/sitemap.ts"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": [
+    {
+      "table": "pages",
+      "changes": "新增 seed_key TEXT DEFAULT NULL 欄位 + UNIQUE partial index"
+    }
+  ]
+}

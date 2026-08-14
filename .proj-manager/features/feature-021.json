@@ -1,0 +1,14 @@
+{
+  "feature_id": "feature-021",
+  "name": "計算器遞增式 seed 與定義自動更新",
+  "description": "修復計算器 seed 邏輯：從「全有全無」改為 slug-based 遞增式。既有系統計算器若 definition JSON 不同則自動更新，缺少的則自動新增。解決既有 DB 部署後無法取得新版計算器定義的問題。",
+  "status": "completed",
+  "created_at": "2026-07-31T04:00:00Z",
+  "files": [
+    "src/lib/calc-db.ts"
+  ],
+  "dependencies": [],
+  "api_endpoints": [],
+  "data_model": [],
+  "related_issues": ["#10", "#11", "#12"]
+}

@@ -5,6 +5,9 @@ import Link from "next/link";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
+import PageBuilder from "./PageBuilder";
+import ManualContent from "./ManualContent";
+import CalcEditor from "./CalcEditor";
 
 /* ============================================================
    Types
@@ -22,94 +25,41 @@ interface SettingsData {
   googleMapEmbed: string;
   scrivenerName: string;
   licenseNumber: string;
+  logoSize: string;
 }
 
-interface AboutData {
-  introduction: string;
-  philosophy: string;
-  features: string[];
-  qualifications: string[];
-  experience: string[];
-  specialties: string[];
-}
-
-interface ServiceItem {
-  title: string;
-  description: string;
-}
-
-interface FeeItem {
-  service: string;
-  fee: string;
-  payer: string;
-  note: string;
-}
-
-interface FeesData {
-  items: FeeItem[];
-  notes: string[];
-}
-
-interface FaqItem {
-  question: string;
-  answer: string;
-}
-
-interface FlowItem {
-  stepName: string;
-  stepDescription: string;
-}
 
 /* ============================================================
    Constants
    ============================================================ */
 
 const TABS = [
+  { key: "pages", label: "頁面管理" },
   { key: "settings", label: "基本資訊" },
-  { key: "about", label: "關於我們" },
-  { key: "services", label: "服務項目" },
-  { key: "fees", label: "收費標準" },
-  { key: "faqs", label: "常見問題" },
-  { key: "flow", label: "服務流程" },
   { key: "images", label: "圖片管理" },
+  { key: "calculators", label: "小工具" },
+  { key: "manual", label: "使用手冊" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
-const IMAGE_GROUPS = [
-  {
-    group: "網站通用",
-    slots: [
-      { key: "logo", label: "Logo", hint: "顯示於網站左上角" },
-      { key: "scrivener_photo", label: "代書照片", hint: "顯示於關於我們頁面" },
-    ],
-  },
-  {
-    group: "首頁事務所照片",
-    description: "首頁「事務所環境」區塊展示的照片。留空則使用預設照片。",
-    slots: [
-      { key: "office_interior", label: "內部環境", hint: "事務所內部環境照" },
-      { key: "office_exterior", label: "外觀", hint: "事務所外觀照" },
-      { key: "office_sign", label: "招牌", hint: "事務所招牌照" },
-    ],
-  },
-  {
-    group: "頁面背景圖",
-    description: "各頁面頂部橫幅背景，建議尺寸 1920×600 以上。留空則使用預設圖片。",
-    slots: [
-      { key: "hero_bg", label: "首頁", hint: "首頁大圖橫幅背景", pageUrl: "/" },
-      { key: "about_bg", label: "關於我們", hint: "關於我們頁面頂部背景", pageUrl: "/about" },
-      { key: "services_bg", label: "服務項目", hint: "服務項目頁面頂部背景", pageUrl: "/services" },
-      { key: "contact_bg", label: "聯絡我們", hint: "聯絡我們頁面頂部背景", pageUrl: "/contact" },
-      { key: "faq_bg", label: "常見問題", hint: "常見問題頁面頂部背景", pageUrl: "/faq" },
-      { key: "tools_bg", label: "小工具", hint: "小工具頁面頂部背景", pageUrl: "/tools" },
-    ],
-  },
-] as const;
+interface ImageGroup {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+}
 
-const IMAGE_SLOTS = IMAGE_GROUPS.flatMap((g) =>
-  g.slots.map((s) => ({ key: s.key, label: s.label, hint: s.hint }))
-);
+interface ImageSlot {
+  key: string;
+  groupId: string;
+  label: string;
+  hint: string;
+  sortOrder: number;
+  isSystem: boolean;
+  aspectRatio: string;
+  slotType: string;
+}
 
 const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "name", label: "名稱" },
@@ -135,15 +85,6 @@ function authHeaders(): HeadersInit {
 
 function authHeadersNoContentType(): HeadersInit {
   return {};
-}
-
-/** Move an element in an array by delta (-1 = up, +1 = down) */
-function moveItem<T>(arr: T[], index: number, delta: number): T[] {
-  const next = [...arr];
-  const target = index + delta;
-  if (target < 0 || target >= next.length) return next;
-  [next[index], next[target]] = [next[target], next[index]];
-  return next;
 }
 
 /* ============================================================
@@ -188,72 +129,6 @@ function Spinner() {
 }
 
 /* ============================================================
-   Reusable List Editor (for string arrays)
-   ============================================================ */
-
-function StringListEditor({
-  label,
-  items,
-  onChange,
-}: {
-  label: string;
-  items: string[];
-  onChange: (items: string[]) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm font-semibold text-stone-700">
-        {label}
-      </label>
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={item}
-            onChange={(e) => {
-              const next = [...items];
-              next[i] = e.target.value;
-              onChange(next);
-            }}
-            className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-          />
-          <button
-            type="button"
-            onClick={() => onChange(moveItem(items, i, -1))}
-            disabled={i === 0}
-            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-          >
-            上移
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange(moveItem(items, i, 1))}
-            disabled={i === items.length - 1}
-            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-          >
-            下移
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange(items.filter((_, idx) => idx !== i))}
-            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-          >
-            刪除
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() => onChange([...items, ""])}
-        className="mt-1 rounded bg-amber-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-900"
-      >
-        新增
-      </button>
-    </div>
-  );
-}
-
-/* ============================================================
    Main Admin Client Component
    ============================================================ */
 
@@ -268,7 +143,7 @@ export default function AdminClient() {
   const [authChecked, setAuthChecked] = useState(false);
 
   /* ------ Dashboard state ------ */
-  const [activeTab, setActiveTabState] = useState<TabKey>("settings");
+  const [activeTab, setActiveTabState] = useState<TabKey>("pages");
 
   // Sync tab with URL hash
   const setActiveTab = useCallback((tab: TabKey) => {
@@ -301,32 +176,35 @@ export default function AdminClient() {
     googleMapEmbed: "",
     scrivenerName: "",
     licenseNumber: "",
+    logoSize: "medium",
   });
 
-  const [about, setAbout] = useState<AboutData>({
-    introduction: "",
-    philosophy: "",
-    features: [],
-    qualifications: [],
-    experience: [],
-    specialties: [],
-  });
-
-  const [services, setServices] = useState<ServiceItem[]>([]);
-  const [fees, setFees] = useState<FeesData>({ items: [], notes: [] });
-  const [faqs, setFaqs] = useState<FaqItem[]>([]);
-  const [flow, setFlow] = useState<FlowItem[]>([]);
+  const [imageGroups, setImageGroups] = useState<ImageGroup[]>([]);
+  const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
   const [imageTimestamps, setImageTimestamps] = useState<
     Record<string, number>
   >({});
   const [heroConfigs, setHeroConfigs] = useState<
     Record<string, { mode: string; color: string }>
   >({});
+  const [showAddGroup, setShowAddGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDesc, setNewGroupDesc] = useState("");
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDesc, setEditGroupDesc] = useState("");
+  const [showAddSlot, setShowAddSlot] = useState<string | null>(null);
+  const [newSlotKey, setNewSlotKey] = useState("");
+  const [newSlotLabel, setNewSlotLabel] = useState("");
+  const [newSlotHint, setNewSlotHint] = useState("");
+  const [newSlotAspect, setNewSlotAspect] = useState("3:4");
+  const [newSlotType, setNewSlotType] = useState("general");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [cropState, setCropState] = useState<{
     imageUrl: string;
     key: string;
     aspect: number;
+    mimeType: string;
   } | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -338,15 +216,10 @@ export default function AdminClient() {
   const getTabPayload = useCallback((tab: string): string => {
     switch (tab) {
       case "settings": return JSON.stringify(settings);
-      case "about": return JSON.stringify(about);
-      case "services": return JSON.stringify(services);
-      case "fees": return JSON.stringify({ fees: fees.items, notes: fees.notes });
-      case "faqs": return JSON.stringify(faqs);
-      case "flow": return JSON.stringify(flow);
       case "heroConfigs": return JSON.stringify(heroConfigs);
       default: return "";
     }
-  }, [settings, about, services, fees, faqs, flow, heroConfigs]);
+  }, [settings, heroConfigs]);
 
   const dirtyTabs = TABS.filter((tab) => {
     if (tab.key === "images") {
@@ -435,34 +308,37 @@ export default function AdminClient() {
       try {
         let url = "";
         switch (tab) {
+          case "pages":
+          case "manual":
+          case "calculators":
+            setLoading(false);
+            return;
           case "settings":
             url = "/api/admin/settings";
             break;
-          case "about":
-            url = "/api/admin/about";
-            break;
-          case "services":
-            url = "/api/admin/services";
-            break;
-          case "fees":
-            url = "/api/admin/fees";
-            break;
-          case "faqs":
-            url = "/api/admin/faqs";
-            break;
-          case "flow":
-            url = "/api/admin/flow";
-            break;
-          case "images":
-            fetch("/api/admin/hero-config", { headers: authHeaders() })
-              .then((r) => r.ok ? r.json() : {})
-              .then((data) => {
-                setHeroConfigs(data);
-                savedSnapshots.current["heroConfigs"] = JSON.stringify(data);
-              })
-              .catch(() => {});
+          case "images": {
+            const [imgRes, heroRes] = await Promise.all([
+              fetch("/api/admin/images", { headers: authHeaders() }),
+              fetch("/api/admin/hero-config", { headers: authHeaders() }),
+            ]);
+            if (imgRes.ok) {
+              const imgData = await imgRes.json();
+              setImageGroups(imgData.groups || []);
+              setImageSlots(imgData.slots || []);
+              if (imgData.images?.length) {
+                const ts: Record<string, number> = {};
+                for (const img of imgData.images) ts[img.key] = new Date(img.updated_at).getTime() || Date.now();
+                setImageTimestamps((prev) => ({ ...ts, ...prev }));
+              }
+            }
+            if (heroRes.ok) {
+              const heroData = await heroRes.json();
+              setHeroConfigs(heroData);
+              savedSnapshots.current["heroConfigs"] = JSON.stringify(heroData);
+            }
             setLoading(false);
             return;
+          }
         }
 
         const res = await fetch(url, { headers: authHeaders() });
@@ -481,26 +357,6 @@ export default function AdminClient() {
           case "settings":
             setSettings(data);
             savedSnapshots.current["settings"] = JSON.stringify(data);
-            break;
-          case "about":
-            setAbout(data);
-            savedSnapshots.current["about"] = JSON.stringify(data);
-            break;
-          case "services":
-            setServices(data);
-            savedSnapshots.current["services"] = JSON.stringify(data);
-            break;
-          case "fees":
-            setFees({ items: data.fees || [], notes: data.notes || [] });
-            savedSnapshots.current["fees"] = JSON.stringify({ fees: data.fees || [], notes: data.notes || [] });
-            break;
-          case "faqs":
-            setFaqs(data);
-            savedSnapshots.current["faqs"] = JSON.stringify(data);
-            break;
-          case "flow":
-            setFlow(data);
-            savedSnapshots.current["flow"] = JSON.stringify(data);
             break;
         }
       } catch {
@@ -557,11 +413,6 @@ export default function AdminClient() {
   const saveTab = async (tabKey: string) => {
     const endpointMap: Record<string, { url: string; body: unknown }> = {
       settings: { url: "/api/admin/settings", body: settings },
-      about: { url: "/api/admin/about", body: about },
-      services: { url: "/api/admin/services", body: services },
-      fees: { url: "/api/admin/fees", body: { fees: fees.items, notes: fees.notes } },
-      faqs: { url: "/api/admin/faqs", body: faqs },
-      flow: { url: "/api/admin/flow", body: flow },
       images: { url: "/api/admin/hero-config", body: heroConfigs },
     };
     const entry = endpointMap[tabKey];
@@ -622,7 +473,11 @@ export default function AdminClient() {
       }
 
       showToast("圖片刪除成功", "success");
-      setImageTimestamps((prev) => ({ ...prev, [key]: Date.now() }));
+      setImageTimestamps((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     } catch {
       showToast("圖片刪除失敗", "error");
     }
@@ -630,8 +485,15 @@ export default function AdminClient() {
 
   const openCropper = (file: File, key: string) => {
     const url = URL.createObjectURL(file);
-    const isBg = key.endsWith("_bg");
-    setCropState({ imageUrl: url, key, aspect: isBg ? 16 / 6 : 3 / 4 });
+    const slot = imageSlots.find(s => s.key === key);
+    const ratioStr = slot?.aspectRatio || "3:4";
+    let aspect: number | undefined;
+    if (ratioStr !== "free") {
+      const parts = ratioStr.split(":").map(Number);
+      aspect = parts.length === 2 && parts[1] ? parts[0] / parts[1] : 3 / 4;
+    }
+    const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+    setCropState({ imageUrl: url, key, aspect: aspect ?? 0, mimeType });
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     croppedAreaRef.current = null;
@@ -643,10 +505,9 @@ export default function AdminClient() {
 
   const handleCropConfirm = async () => {
     if (!cropState || !croppedAreaRef.current) return;
-    const { imageUrl, key } = cropState;
+    const { imageUrl, key, mimeType } = cropState;
     const area = croppedAreaRef.current;
 
-    // Draw cropped image on canvas
     const image = new Image();
     image.src = imageUrl;
     await new Promise((resolve) => { image.onload = resolve; });
@@ -657,14 +518,16 @@ export default function AdminClient() {
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
 
+    const isPng = mimeType === "image/png";
     const blob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9)
+      canvas.toBlob((b) => resolve(b!), isPng ? "image/png" : "image/jpeg", isPng ? undefined : 0.9)
     );
 
     URL.revokeObjectURL(imageUrl);
     setCropState(null);
 
-    const file = new File([blob], `${key}.jpg`, { type: "image/jpeg" });
+    const ext = isPng ? "png" : "jpg";
+    const file = new File([blob], `${key}.${ext}`, { type: mimeType });
     await handleImageUpload(key, file);
   };
 
@@ -680,6 +543,124 @@ export default function AdminClient() {
       setPreviewUrl(pageUrl);
     } catch {
       showToast("預覽暫存失敗", "error");
+    }
+  };
+
+  const refreshImageLibrary = async () => {
+    const res = await fetch("/api/admin/images", { headers: authHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      setImageGroups(data.groups || []);
+      setImageSlots(data.slots || []);
+    }
+  };
+
+  const handleAddGroup = async () => {
+    if (!newGroupName.trim()) return;
+    const res = await fetch("/api/admin/image-groups", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ name: newGroupName.trim(), description: newGroupDesc.trim() }),
+    });
+    if (res.ok) {
+      showToast("群組新增成功", "success");
+      setNewGroupName("");
+      setNewGroupDesc("");
+      setShowAddGroup(false);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "新增失敗", "error");
+    }
+  };
+
+  const handleUpdateGroup = async (id: string) => {
+    const res = await fetch("/api/admin/image-groups", {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ id, name: editGroupName.trim(), description: editGroupDesc.trim() }),
+    });
+    if (res.ok) {
+      showToast("群組更新成功", "success");
+      setEditingGroup(null);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "更新失敗", "error");
+    }
+  };
+
+  const handleDeleteGroup = async (id: string, name: string) => {
+    if (!confirm(`確定要刪除群組「${name}」嗎？其中所有自訂圖片欄位和圖片都會被一併刪除。`)) return;
+    const res = await fetch("/api/admin/image-groups", {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      showToast("群組刪除成功", "success");
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "刪除失敗", "error");
+    }
+  };
+
+  const handleAddSlot = async (groupId: string) => {
+    if (!newSlotKey.trim() || !newSlotLabel.trim()) return;
+    const res = await fetch("/api/admin/image-slots", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        key: newSlotKey.trim().toLowerCase(),
+        groupId,
+        label: newSlotLabel.trim(),
+        hint: newSlotHint.trim(),
+        aspectRatio: newSlotAspect,
+        slotType: newSlotType,
+      }),
+    });
+    if (res.ok) {
+      showToast("圖片欄位新增成功", "success");
+      setNewSlotKey("");
+      setNewSlotLabel("");
+      setNewSlotHint("");
+      setNewSlotAspect("3:4");
+      setNewSlotType("general");
+      setShowAddSlot(null);
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "新增失敗", "error");
+    }
+  };
+
+  const handleDeleteSlot = async (key: string, label: string) => {
+    if (!confirm(`確定要刪除圖片欄位「${label}」嗎？對應的圖片也會被刪除。`)) return;
+    const res = await fetch("/api/admin/image-slots", {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ key }),
+    });
+    if (res.ok) {
+      showToast("圖片欄位刪除成功", "success");
+      await refreshImageLibrary();
+    } else {
+      const data = await res.json();
+      showToast(data.error || "刪除失敗", "error");
+    }
+  };
+
+  const handleUpdateSlotAspect = async (key: string, aspectRatio: string) => {
+    const res = await fetch("/api/admin/image-slots", {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ key, aspectRatio }),
+    });
+    if (res.ok) {
+      setImageSlots((prev) => prev.map((s) => s.key === key ? { ...s, aspectRatio } : s));
+    } else {
+      showToast("比例更新失敗", "error");
     }
   };
 
@@ -852,6 +833,13 @@ export default function AdminClient() {
           ) : (
             <>
               {/* ============================
+                  Tab: 頁面管理
+                  ============================ */}
+              {activeTab === "pages" && (
+                <PageBuilder showToast={showToast} />
+              )}
+
+              {/* ============================
                   Tab: 基本資訊
                   ============================ */}
               {activeTab === "settings" && (
@@ -895,553 +883,22 @@ export default function AdminClient() {
                     ))}
                   </div>
 
-                </div>
-              )}
-
-              {/* ============================
-                  Tab: 關於我們
-                  ============================ */}
-              {activeTab === "about" && (
-                <div className="space-y-6">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    關於我們
-                  </h2>
-
-                  {/* Introduction */}
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-stone-700">
-                      事務所介紹
-                    </label>
-                    <textarea
-                      value={about.introduction}
-                      onChange={(e) =>
-                        setAbout((prev) => ({
-                          ...prev,
-                          introduction: e.target.value,
-                        }))
-                      }
-                      rows={5}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                    />
-                  </div>
-
-                  {/* Philosophy */}
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-stone-700">
-                      服務理念
-                    </label>
-                    <textarea
-                      value={about.philosophy}
-                      onChange={(e) =>
-                        setAbout((prev) => ({
-                          ...prev,
-                          philosophy: e.target.value,
-                        }))
-                      }
-                      rows={5}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                    />
-                  </div>
-
-                  {/* String list editors */}
-                  <StringListEditor
-                    label="服務特色"
-                    items={about.features}
-                    onChange={(features) =>
-                      setAbout((prev) => ({ ...prev, features }))
-                    }
-                  />
-                  <StringListEditor
-                    label="專業資格"
-                    items={about.qualifications}
-                    onChange={(qualifications) =>
-                      setAbout((prev) => ({ ...prev, qualifications }))
-                    }
-                  />
-                  <StringListEditor
-                    label="經歷"
-                    items={about.experience}
-                    onChange={(experience) =>
-                      setAbout((prev) => ({ ...prev, experience }))
-                    }
-                  />
-                  <StringListEditor
-                    label="專長領域"
-                    items={about.specialties}
-                    onChange={(specialties) =>
-                      setAbout((prev) => ({ ...prev, specialties }))
-                    }
-                  />
-
-                </div>
-              )}
-
-              {/* ============================
-                  Tab: 服務項目
-                  ============================ */}
-              {activeTab === "services" && (
-                <div className="space-y-4">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    服務項目
-                  </h2>
-
-                  {services.map((item, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-stone-200 p-4"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-stone-600">
-                          項目 {i + 1}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setServices(moveItem(services, i, -1))
-                            }
-                            disabled={i === 0}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            上移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setServices(moveItem(services, i, 1))
-                            }
-                            disabled={i === services.length - 1}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            下移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setServices(
-                                services.filter((_, idx) => idx !== i),
-                              )
-                            }
-                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            標題
-                          </label>
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={(e) => {
-                              const next = [...services];
-                              next[i] = { ...next[i], title: e.target.value };
-                              setServices(next);
-                            }}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            描述
-                          </label>
-                          <textarea
-                            value={item.description}
-                            onChange={(e) => {
-                              const next = [...services];
-                              next[i] = {
-                                ...next[i],
-                                description: e.target.value,
-                              };
-                              setServices(next);
-                            }}
-                            rows={2}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                      </div>
+                  <div className="mt-6 pt-6 border-t border-stone-200">
+                    <label className="mb-2 block text-sm font-medium text-stone-700">Logo 顯示大小</label>
+                    <div className="flex gap-2">
+                      {([["small", "小"], ["medium", "中"], ["large", "大"], ["xlarge", "特大"]] as const).map(([val, lbl]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setSettings((prev) => ({ ...prev, logoSize: val }))}
+                          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${settings.logoSize === val ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+                        >
+                          {lbl}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setServices([
-                        ...services,
-                        { title: "", description: "" },
-                      ])
-                    }
-                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
-                  >
-                    新增
-                  </button>
-
-                </div>
-              )}
-
-              {/* ============================
-                  Tab: 收費標準
-                  ============================ */}
-              {activeTab === "fees" && (
-                <div className="space-y-6">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    收費標準
-                  </h2>
-
-                  {/* Fee table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-stone-200 bg-stone-50">
-                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
-                            服務項目
-                          </th>
-                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
-                            收費
-                          </th>
-                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
-                            付費方
-                          </th>
-                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
-                            備註
-                          </th>
-                          <th className="px-3 py-2 text-left font-semibold text-stone-700">
-                            操作
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fees.items.map((item, i) => (
-                          <tr key={i} className="border-b border-stone-100">
-                            <td className="px-2 py-1.5">
-                              <input
-                                type="text"
-                                value={item.service}
-                                onChange={(e) => {
-                                  const next = [...fees.items];
-                                  next[i] = {
-                                    ...next[i],
-                                    service: e.target.value,
-                                  };
-                                  setFees((prev) => ({
-                                    ...prev,
-                                    items: next,
-                                  }));
-                                }}
-                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                type="text"
-                                value={item.fee}
-                                onChange={(e) => {
-                                  const next = [...fees.items];
-                                  next[i] = {
-                                    ...next[i],
-                                    fee: e.target.value,
-                                  };
-                                  setFees((prev) => ({
-                                    ...prev,
-                                    items: next,
-                                  }));
-                                }}
-                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                type="text"
-                                value={item.payer}
-                                onChange={(e) => {
-                                  const next = [...fees.items];
-                                  next[i] = {
-                                    ...next[i],
-                                    payer: e.target.value,
-                                  };
-                                  setFees((prev) => ({
-                                    ...prev,
-                                    items: next,
-                                  }));
-                                }}
-                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                type="text"
-                                value={item.note}
-                                onChange={(e) => {
-                                  const next = [...fees.items];
-                                  next[i] = {
-                                    ...next[i],
-                                    note: e.target.value,
-                                  };
-                                  setFees((prev) => ({
-                                    ...prev,
-                                    items: next,
-                                  }));
-                                }}
-                                className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setFees((prev) => ({
-                                    ...prev,
-                                    items: prev.items.filter(
-                                      (_, idx) => idx !== i,
-                                    ),
-                                  }))
-                                }
-                                className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                              >
-                                刪除
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <p className="mt-1 text-xs text-stone-400">調整網站左上角 Logo 圖片的顯示大小</p>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFees((prev) => ({
-                        ...prev,
-                        items: [
-                          ...prev.items,
-                          { service: "", fee: "", payer: "", note: "" },
-                        ],
-                      }))
-                    }
-                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
-                  >
-                    新增項目
-                  </button>
-
-                  {/* Fee notes */}
-                  <div className="border-t border-stone-200 pt-6">
-                    <StringListEditor
-                      label="收費備註"
-                      items={fees.notes}
-                      onChange={(notes) =>
-                        setFees((prev) => ({ ...prev, notes }))
-                      }
-                    />
-                  </div>
-
-                </div>
-              )}
-
-              {/* ============================
-                  Tab: 常見問題
-                  ============================ */}
-              {activeTab === "faqs" && (
-                <div className="space-y-4">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    常見問題
-                  </h2>
-
-                  {faqs.map((item, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-stone-200 p-4"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-stone-600">
-                          問題 {i + 1}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setFaqs(moveItem(faqs, i, -1))}
-                            disabled={i === 0}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            上移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFaqs(moveItem(faqs, i, 1))}
-                            disabled={i === faqs.length - 1}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            下移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setFaqs(faqs.filter((_, idx) => idx !== i))
-                            }
-                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            問題
-                          </label>
-                          <input
-                            type="text"
-                            value={item.question}
-                            onChange={(e) => {
-                              const next = [...faqs];
-                              next[i] = {
-                                ...next[i],
-                                question: e.target.value,
-                              };
-                              setFaqs(next);
-                            }}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            答案
-                          </label>
-                          <textarea
-                            value={item.answer}
-                            onChange={(e) => {
-                              const next = [...faqs];
-                              next[i] = {
-                                ...next[i],
-                                answer: e.target.value,
-                              };
-                              setFaqs(next);
-                            }}
-                            rows={3}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFaqs([...faqs, { question: "", answer: "" }])
-                    }
-                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
-                  >
-                    新增
-                  </button>
-
-                </div>
-              )}
-
-              {/* ============================
-                  Tab: 服務流程
-                  ============================ */}
-              {activeTab === "flow" && (
-                <div className="space-y-4">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    服務流程
-                  </h2>
-
-                  {flow.map((item, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-stone-200 p-4"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-stone-600">
-                          步驟 {i + 1}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setFlow(moveItem(flow, i, -1))}
-                            disabled={i === 0}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            上移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFlow(moveItem(flow, i, 1))}
-                            disabled={i === flow.length - 1}
-                            className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-300 disabled:opacity-30"
-                          >
-                            下移
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setFlow(flow.filter((_, idx) => idx !== i))
-                            }
-                            className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            步驟名稱
-                          </label>
-                          <input
-                            type="text"
-                            value={item.stepName}
-                            onChange={(e) => {
-                              const next = [...flow];
-                              next[i] = {
-                                ...next[i],
-                                stepName: e.target.value,
-                              };
-                              setFlow(next);
-                            }}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
-                            步驟描述
-                          </label>
-                          <textarea
-                            value={item.stepDescription}
-                            onChange={(e) => {
-                              const next = [...flow];
-                              next[i] = {
-                                ...next[i],
-                                stepDescription: e.target.value,
-                              };
-                              setFlow(next);
-                            }}
-                            rows={2}
-                            className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFlow([
-                        ...flow,
-                        { stepName: "", stepDescription: "" },
-                      ])
-                    }
-                    className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
-                  >
-                    新增
-                  </button>
 
                 </div>
               )}
@@ -1451,176 +908,266 @@ export default function AdminClient() {
                   ============================ */}
               {activeTab === "images" && (
                 <div className="space-y-8">
-                  <h2 className="mb-4 text-lg font-bold text-stone-800">
-                    圖片管理
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-stone-800">圖片庫</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddGroup(true)}
+                      className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900 transition"
+                    >
+                      + 新增群組
+                    </button>
+                  </div>
 
-                  {IMAGE_GROUPS.map((group) => (
-                    <div key={group.group}>
-                      <div className="mb-4">
-                        <h3 className="text-base font-bold text-stone-700">{group.group}</h3>
-                        {"description" in group && group.description && (
-                          <p className="mt-1 text-sm text-stone-500">{group.description}</p>
-                        )}
+                  {/* Add Group Form */}
+                  {showAddGroup && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-stone-700">新增圖片群組</h4>
+                      <input
+                        type="text"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="群組名稱"
+                        className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      />
+                      <input
+                        type="text"
+                        value={newGroupDesc}
+                        onChange={(e) => setNewGroupDesc(e.target.value)}
+                        placeholder="群組說明（選填）"
+                        className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={handleAddGroup} className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900">確認</button>
+                        <button type="button" onClick={() => { setShowAddGroup(false); setNewGroupName(""); setNewGroupDesc(""); }} className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        {group.slots.map((slot) => {
-                          const isBg = slot.key.endsWith("_bg");
-                          const cfg = heroConfigs[slot.key];
-                          const mode = cfg?.mode || "default";
-                          const color = cfg?.color || "#44403c";
-                          return (
-                            <div
-                              key={slot.key}
-                              className="rounded-lg border border-stone-200 p-4"
-                            >
-                              <h4 className="mb-1 text-sm font-semibold text-stone-700">
-                                {slot.label}
-                              </h4>
-                              <p className="mb-3 text-xs text-stone-400">{slot.hint}</p>
-
-                              {/* Mode selector for bg slots */}
-                              {isBg && (
-                                <div className="mb-3">
-                                  <label className="mb-1.5 block text-xs font-medium text-stone-600">顯示模式</label>
-                                  <div className="flex gap-1">
-                                    {([
-                                      ["default", "預設漸層"],
-                                      ["image", "背景圖"],
-                                      ["color", "純色"],
-                                    ] as const).map(([val, label]) => (
-                                      <button
-                                        key={val}
-                                        type="button"
-                                        onClick={() => {
-                                          const updated = { ...heroConfigs, [slot.key]: { mode: val, color } };
-                                          setHeroConfigs(updated);
-                                        }}
-                                        className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition ${
-                                          mode === val
-                                            ? "bg-amber-800 text-white"
-                                            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                                        }`}
-                                      >
-                                        {label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
+                  {imageGroups.map((group) => {
+                    const groupSlots = imageSlots.filter(s => s.groupId === group.id);
+                    const hasSystemSlots = groupSlots.some(s => s.isSystem);
+                    return (
+                      <div key={group.id}>
+                        <div className="mb-4">
+                          {editingGroup === group.id ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editGroupName}
+                                onChange={(e) => setEditGroupName(e.target.value)}
+                                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                              <input
+                                type="text"
+                                value={editGroupDesc}
+                                onChange={(e) => setEditGroupDesc(e.target.value)}
+                                placeholder="群組說明（選填）"
+                                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                              />
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => handleUpdateGroup(group.id)} className="rounded-lg bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-900">儲存</button>
+                                <button type="button" onClick={() => setEditingGroup(null)} className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-base font-bold text-stone-700">{group.name}</h3>
+                              <button
+                                type="button"
+                                onClick={() => { setEditingGroup(group.id); setEditGroupName(group.name); setEditGroupDesc(group.description); }}
+                                className="rounded px-2 py-0.5 text-xs text-stone-400 hover:text-amber-800 hover:bg-stone-100"
+                                title="編輯群組"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+                              </button>
+                              {!hasSystemSlots && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGroup(group.id, group.name)}
+                                  className="rounded px-2 py-0.5 text-xs text-stone-400 hover:text-red-600 hover:bg-red-50"
+                                  title="刪除群組"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                </button>
                               )}
+                            </div>
+                          )}
+                          {group.description && editingGroup !== group.id && (
+                            <p className="mt-1 text-sm text-stone-500">{group.description}</p>
+                          )}
+                        </div>
 
-                              {/* Color picker for color mode */}
-                              {isBg && mode === "color" && (
-                                <div className="mb-3 flex items-center gap-2">
-                                  <label className="text-xs font-medium text-stone-600">背景色</label>
-                                  <input
-                                    type="color"
-                                    value={color}
-                                    onChange={(e) => {
-                                      const updated = { ...heroConfigs, [slot.key]: { mode: "color", color: e.target.value } };
-                                      setHeroConfigs(updated);
-                                    }}
-                                    className="h-8 w-10 cursor-pointer rounded border border-stone-300"
-                                  />
-                                  <span className="text-xs text-stone-500">{color}</span>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                          {groupSlots.map((slot) => {
+                            const isBg = slot.slotType === "background";
+                            const cfg = heroConfigs[slot.key];
+                            const mode = cfg?.mode || "default";
+                            const color = cfg?.color || "#44403c";
+                            return (
+                              <div key={slot.key} className="rounded-lg border border-stone-200 p-4">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className="text-sm font-semibold text-stone-700">{slot.label}</h4>
+                                  {!slot.isSystem && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteSlot(slot.key, slot.label)}
+                                      className="rounded p-1 text-stone-400 hover:text-red-600 hover:bg-red-50"
+                                      title="刪除欄位"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                  )}
                                 </div>
-                              )}
+                                <p className="mb-1 text-xs text-stone-400">{slot.hint}</p>
+                                <div className="mb-3 flex items-center gap-1">
+                                  <select
+                                    value={slot.aspectRatio}
+                                    onChange={(e) => handleUpdateSlotAspect(slot.key, e.target.value)}
+                                    className="rounded border border-stone-200 px-1.5 py-0.5 text-xs text-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-800"
+                                    title="裁切比例"
+                                  >
+                                    <option value="1:1">1:1</option>
+                                    <option value="3:4">3:4</option>
+                                    <option value="4:3">4:3</option>
+                                    <option value="16:9">16:9</option>
+                                    <option value="16:6">16:6</option>
+                                    <option value="2:1">2:1</option>
+                                    <option value="free">自由</option>
+                                  </select>
+                                  <span className="text-[10px] text-stone-300">裁切比例</span>
+                                </div>
 
-                              {/* Preview */}
-                              <div className={`mb-3 flex items-center justify-center overflow-hidden rounded-lg ${
-                                isBg
-                                  ? mode === "color"
-                                    ? "relative h-32"
-                                    : "relative h-32 bg-stone-800"
-                                  : "h-40 bg-stone-100"
-                              }`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
-                                {/* Show image preview (all modes except color for bg) */}
-                                {(!isBg || mode !== "color") && (() => {
-                                  const ts = imageTimestamps[slot.key];
-                                  const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
-                                  const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
-                                  return (
-                                    <>
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        key={`${slot.key}-${ts || 0}`}
-                                        src={dbSrc}
-                                        alt={slot.label}
-                                        className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
-                                        onError={(e) => {
-                                          const img = e.target as HTMLImageElement;
-                                          if (defaultSrc && !img.dataset.fallback) {
-                                            img.dataset.fallback = "1";
-                                            img.src = defaultSrc;
-                                          } else {
-                                            img.style.display = "none";
-                                          }
-                                        }}
-                                        onLoad={(e) => {
-                                          (e.target as HTMLImageElement).style.display = "block";
-                                        }}
-                                      />
-                                    </>
-                                  );
-                                })()}
-                                {/* Overlay + label for bg */}
-                                {isBg && (mode === "image" || mode === "color") && (
-                                  <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center">
-                                    <span className="text-white text-sm font-bold">{slot.label}</span>
+                                {isBg && (
+                                  <div className="mb-3">
+                                    <label className="mb-1.5 block text-xs font-medium text-stone-600">顯示模式</label>
+                                    <div className="flex gap-1">
+                                      {([["default", "預設漸層"], ["image", "背景圖"], ["color", "純色"]] as const).map(([val, lbl]) => (
+                                        <button
+                                          key={val}
+                                          type="button"
+                                          onClick={() => { setHeroConfigs({ ...heroConfigs, [slot.key]: { mode: val, color } }); }}
+                                          className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition ${mode === val ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}
+                                        >
+                                          {lbl}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
-                                {/* Default state placeholder */}
-                                {isBg && mode === "default" && (
-                                  <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50">
-                                    <span className="text-sm font-bold text-stone-600">{slot.label}</span>
+
+                                {isBg && mode === "color" && (
+                                  <div className="mb-3 flex items-center gap-2">
+                                    <label className="text-xs font-medium text-stone-600">背景色</label>
+                                    <input type="color" value={color} onChange={(e) => { setHeroConfigs({ ...heroConfigs, [slot.key]: { mode: "color", color: e.target.value } }); }} className="h-8 w-10 cursor-pointer rounded border border-stone-300" />
+                                    <span className="text-xs text-stone-500">{color}</span>
                                   </div>
                                 )}
-                                {/* Fallback placeholder — only show when no default image exists */}
-                                {!DEFAULT_IMAGES[slot.key] && (
-                                  <div className="flex flex-col items-center justify-center text-stone-400">
-                                    <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="text-xs">尚無圖片</span>
+
+                                <div className={`mb-3 flex items-center justify-center overflow-hidden rounded-lg ${isBg ? mode === "color" ? "relative h-32" : "relative h-32 bg-stone-800" : "h-40 bg-stone-100"}`} style={isBg && mode === "color" ? { backgroundColor: color } : undefined}>
+                                  {(!isBg || mode !== "color") && (() => {
+                                    const ts = imageTimestamps[slot.key];
+                                    const dbSrc = `/api/images/${slot.key}?t=${ts || 0}`;
+                                    const defaultSrc = DEFAULT_IMAGES[slot.key] || null;
+                                    return (
+                                      <>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          key={`${slot.key}-${ts || 0}`}
+                                          src={dbSrc}
+                                          alt={slot.label}
+                                          className={isBg ? "absolute inset-0 h-full w-full object-cover" : "h-full w-full object-contain"}
+                                          onError={(e) => {
+                                            const img = e.target as HTMLImageElement;
+                                            if (defaultSrc && !img.dataset.fallback) { img.dataset.fallback = "1"; img.src = defaultSrc; } else { img.style.display = "none"; }
+                                          }}
+                                          onLoad={(e) => { (e.target as HTMLImageElement).style.display = "block"; }}
+                                        />
+                                      </>
+                                    );
+                                  })()}
+                                  {isBg && (mode === "image" || mode === "color") && (
+                                    <div className="absolute inset-0 bg-stone-900/50 flex items-center justify-center"><span className="text-white text-sm font-bold">{slot.label}</span></div>
+                                  )}
+                                  {isBg && mode === "default" && (
+                                    <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-stone-50 to-amber-50"><span className="text-sm font-bold text-stone-600">{slot.label}</span></div>
+                                  )}
+                                  {!DEFAULT_IMAGES[slot.key] && !isBg && !imageTimestamps[slot.key] && (
+                                    <div className="flex flex-col items-center justify-center text-stone-400">
+                                      <svg className="mb-1 h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                      <span className="text-xs">尚無圖片</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {(!isBg || mode !== "color") && (
+                                  <div className="flex gap-2">
+                                    <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
+                                      上傳圖片
+                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) openCropper(file, slot.key); e.target.value = ""; }} />
+                                    </label>
+                                    <button type="button" onClick={() => handleImageDelete(slot.key)} className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">刪除</button>
                                   </div>
                                 )}
                               </div>
+                            );
+                          })}
 
-                              {/* Upload + Delete (show for non-bg, or bg in non-color mode) */}
-                              {(!isBg || mode !== "color") && (
-                                <div className="flex gap-2">
-                                  <label className="flex-1 cursor-pointer rounded-lg bg-amber-800 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-amber-900">
-                                    上傳圖片
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          openCropper(file, slot.key);
-                                        }
-                                        e.target.value = "";
-                                      }}
-                                    />
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleImageDelete(slot.key)}
-                                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
-                                  >
-                                    刪除
-                                  </button>
-                                </div>
-                              )}
+                          {/* Add Slot button */}
+                          <div
+                            className="flex items-center justify-center rounded-lg border-2 border-dashed border-stone-200 p-4 cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition"
+                            onClick={() => { setShowAddSlot(group.id); setNewSlotKey(""); setNewSlotLabel(""); setNewSlotHint(""); setNewSlotAspect("3:4"); setNewSlotType("general"); }}
+                          >
+                            <span className="text-sm text-stone-400">+ 新增圖片欄位</span>
+                          </div>
+                        </div>
 
+                        {/* Add Slot Form */}
+                        {showAddSlot === group.id && (
+                          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                            <h4 className="text-sm font-semibold text-stone-700">新增圖片欄位到「{group.name}」</h4>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">Key（英文小寫、數字、底線）</label>
+                                <input type="text" value={newSlotKey} onChange={(e) => setNewSlotKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="例如: custom_photo" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">顯示名稱</label>
+                                <input type="text" value={newSlotLabel} onChange={(e) => setNewSlotLabel(e.target.value)} placeholder="例如: 自訂照片" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">提示文字（選填）</label>
+                                <input type="text" value={newSlotHint} onChange={(e) => setNewSlotHint(e.target.value)} placeholder="說明這張圖的用途" className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800" />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-stone-600">裁切比例</label>
+                                <select value={newSlotAspect} onChange={(e) => setNewSlotAspect(e.target.value)} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800">
+                                  <option value="3:4">3:4（直式）</option>
+                                  <option value="4:3">4:3（橫式）</option>
+                                  <option value="1:1">1:1（正方形）</option>
+                                  <option value="16:9">16:9（寬螢幕）</option>
+                                  <option value="16:6">16:6（橫幅背景）</option>
+                                  <option value="2:1">2:1（寬橫式）</option>
+                                  <option value="free">自由裁切</option>
+                                </select>
+                              </div>
                             </div>
-                          );
-                        })}
+                            <div>
+                              <label className="mb-1 block text-xs font-medium text-stone-600">類型</label>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => setNewSlotType("general")} className={`rounded-md px-3 py-1.5 text-xs font-medium ${newSlotType === "general" ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600"}`}>一般圖片</button>
+                                <button type="button" onClick={() => setNewSlotType("background")} className={`rounded-md px-3 py-1.5 text-xs font-medium ${newSlotType === "background" ? "bg-amber-800 text-white" : "bg-stone-100 text-stone-600"}`}>背景圖（含模式選擇）</button>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => handleAddSlot(group.id)} className="rounded-lg bg-amber-800 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-900">新增</button>
+                              <button type="button" onClick={() => setShowAddSlot(null)} className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50">取消</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Action buttons */}
                   <div className="mt-6">
@@ -1633,6 +1180,20 @@ export default function AdminClient() {
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* ============================
+                  Tab: 小工具
+                  ============================ */}
+              {activeTab === "calculators" && (
+                <CalcEditor />
+              )}
+
+              {/* ============================
+                  Tab: 使用手冊
+                  ============================ */}
+              {activeTab === "manual" && (
+                <ManualContent onNavigate={setActiveTab} />
               )}
             </>
           )}
@@ -1709,7 +1270,7 @@ export default function AdminClient() {
                 image={cropState.imageUrl}
                 crop={crop}
                 zoom={zoom}
-                aspect={cropState.aspect}
+                aspect={cropState.aspect || undefined}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={handleCropComplete}

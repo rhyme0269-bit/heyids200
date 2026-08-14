@@ -1,5 +1,331 @@
 # Changelog
 
+## [fix: Emoji 圖示跨平台渲染修復] - 2026-08-08T11:00:00Z
+
+### 變更類型
+
+Bug 修正（Issue #17）
+
+### 變更摘要
+
+CJK 字型（Noto Sans TC）會攔截 emoji codepoints，導致 Linux 等缺少 emoji 字型的系統上服務項目圖示顯示為空方框。建立 23KB 的 Noto Color Emoji 字型子集，透過 @font-face 載入為 web font，搭配系統 emoji 字型作為 fallback。所有 emoji icon 元素加上 emoji-icon CSS class。
+
+### 改動
+
+- globals.css: 新增 @font-face "Emoji" 字型宣告 + .emoji-icon class
+- KeyValueListRenderer.tsx: icon span 加上 emoji-icon class
+- ToolsClient.tsx: calculator icon span 加上 emoji-icon class
+- CalcEditor.tsx: 後台 calculator icon span 加上 emoji-icon class
+- public/fonts/emoji-subset.woff2: 23KB emoji 字型子集
+
+### Issue 更新
+
+- Issue #10（購屋總費用試算）：所有功能已在先前 commit 實作完成，已附截圖回覆
+- Issue #17（後台管理 icon）：emoji 圖示渲染修復，已附截圖回覆
+- Issue #19（實用連結）：已在先前 commit 完成，已附截圖回覆
+- Issue #20（服務項目）：已在先前 commit 完成，已附截圖回覆
+
+---
+
+## [feat: 視覺公式建構器增強與前端硬編碼移除] - 2026-08-04T00:00:00Z
+
+### 變更類型
+
+功能增強 + Bug 修正
+
+### 變更摘要
+
+視覺公式建構器新增線性建構流程（ContinueButton `…` 按鈕）、清除公式功能、空公式提示。修正 nodeToExpr 對空節點回傳 0 的問題。移除前端 rate_display 硬編碼邏輯，改由後端公式計算。新增 rate_display 公式至 deed_tax 和 combined_income_tax seed。metadata description 改為泛用文字。
+
+### 改動
+
+- FormulaBuilder.tsx: 新增 ContinueButton、handleWrap、handleClear、空公式提示；修正 nodeToExpr empty 回傳 null
+- ToolsClient.tsx: 移除 rate_display 特殊處理邏輯
+- page.tsx (tools): metadata description 改為泛用文字
+- calc-seed.ts: 新增 rate_display 公式至 deed_tax 和 combined_income_tax
+- calc-types.ts: CalcFormula 新增 optional label 欄位
+- CalcEditor.tsx: 支援公式 label 顯示
+
+---
+
+## [feat: 後台使用手冊 TPEX 風格改版] - 2026-07-31T06:00:00Z
+
+### 變更類型
+
+功能改進
+
+### 變更摘要
+
+參考 TPEX 前端使用說明界面，重新設計後台使用手冊：新增歡迎橫幅、5 步驟快速入門時間軸、注意事項側欄卡片、可點擊跳轉其他頁籤的 TabLink 元件。所有原有操作說明內容保留。
+
+### 改動
+
+- ManualContent.tsx: 完整改版，新增 WelcomeBanner、TimelineGuide、NoticeCard、TabLink 元件
+- AdminClient.tsx: 傳入 onNavigate={setActiveTab} 讓手冊內連結可跳轉頁籤
+
+---
+
+## [fix: 服務項目預設 emoji icon] - 2026-07-31T05:30:00Z
+
+### 變更類型
+
+Bug 修復
+
+### 變更摘要
+
+修復服務項目 key_value_list 區塊 seed 資料缺少 icon 欄位的問題。新部署時服務項目卡片會帶有預設 emoji 圖示（🏠🌳🤲🔐🧾⚖️🏛📈💬）。
+
+### 改動
+
+- cms-db.ts: 兩處 seedHomePage/seedServicesPage 的 defaultServices.map 加入 icon 欄位
+
+### 關閉 Issues
+
+- #17 後台管理（項目增加圖示後並未顯示）
+
+---
+
+## [fix: 計算器遞增式 seed + 定義自動更新] - 2026-07-31T04:00:00Z
+
+### 變更類型
+
+Bug 修復
+
+### 變更摘要
+
+修復計算器 seed 邏輯從「全有全無」（表有資料就跳過）改為 slug-based 遞增式 seed。新增的系統計算器會自動 INSERT，已存在但 definition 不同的會自動 UPDATE。解決既有 DB 無法取得新版計算器定義的問題（#10 購屋總費用、#11 土地增值稅、#12 房地合一稅）。
+
+### 改動
+
+- calc-db.ts: `seedCalculators()` 改為查詢既有 slug+definition，比對後決定 INSERT 或 UPDATE
+
+### 關閉 Issues
+
+- #10 購屋總費用試算
+- #11 土地增值稅試算修改
+- #12 房地合一稅試算
+
+---
+
+## [feat: 系統頁面與使用者頁面分離] - 2026-07-31T03:00:00Z
+
+### 變更類型
+
+架構改進
+
+### 變更摘要
+
+解決兩個問題：(1) seed 邏輯從「全有全無」改為遞增式，新增 `seed_key` 欄位追蹤每個系統預設頁面，既有 DB 升級時可自動新增缺少的系統頁面；(2) 使用者建立的頁面 URL 改用 `/p/{slug}` 前綴，與系統頁面（頂層 `/{slug}`）隔離，防止 slug 衝突。同時新增保留 slug 驗證（admin、api、p 等），sitemap 改為從 DB 動態生成。
+
+### 改動
+
+- cms-types.ts: Page interface 新增 `seedKey: string | null`
+- cms-db.ts: pages 表新增 `seed_key` 欄位 + 遷移邏輯、`seedCmsPages()` 改為遞增式（每個頁面獨立 seed 函式）、`getNavItems()` 依 is_system 產生不同 URL、`createPage()` 新增 RESERVED_SLUGS 驗證
+- [slug]/page.tsx: 加 `!page.isSystem` guard，僅服務系統頁面
+- p/[slug]/page.tsx: 新增使用者頁面路由，僅服務非系統頁面
+- PageBuilder.tsx: 建立 modal 顯示 `/p/` 前綴、頁面列表區分系統/使用者路徑、保留 slug 驗證提示
+- API routes: 新增保留 slug 400 錯誤處理
+- sitemap.ts: 改為動態查詢 DB 生成，正確區分系統/使用者頁面 URL
+
+### 影響評估
+- 風險等級: Medium
+- 受影響功能: feature-020
+- 破壞性變更: 使用者頁面 URL 從 `/{slug}` 變為 `/p/{slug}`（上線前可接受）
+
+---
+
+## [feat: 計算器排序 (#13) + Google 表單 (#14) + 實用連結 (#16)] - 2026-07-31T01:00:00Z
+
+### 變更類型
+
+新增功能
+
+### 變更摘要
+
+依 GitHub Issues 完成三項功能：#13 計算器排序 UI（▲▼ 箭頭即時重排）、#14 Google 表單嵌入（聯絡表單/聯絡雙欄支援 googleFormUrl）、#16 實用連結頁面（/links seed + 項目列表 url 欄位支援連結卡片）。更新使用手冊新增三項功能的操作說明。修正 KeyValueListRenderer eyebrow 文字依內容動態切換。
+
+### 改動
+
+- CalcEditor.tsx: 新增 `handleMove` + ▲▼ 按鈕
+- cms-types.ts: KeyValueListData items 新增 `url`、ContactFormData 新增 `googleFormUrl`
+- ContactFormRenderer.tsx / ContactLayoutRenderer.tsx: 支援 Google Form iframe
+- PageBuilder.tsx: 新增 Google Form URL 和項目連結 URL 編輯欄位
+- KeyValueListRenderer.tsx: 提取 ItemCard 元件，支援連結卡片，eyebrow 動態切換
+- cms-db.ts: 新增「實用連結」seed 頁面（6 個政府連結）
+- ManualContent.tsx: 新增計算器排序、Google 表單、實用連結操作說明
+
+### 影響評估
+- 風險等級: Low
+- 受影響功能: feature-015, feature-017, feature-018, feature-019
+- 破壞性變更: No
+
+---
+
+## [feat: 計算器改良 (#10-13) + FAQ 連結 (#15) + 使用手冊更新] - 2026-07-30T23:30:00Z
+
+### 變更類型
+
+功能修改 + 新增功能
+
+### 變更摘要
+
+依 GitHub Issues #10-13 改良計算器：購屋總費用新增貸款相關欄位（設定費、設定規費）、土地增值稅改為連結型計算器、房地合一稅自動推算推計費用、計算器重新排序。依 #15 為 FAQ 答案加入 Markdown 連結語法支援。更新使用手冊新增計算器特殊功能和 FAQ 連結操作說明。
+
+### 改動
+
+- calc-types.ts: 新增 `CalcLink` interface 和 `links` 欄位
+- calc-seed.ts: 重寫購屋總費用（貸款欄位）、土地增值稅（連結型）、房地合一稅（自動推算）、重新排序
+- ToolsClient.tsx: 新增 `NoteText`、`LinkCard` 元件，支援連結型計算器和備註連結
+- FaqAccordionRenderer.tsx: 新增 `RichAnswer` 元件，解析 `[text](url)` 語法
+- default-data.ts: FAQ Q3/Q6 答案加入連結語法
+- ManualContent.tsx: 新增「計算器特殊功能」和「FAQ 答案加入連結」章節
+
+### 影響評估
+- 風險等級: Low
+- 受影響功能: feature-015, feature-016
+- 破壞性變更: No
+
+---
+
+## [feat: CMS 自動 seed + 孤兒程式碼清理] - 2026-07-30T22:00:00Z
+
+### 變更類型
+
+新增功能 + 程式碼清理
+
+### 變更摘要
+
+新增 CMS 頁面自動 seed 機制：首次部署時自動建立 6 個預設頁面（首頁、關於我們、服務項目、常見問題、聯絡我們、小工具）及 5 個頁面模板，使用 default-data.ts 的預設內容。同時清理被 CMS 取代的舊程式碼：刪除 6 個孤兒 API 路由（about、services、faqs、fees、flow、cms/migrate）、刪除 migrate-to-cms.ts、移除 db.ts 中 10 個不再使用的函式。
+
+### 改動
+
+- cms-db.ts: 新增 `seedCmsPages()` 函式（含模板 seed + 6 頁面含區塊 seed）
+- db.ts: 在 `getDb()` 中呼叫 `seedCmsPages()`
+- db.ts: 移除 `updateAbout`, `replaceServices`, `replaceServiceFlow`, `replaceFaqs`, `replaceFees`, `replaceFeeNotes`, `getServiceFlow`, `getFaqs`, `getFees`, `getFeeNotes`
+- 刪除 `src/lib/migrate-to-cms.ts`
+- 刪除 `src/app/api/admin/about/route.ts`
+- 刪除 `src/app/api/admin/services/route.ts`
+- 刪除 `src/app/api/admin/faqs/route.ts`
+- 刪除 `src/app/api/admin/fees/route.ts`
+- 刪除 `src/app/api/admin/flow/route.ts`
+- 刪除 `src/app/api/admin/cms/migrate/route.ts`
+
+### 影響評估
+- 風險等級: Medium
+- 受影響功能: feature-004, feature-011
+- 破壞性變更: Yes（移除 6 個 API endpoint，但均為孤兒未被前端呼叫）
+
+---
+
+## [feat: DB 驅動計算器系統] - 2026-07-30T18:00:00Z
+
+### 變更類型
+
+新功能
+
+### 變更摘要
+
+將 6 個硬編碼試算器轉為 SQLite + JSON blob 驅動的動態系統。新增 S-expression 公式引擎（支援 +, -, *, /, pow, round, abs, min, max, if, 比較運算, tiered 累進稅率, and, or, not）。前端 ToolsClient 從 505 行硬編碼重寫為 ~170 行泛用渲染器。後台新增「小工具」tab，提供計算器 CRUD 管理介面（輸入欄位、公式、結果顯示、總計列編輯器）。
+
+### 改動
+
+- 新增 calc-types.ts / calc-engine.ts / calc-seed.ts / calc-db.ts（計算器核心）
+- 新增 CalcEditor.tsx（後台計算器管理介面）
+- 新增 /api/calculators 和 /api/admin/calculators API
+- 重寫 ToolsClient.tsx（硬編碼 → 動態渲染）
+- 修改 db.ts 整合 calculators 表初始化
+- AdminClient.tsx 新增「小工具」tab
+
+---
+
+## [fix: 前端動態設定、PNG 透明、Admin 圖片 UX] - 2026-07-30T12:00:00Z
+
+### 變更類型
+
+修復 + 增強
+
+### 變更摘要
+
+修正圖片管理與前端顯示的多項問題。前端 Header/Footer/HeroSection/AboutPreview 從硬編碼改為動態讀取 DB settings。PNG 裁切保留透明背景。Admin 佔位符邏輯修正（上傳後不再重複顯示、刪除後正確恢復）。Logo SSR hydration 競態修正。新增 Logo 大小設定與自由裁切。移除 admin UI 中的 key: xxx 技術資訊。
+
+### 改動
+
+- Header/Footer/HeroSection/AboutPreview 改為動態讀取 settings（名稱、電話）
+- layout.tsx 傳入 siteName/phone/logoSize 到 Header
+- AdminClient: PNG 偵測與保留、imageTimestamps 初始化與刪除清除、佔位符條件修正、移除 key 顯示、logoSize UI、裁切比例選擇器、自由裁切
+- Header: useCallback ref 修正 SSR hydration、LOGO_SIZES 對應
+- default-data.ts: SiteSettings 新增 logoSize
+- images/[key]/route.ts: Cache-Control 加 must-revalidate
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-012
+- 破壞性變更: No
+
+---
+
+## [feat: 圖片庫 + 使用手冊 + 編輯器提示] - 2026-07-30T00:00:00Z
+
+### 變更類型
+
+新增功能
+
+### 變更摘要
+
+三大後台功能：(1) 圖片庫 — 將固定 11 個 key/3 個硬編碼群組改為資料庫驅動的動態群組與欄位系統，使用者可自由新增/編輯/刪除群組和圖片欄位，系統圖片受保護；(2) 使用手冊 — 後台新增「使用手冊」tab，含 4 大章節 10 個子頁面的操作說明；(3) 區塊編輯器提示 — 區塊選擇器按鈕顯示描述文字，區塊標頭旁加 info icon tooltip。
+
+### 改動
+
+- `src/lib/db.ts` — 新增 image_groups / image_slots 表、seedImageLibrary()、ImageGroup/ImageSlot 型別、15+ CRUD 函式
+- `src/app/api/admin/images/route.ts` — GET 回傳結構化資料（groups+slots+images），移除 ALLOWED_KEYS 改為 isValidImageKey()
+- `src/app/api/admin/hero-config/route.ts` — 移除硬編碼 ALLOWED_KEYS，改為 getBackgroundSlotKeys() 動態查詢
+- `src/app/api/admin/image-groups/route.ts` — 新增群組 CRUD API
+- `src/app/api/admin/image-slots/route.ts` — 新增欄位 CRUD API
+- `src/app/admin/AdminClient.tsx` — 移除 IMAGE_GROUPS/IMAGE_SLOTS 常數，改為動態 API 驅動；新增群組/欄位 CRUD UI；新增「使用手冊」tab
+- `src/app/admin/ManualContent.tsx` — 新增使用手冊元件（側邊欄導航 + 內容）
+- `src/app/admin/PageBuilder.tsx` — 新增 BLOCK_TYPE_HINTS（19 種區塊描述）、區塊選擇器顯示提示文字、區塊標頭 info icon tooltip
+
+### 影響評估
+
+- 風險等級: Low
+- 受影響功能: feature-012, feature-013, feature-014
+- 破壞性變更: No
+
+---
+
+## [feat(cms): Phase 4 整合 — 動態導覽列、舊頁面清理] - 2026-07-29T00:00:00Z
+
+### 變更類型
+
+功能修改
+
+### 變更摘要
+
+CMS 整合最後階段：Header/Footer 改為從 CMS 動態讀取導覽項目（頁面+自訂連結），支援頁面排序與顯示/隱藏切換。新增自訂導覽連結功能（支援內部/外部 URL）。刪除舊的靜態頁面路由（about、services、faq、contact），改由 CMS `[slug]` 動態路由處理。AdminClient 移除舊分頁（about/services/fees/faqs/flow），僅保留頁面管理、基本資訊、圖片管理。FAQ 頁面自動產生 FAQPage JSON-LD 結構化資料。
+
+### 改動
+
+- `src/lib/cms-types.ts` — 新增 NavItem.isExternal、NavLink interface
+- `src/lib/cms-db.ts` — 新增 nav_links 表、reorderPages()、NavLink CRUD、getNavItems()
+- `src/app/[slug]/page.tsx` — SKIP_SLUGS、FAQ JSON-LD、CMS 動態渲染
+- `src/app/admin/PageBuilder.tsx` — 頁面排序 UI、導覽切換、自訂連結管理
+- `src/app/admin/AdminClient.tsx` — 移除 5 個舊分頁及所有相關程式碼（-723 行）
+- `src/components/layout/Header.tsx` — 改為 navItems prop 動態渲染
+- `src/components/layout/Footer.tsx` — 從 CMS 讀取動態導覽
+- `src/app/layout.tsx` — 傳入 CMS navItems
+- `src/app/api/admin/cms/pages/reorder/route.ts` — 新增頁面排序 API
+- `src/app/api/admin/cms/nav-links/route.ts` — 新增自訂連結 CRUD API
+- 刪除 `src/app/about/page.tsx`、`services/page.tsx`、`faq/page.tsx`、`contact/page.tsx`
+
+### 影響評估
+
+- 風險等級: Medium
+- 受影響功能: feature-011 (CMS), feature-004 (後台管理)
+- 破壞性變更: Yes（舊靜態路由已刪除，由 CMS 接管）
+
+---
+
 ## [fix: 後台圖片預覽修正] - 2026-07-27T00:00:00Z
 
 ### 變更類型

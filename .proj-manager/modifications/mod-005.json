@@ -1,0 +1,31 @@
+{
+  "modification_id": "mod-005",
+  "feature_id": "feature-011",
+  "type": "enhancement",
+  "status": "applied",
+  "description": "CMS Phase 4 整合：動態導覽列、頁面排序、自訂連結、刪除舊靜態頁面路由、清理 AdminClient 舊分頁程式碼",
+  "created_at": "2026-07-29T00:00:00Z",
+  "impact_analysis": {
+    "breaking_change": true,
+    "affects_api": true,
+    "risk_level": "medium"
+  },
+  "changes": {
+    "files": [
+      { "path": "src/lib/cms-types.ts", "change_type": "modified", "diff_summary": "新增 NavItem.isExternal 與 NavLink interface" },
+      { "path": "src/lib/cms-db.ts", "change_type": "modified", "diff_summary": "新增 nav_links 資料表、reorderPages()、NavLink CRUD、getNavItems() 整合頁面+自訂連結" },
+      { "path": "src/app/[slug]/page.tsx", "change_type": "modified", "diff_summary": "新增 SKIP_SLUGS、buildFaqSchema() JSON-LD、CMS 動態頁面渲染" },
+      { "path": "src/app/admin/PageBuilder.tsx", "change_type": "modified", "diff_summary": "新增頁面排序、導覽顯示切換、自訂導覽連結管理 UI" },
+      { "path": "src/app/admin/AdminClient.tsx", "change_type": "modified", "diff_summary": "移除舊分頁（about/services/fees/faqs/flow）及相關 state/types/UI，保留 pages/settings/images" },
+      { "path": "src/components/layout/Header.tsx", "change_type": "modified", "diff_summary": "改為接收 navItems prop 動態渲染導覽列" },
+      { "path": "src/components/layout/Footer.tsx", "change_type": "modified", "diff_summary": "改為從 CMS 讀取動態導覽項目" },
+      { "path": "src/app/layout.tsx", "change_type": "modified", "diff_summary": "傳入 CMS navItems 給 Header" },
+      { "path": "src/app/api/admin/cms/pages/reorder/route.ts", "change_type": "added", "diff_summary": "頁面排序 API" },
+      { "path": "src/app/api/admin/cms/nav-links/route.ts", "change_type": "added", "diff_summary": "自訂導覽連結 CRUD API" },
+      { "path": "src/app/about/page.tsx", "change_type": "deleted", "diff_summary": "由 CMS [slug] 路由取代" },
+      { "path": "src/app/services/page.tsx", "change_type": "deleted", "diff_summary": "由 CMS [slug] 路由取代" },
+      { "path": "src/app/faq/page.tsx", "change_type": "deleted", "diff_summary": "由 CMS [slug] 路由取代" },
+      { "path": "src/app/contact/page.tsx", "change_type": "deleted", "diff_summary": "由 CMS [slug] 路由取代" }
+    ]
+  }
+}

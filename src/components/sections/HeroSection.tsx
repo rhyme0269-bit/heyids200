@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { hasImage, getHeroConfigs, getHeroConfigsPreview } from "@/lib/db";
+import { hasImage, getHeroConfigs, getHeroConfigsPreview, getSettings } from "@/lib/db";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
 
 export default async function HeroSection() {
   const cookieStore = await cookies();
   const isPreview = cookieStore.get("hero_preview")?.value === "1";
   const configs = isPreview ? getHeroConfigsPreview() : getHeroConfigs();
+  const settings = getSettings();
   const cfg = configs["hero_bg"];
   const mode = cfg?.mode || "default";
   const bgColor = mode === "color" ? cfg.color : undefined;
@@ -44,7 +45,7 @@ export default async function HeroSection() {
 
           {/* Title */}
           <h1 className="animate-fade-in-up animate-delay-100 text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight font-serif tracking-tight">
-            合一地政士事務所
+            {settings.name}
           </h1>
 
           {/* Decorative line */}

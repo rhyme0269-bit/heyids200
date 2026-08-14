@@ -1,0 +1,31 @@
+{
+  "feature_id": "feature-012",
+  "name": "圖片庫（動態群組與欄位）",
+  "description": "資料庫驅動的動態圖片群組與欄位系統。使用者可自由建立、編輯、刪除群組和圖片欄位。系統圖片（logo、hero_bg 等）受 is_system 保護無法刪除。裁切比例（含自由裁切）和欄位類型（一般/背景）儲存在資料庫中。上傳 PNG 保留透明背景。Logo 支援 4 段大小調整。前端所有頁面動態讀取 DB settings（名稱、電話、logoSize），不再硬編碼。",
+  "status": "completed",
+  "created_at": "2026-07-30T00:00:00Z",
+  "files": [
+    "src/lib/db.ts",
+    "src/app/admin/AdminClient.tsx",
+    "src/app/api/admin/images/route.ts",
+    "src/app/api/admin/hero-config/route.ts",
+    "src/app/api/admin/image-groups/route.ts",
+    "src/app/api/admin/image-slots/route.ts"
+  ],
+  "dependencies": [],
+  "api_endpoints": [
+    { "method": "GET", "path": "/api/admin/images", "description": "取得 groups + slots + images 結構化資料" },
+    { "method": "POST", "path": "/api/admin/images", "description": "上傳圖片（動態驗證 key）" },
+    { "method": "DELETE", "path": "/api/admin/images", "description": "刪除圖片" },
+    { "method": "POST", "path": "/api/admin/image-groups", "description": "建立圖片群組" },
+    { "method": "PUT", "path": "/api/admin/image-groups", "description": "更新群組名稱/說明" },
+    { "method": "DELETE", "path": "/api/admin/image-groups", "description": "刪除群組（含 system slot 時拒絕）" },
+    { "method": "POST", "path": "/api/admin/image-slots", "description": "建立圖片欄位" },
+    { "method": "PUT", "path": "/api/admin/image-slots", "description": "更新欄位設定" },
+    { "method": "DELETE", "path": "/api/admin/image-slots", "description": "刪除欄位（system 時拒絕）" }
+  ],
+  "data_model": [
+    { "name": "image_groups", "fields": ["id", "name", "description", "sort_order"] },
+    { "name": "image_slots", "fields": ["key", "group_id", "label", "hint", "sort_order", "is_system", "aspect_ratio", "slot_type"] }
+  ]
+}

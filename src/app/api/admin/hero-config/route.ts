@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
-import { getHeroConfigs, updateHeroConfigs } from "@/lib/db";
+import { getHeroConfigs, updateHeroConfigs, getBackgroundSlotKeys } from "@/lib/db";
 import type { HeroConfig } from "@/lib/db";
-
-const ALLOWED_KEYS = [
-  "hero_bg",
-  "about_bg",
-  "services_bg",
-  "contact_bg",
-  "faq_bg",
-  "tools_bg",
-];
 
 export async function GET(request: NextRequest) {
   const authError = checkAuth(request);
@@ -24,10 +15,10 @@ export async function PUT(request: NextRequest) {
   if (authError) return authError;
 
   const body = (await request.json()) as Record<string, HeroConfig>;
+  const allowedKeys = getBackgroundSlotKeys();
 
-  // Validate keys
   for (const key of Object.keys(body)) {
-    if (!ALLOWED_KEYS.includes(key)) {
+    if (!allowedKeys.includes(key)) {
       return NextResponse.json({ error: `無效的 key: ${key}` }, { status: 400 });
     }
     const config = body[key];

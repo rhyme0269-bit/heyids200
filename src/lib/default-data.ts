@@ -12,6 +12,7 @@ export interface SiteSettings {
   googleMapEmbed: string;
   scrivenerName: string;
   licenseNumber: string;
+  logoSize: string;
 }
 
 export interface About {
@@ -64,6 +65,7 @@ export const defaultSiteSettings: SiteSettings = {
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.5!2d121.473!3d25.085!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z5ZCI5LiA5Zyw5pS_5aOr5LqL5YuZ5omA!5e0!3m2!1szh-TW!2stw!4v1",
   scrivenerName: "胡玉芬",
   licenseNumber: "（108）新北府地士字第003204號（換發）",
+  logoSize: "medium",
 };
 
 // ===== About =====
@@ -225,7 +227,7 @@ export const defaultFaqs: Faq[] = [
     _id: "faq-3",
     question: "地政士費用怎麼計算？",
     answer:
-      "費用依案件類型而定，請參考本所收費標準頁面。實際費用會在了解您的案件內容後提供正式報價，絕不額外加價。",
+      "費用依案件類型而定，請參考本所[收費標準](/services)頁面。實際費用會在了解您的案件內容後提供正式報價，絕不額外加價。",
   },
   {
     _id: "faq-4",
@@ -243,7 +245,7 @@ export const defaultFaqs: Faq[] = [
     _id: "faq-6",
     question: "可以用 LINE 諮詢嗎？",
     answer:
-      "當然可以！歡迎加入我們的官方 LINE 帳號（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
+      "當然可以！歡迎加入我們的[官方 LINE 帳號](https://line.me/R/ti/p/@240mvtlq)（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
   },
   {
     _id: "faq-7",

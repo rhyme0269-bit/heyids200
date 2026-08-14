@@ -29,7 +29,11 @@
         "api/admin/flow/route.ts": "服務流程 CRUD API",
         "api/admin/images/route.ts": "圖片上傳管理 API（size + MIME + key 白名單）",
         "api/admin/hero-config/route.ts": "Hero 背景設定 API（模式 + 顏色）",
-        "api/admin/hero-config/preview/route.ts": "Hero 預覽暫存 API（暫存 + 套用）"
+        "api/admin/hero-config/preview/route.ts": "Hero 預覽暫存 API（暫存 + 套用）",
+        "api/calculators/route.ts": "公開計算器列表 API",
+        "api/admin/calculators/route.ts": "計算器管理 API（列表、新增、排序）",
+        "api/admin/calculators/[id]/route.ts": "計算器單項 API（讀取、更新、刪除）",
+        "admin/CalcEditor.tsx": "計算器管理編輯器（Client Component）"
       }
     },
     "src/components": {
@@ -58,7 +62,11 @@
         "structured-data.ts": "SEO JSON-LD 結構化資料生成",
         "auth.ts": "後台 session 驗證邏輯",
         "rate-limit.ts": "記憶體速率限制器",
-        "preview.ts": "預覽模式偵測（NEXT_PUBLIC_BASE_PATH）"
+        "preview.ts": "預覽模式偵測（NEXT_PUBLIC_BASE_PATH）",
+        "calc-types.ts": "計算器 TypeScript 型別定義",
+        "calc-engine.ts": "S-expression 公式求值引擎",
+        "calc-seed.ts": "6 個預設系統計算器定義",
+        "calc-db.ts": "計算器 SQLite CRUD 函式"
       }
     },
     ".github/workflows": {
