@@ -17,3 +17,7 @@ data/
 # misc
 .DS_Store
 *.tgz
+tsconfig.tsbuildinfo
+
+# Claude Code 個人設定（含 GH_TOKEN，不可進版控）
+.claude/settings.local.json
