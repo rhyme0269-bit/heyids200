@@ -62,16 +62,6 @@ jobs:
         run: |
           BASE="${{ steps.urls.outputs.base_path }}"
 
-          # Auto-detect pages from src/app/
-          PAGES=("")
-          for f in $(find src/app -name "page.tsx" -not -path "*/api/*" -not -path "*/admin/*" | sort); do
-            route=$(dirname "$f" | sed 's|^src/app||' | sed 's|^/||')
-            if [ -n "$route" ] && [ "$route" != "." ]; then
-              PAGES+=("$route")
-            fi
-          done
-          echo "Detected pages: ${PAGES[*]}"
-
           # Prepare standalone server
           cp -r .next/static .next/standalone/.next/static
           if [ -d public ]; then cp -r public .next/standalone/public; fi
@@ -82,15 +72,49 @@ jobs:
             sleep 1
           done
 
-          # Download pages
+          # Discover pages from the sitemap, which lists every published CMS page
+          # (including ones hidden from the nav, e.g. /fees). Scanning src/app/ no
+          # longer works: since the CMS migration the routes are dynamic segments
+          # ([slug], p/[slug]), and feeding those to curl literally aborts the job.
+          PAGES=()
+          while IFS= read -r route; do PAGES+=("$route"); done < <(
+            curl -sL "http://localhost:3000${BASE}/sitemap.xml" \
+              | grep -o '<loc>[^<]*</loc>' \
+              | sed 's|<loc>||; s|</loc>||' \
+              | sed 's|^https\?://[^/]*||' \
+              | sed "s|^${BASE}||" \
+              | sed 's|^/||' \
+              | sort -u
+          )
+
+          # Fall back to static routes on disk if the sitemap is unavailable.
+          if [ ${#PAGES[@]} -eq 0 ]; then
+            echo "::warning::sitemap returned no pages, falling back to filesystem scan"
+            PAGES=("")
+            for f in $(find src/app -name "page.tsx" -not -path "*/api/*" -not -path "*/admin/*" | sort); do
+              route=$(dirname "$f" | sed 's|^src/app||' | sed 's|^/||')
+              case "$route" in ""|.|*"["*) continue ;; esac
+              PAGES+=("$route")
+            done
+          fi
+          printf 'Detected page: /%s\n' "${PAGES[@]}"
+
+          # Download pages. -g disables curl globbing so bracketed paths can never
+          # be misread as a URL range.
           mkdir -p _site
+          FAILED=0
           for page in "${PAGES[@]}"; do
             if [ -z "$page" ]; then
-              curl -sL "http://localhost:3000${BASE}" -o _site/index.html
+              URL="http://localhost:3000${BASE}"
+              DEST="_site/index.html"
             else
+              URL="http://localhost:3000${BASE}/$page"
               mkdir -p "_site/$page"
-              curl -sL "http://localhost:3000${BASE}/$page" -o "_site/$page/index.html"
+              DEST="_site/$page/index.html"
             fi
+            CODE=$(curl -gsL -o "$DEST" -w '%{http_code}' "$URL" || echo 000)
+            echo "  /$page -> $CODE"
+            [ "$CODE" = "200" ] || FAILED=$((FAILED + 1))
           done
 
           # Copy static assets
@@ -99,6 +123,12 @@ jobs:
           cp -r public/* _site/ 2>/dev/null || true
 
           kill $SERVER_PID 2>/dev/null || true
+
+          # Don't publish a site full of error pages.
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::$FAILED page(s) failed to capture"
+            exit 1
+          fi
 
           # 404.html redirect for client-side navigation
           cat > _site/404.html <<EOF
