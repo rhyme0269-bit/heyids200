@@ -1,5 +1,45 @@
 # Changelog
 
+## [chore: CMS builder 合併回 main + 預覽站修復] - 2026-08-14T08:00:00Z
+
+### 變更類型
+
+分支合併 + CI 修正 + Bug 修正
+
+### 變更摘要
+
+`feature/cms-builder` 自 2026-07-29 起累積 43 個 commit 未合併，GitHub Pages 預覽站因此停留在舊版，是先前多個 issue 出現「已修改但看不到」的主因之一。合併前先建立回滾 tag，合併後連帶修復兩個只在預覽站環境浮現的問題。
+
+### 改動
+
+- **tag `v0.1.0`**：指向 `34545be`（合併前最後的 main），作為回滾點。回滾方式 `git reset --hard v0.1.0`
+- **PR #21**：`feature/cms-builder` → `main`，`--no-ff` 合併保留完整歷史（merge commit `e367448`，105 檔案 +9035/-2377）
+- **`.gitignore`**（`c11a986`）：加入 `.claude/settings.local.json`（含 GH_TOKEN）與 `tsconfig.tsbuildinfo`
+- **`.github/workflows/deploy-preview.yml`**（`5178473`）：改由執行中 server 的 sitemap 列舉頁面，取代掃描 `src/app/` 的作法
+- **`layout.tsx` / `globals.css`**（`0c18ab9`）：emoji 字型改用 `next/font/local` 宣告，字型檔移至 `src/app/fonts/`
+
+### 修復的問題
+
+1. **預覽站部署失敗**：CMS 改版後路由變成動態片段（`[slug]`、`p/[slug]`），workflow 掃描 `page.tsx` 得到字面上的 `[slug]` 餵給 curl，被判定為 URL 格式錯誤（exit 3），在 `bash -e` 下整個 job 中斷。改用 sitemap 列舉，可涵蓋所有已發布頁面（含不在導覽列的 `/fees`），並加上 `-g` 停用 curl globbing、非 200 即失敗以避免發布錯誤頁。
+
+2. **emoji 字型在預覽站 404**：`@font-face` 寫死絕對路徑 `/fonts/emoji-subset.woff2`，未帶 basePath。預覽站位於 `/heyids200/` 之下，瀏覽器實際請求 `/fonts/...` 得到 404 — 即 Issue #17 的修復（`e6261da`）在預覽站上從未真正生效，只有 basePath 為空的 Docker 環境正常。改用 `next/font/local` 後輸出相對路徑 `url(../media/...)`，任何 basePath 都能解析；同時關閉 `adjustFontFallback` 以免 Next 將 Arial 插進 `.emoji-icon` 的字型鏈、擋在系統 emoji 字型之前。
+
+### 驗證
+
+- `tsc --noEmit` 零錯誤；`next build` 31 條路由全數產出
+- 有 / 無 basePath 兩種建置輸出相同的 `@font-face`
+- Docker 部署（`docker compose up -d --build`）：9 條路由 + 4 個 API 端點全部 200，字型檔 200 / 22796 bytes，服務項目 emoji 正確出現在 HTML
+- CI 抓取 8 個頁面全部 200
+
+### 已知技術債（未處理）
+
+- `ToolsClient.tsx:128-130` early return 排在兩個 `useState` 之前，違反 Rules of Hooks。目前觸發機率低（父層 `key={calc.id}`、清單僅 fetch 一次），但後台若把「純連結」計算器改成含輸入欄位並觸發重新取資料會白畫面。**未動的原因**：Issue #12 客戶要求小工具先不要再變更
+- `PageBuilder.tsx:326` render 期間呼叫 `Date.now()` / `Math.random()`
+- `PageBuilder.tsx:137`、`CalcEditor.tsx:529` effect 中同步 setState
+- `AdminClient.tsx` 3 個 lint error 為 main 既有問題
+
+---
+
 ## [fix: Emoji 圖示跨平台渲染修復] - 2026-08-08T11:00:00Z
 
 ### 變更類型
