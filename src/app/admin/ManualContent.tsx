@@ -193,7 +193,7 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
               <StepBox steps={[
                 "在 FAQ 答案的文字中，用 <code>[顯示文字](網址)</code> 的格式加入連結",
                 "例如：<code>請參考本所[收費標準](/services)頁面</code>",
-                "或外部連結：<code>歡迎加入我們的[官方 LINE 帳號](https://line.me/R/ti/p/@240mvtlq)</code>",
+                "或外部連結：<code>歡迎加入我們的[官方 LINE 帳號](https://lin.ee/pgsUFs6)</code>",
                 "儲存後，前台會把 <code>[收費標準]</code> 顯示為可點擊的橘色連結",
               ]} />
               <TipBox type="info">站內連結用 <code>/路徑</code>（例如 <code>/services</code>），外部連結用完整網址（例如 <code>https://line.me/...</code>）。外部連結會在新分頁中開啟。</TipBox>

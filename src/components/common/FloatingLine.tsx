@@ -1,10 +1,12 @@
 "use client";
 
-export default function FloatingLine() {
+export default function FloatingLine({ href }: { href: string }) {
+  if (!href) return null;
+
   return (
     <a
       id="floating-line"
-      href="https://line.me/R/ti/p/@240mvtlq"
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="LINE 諮詢"

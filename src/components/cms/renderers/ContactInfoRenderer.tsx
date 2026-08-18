@@ -44,7 +44,18 @@ export default function ContactInfoRenderer({ data }: { data: Record<string, unk
             </svg>
             <div>
               <p className="font-medium text-stone-800">LINE</p>
-              <p className="text-stone-600">ID：{settings.lineId}</p>
+              {settings.lineUrl ? (
+                <a
+                  href={settings.lineUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-stone-600 hover:text-amber-800"
+                >
+                  ID：{settings.lineId}
+                </a>
+              ) : (
+                <p className="text-stone-600">ID：{settings.lineId}</p>
+              )}
             </div>
           </div>
         )}

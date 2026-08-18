@@ -37,6 +37,7 @@ function getDb(): Database.Database {
 
   initTables(_db);
   seedIfEmpty(_db);
+  migrateSettings(_db);
   seedImageLibrary(_db);
   initCmsTables(_db);
   seedCmsPages(_db);
@@ -141,6 +142,21 @@ function initTables(db: Database.Database) {
       slot_type TEXT NOT NULL DEFAULT 'general'
     );
   `);
+}
+
+// ===== Migrations =====
+
+// Settings are only seeded into an empty table, so an existing database keeps the
+// value it was first seeded with. Replace the superseded LINE URL, but only where
+// it is still the old default — a value the client has since customised is left
+// alone. Self-limiting: once replaced the condition no longer matches.
+const SUPERSEDED_LINE_URLS = ["https://line.me/R/ti/p/@240mvtlq"];
+
+function migrateSettings(db: Database.Database) {
+  const update = db.prepare("UPDATE settings SET value = ? WHERE key = 'lineUrl' AND value = ?");
+  for (const old of SUPERSEDED_LINE_URLS) {
+    update.run(defaultSiteSettings.lineUrl, old);
+  }
 }
 
 // ===== Seed =====

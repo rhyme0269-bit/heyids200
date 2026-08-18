@@ -82,7 +82,7 @@ export default function RootLayout({
         <Header navItems={navItems} siteName={settings.name} phone={settings.phone} logoSize={settings.logoSize} />
         <main className="flex-1">{children}</main>
         <Footer />
-        <FloatingLine />
+        <FloatingLine href={settings.lineUrl} />
       </body>
     </html>
   );

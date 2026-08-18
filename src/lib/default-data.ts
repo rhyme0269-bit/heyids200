@@ -58,7 +58,7 @@ export const defaultSiteSettings: SiteSettings = {
   mobile: "0915195429",
   email: "heyids200@gmail.com",
   lineId: "@240mvtlq",
-  lineUrl: "https://line.me/R/ti/p/@240mvtlq",
+  lineUrl: "https://lin.ee/pgsUFs6",
   address: "新北市蘆洲區長安街200號",
   googleMapUrl: "https://maps.app.goo.gl/TnpryxjWD7y53Mbx7?g_st=ic",
   googleMapEmbed:
@@ -245,7 +245,7 @@ export const defaultFaqs: Faq[] = [
     _id: "faq-6",
     question: "可以用 LINE 諮詢嗎？",
     answer:
-      "當然可以！歡迎加入我們的[官方 LINE 帳號](https://line.me/R/ti/p/@240mvtlq)（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
+      "當然可以！歡迎加入我們的[官方 LINE 帳號](https://lin.ee/pgsUFs6)（ID: @240mvtlq），即可線上諮詢。我們會盡快回覆您的問題。",
   },
   {
     _id: "faq-7",
