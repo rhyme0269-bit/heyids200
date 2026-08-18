@@ -1003,7 +1003,7 @@ export default function AdminClient() {
                             const isBg = slot.slotType === "background";
                             const cfg = heroConfigs[slot.key];
                             const mode = cfg?.mode || "default";
-                            const color = cfg?.color || "#44403c";
+                            const color = cfg?.color || "#4a3428";
                             return (
                               <div key={slot.key} className="rounded-lg border border-stone-200 p-4">
                                 <div className="flex items-center justify-between mb-1">

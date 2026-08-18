@@ -3,8 +3,9 @@ import type { KeyValueListData } from "@/lib/cms-types";
 
 export type ServiceCardItem = KeyValueListData["items"][number];
 
+// 32px padding, 20px radius per the brand spec (#25).
 const CARD_CLASS =
-  "group hover-lift relative p-6 rounded-xl border border-stone-200 bg-white overflow-hidden";
+  "group hover-lift relative p-8 rounded-[20px] border border-stone-200/70 bg-white overflow-hidden";
 
 /**
  * Card used for key_value_list items. Shared by the CMS renderer (/services,

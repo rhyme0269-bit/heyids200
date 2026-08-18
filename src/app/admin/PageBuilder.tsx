@@ -867,12 +867,12 @@ function BlockEditor({
                 <label className="mb-1 block text-xs font-medium text-stone-600">背景色</label>
                 <input
                   type="color"
-                  value={(data.bgColor as string) || "#44403c"}
+                  value={(data.bgColor as string) || "#4a3428"}
                   onChange={(e) => set("bgColor", e.target.value)}
                   className="h-10 w-16 cursor-pointer rounded border border-stone-300"
                 />
               </div>
-              <span className="pb-2 text-xs text-stone-400">{(data.bgColor as string) || "#44403c"}</span>
+              <span className="pb-2 text-xs text-stone-400">{(data.bgColor as string) || "#4a3428"}</span>
             </div>
           )}
           <Field label="背景圖片 Key" value={data.bgImageKey as string} onChange={(v) => set("bgImageKey", v)} />
@@ -1396,7 +1396,7 @@ function ArrayEditor<T>({
 
 function getDefaultData(blockType: BlockType): Record<string, unknown> {
   switch (blockType) {
-    case "hero_banner": return { title: "", subtitle: "", bgMode: "default", bgColor: "#44403c", bgImageKey: null };
+    case "hero_banner": return { title: "", subtitle: "", bgMode: "default", bgColor: "#4a3428", bgImageKey: null };
     case "text_heading": return { text: "", level: "h2" };
     case "text_body": return { html: "" };
     case "image": return { imageKey: "", alt: "", caption: "" };

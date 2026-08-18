@@ -780,7 +780,7 @@ function QuickIndex({ onSelect, onNavigate }: { onSelect: (id: string) => void; 
             <button
               key={sub.id}
               onClick={() => onSelect(sub.id)}
-              className="text-xs text-stone-500 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded border border-stone-150 transition"
+              className="text-xs text-stone-500 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded border border-stone-200 transition"
             >
               {sub.title}
             </button>

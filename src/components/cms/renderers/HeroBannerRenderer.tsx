@@ -5,7 +5,7 @@ import type { HeroBannerData } from "@/lib/cms-types";
 export default function HeroBannerRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as HeroBannerData;
   const bgMode = d.bgMode ?? "default";
-  const bgColor = d.bgColor ?? "#44403c";
+  const bgColor = d.bgColor ?? "#4a3428";
   const imageKey = d.bgImageKey;
   const imageSrc = imageKey
     ? hasImage(imageKey)

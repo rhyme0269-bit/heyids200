@@ -1,8 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf8f5;
-  --foreground: #292524;
+  --background: #f5f1eb;
+  --foreground: #2d2a26;
+}
+
+/*
+ * Brand palette (#25).
+ *
+ * The whole site is written in Tailwind's `stone` and `amber` utilities, so the
+ * palette is applied by redefining those two scales rather than rewriting a few
+ * hundred class names. Every existing text-stone-800 / bg-amber-800 picks up the
+ * brand colour, and re-tuning the brand later is an edit in this one block.
+ *
+ *   stone = warm neutrals   50 background · 200 borders · 600 sub text · 800 text
+ *   amber = brand accent   500 secondary gold · 800 primary brown
+ *
+ * Anchors from the spec: Primary #4A3428, Secondary #B08D57,
+ * Background #F5F1EB, Text #2D2A26, Sub Text #7A6A5A.
+ * The remaining steps are interpolated to keep each scale even.
+ */
+@theme {
+  --color-stone-50: #f5f1eb;
+  --color-stone-100: #ede6da;
+  --color-stone-200: #ddd3c4;
+  --color-stone-300: #c7b9a6;
+  --color-stone-400: #a89684;
+  --color-stone-500: #8a7a69;
+  --color-stone-600: #7a6a5a;
+  --color-stone-700: #574a3e;
+  --color-stone-800: #2d2a26;
+  --color-stone-900: #201e1b;
+  --color-stone-950: #151412;
+
+  --color-amber-50: #faf6f0;
+  --color-amber-100: #f2e9dc;
+  --color-amber-200: #e3d2b8;
+  --color-amber-300: #d4bb94;
+  --color-amber-400: #c4a475;
+  --color-amber-500: #b08d57;
+  --color-amber-600: #9a7848;
+  --color-amber-700: #6e5138;
+  --color-amber-800: #4a3428;
+  --color-amber-900: #33231a;
+
+  /* Named alias so gold can be used deliberately (nav underline, accents)
+     without depending on where it happens to sit in the amber scale. */
+  --color-gold: #b08d57;
 }
 
 @theme inline {
@@ -59,12 +103,19 @@ body {
 }
 
 /* Hover lift effect */
+/* Card surface: soft resting shadow, lifts 8px on hover over 0.3s (#25). */
 .hover-lift {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift:hover {
+    transform: none;
+  }
 }
 
 /* Section divider decorations */
@@ -91,9 +142,9 @@ body {
   font-family: var(--font-emoji), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
-/* Gradient text utility */
+/* Gradient text utility — brand brown into secondary gold */
 .text-gradient {
-  background: linear-gradient(135deg, #78350f, #92400e, #b45309);
+  background: linear-gradient(135deg, #4a3428, #6e5138, #b08d57);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
