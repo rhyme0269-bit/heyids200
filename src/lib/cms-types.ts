@@ -17,6 +17,7 @@ export type BlockType =
   | "custom_html"
   | "profile_card"
   | "two_column_list"
+  | "two_column_flow"
   | "contact_layout";
 
 export type PageStatus = "published" | "draft";
@@ -179,6 +180,23 @@ export interface TwoColumnListData {
   rightTitle: string;
   rightItems: string[];
   rightStyle: "check" | "bullet" | "circle-check";
+}
+
+/**
+ * Stage-by-stage flow with two parallel columns of work (e.g. 地政士作業 vs
+ * 買賣雙方作業). Column text is one entry per line rather than an array, so the
+ * editor is a plain textarea and a stage can hold any number of entries.
+ */
+export interface TwoColumnFlowData {
+  title: string;
+  leftLabel: string;
+  rightLabel: string;
+  defaultOpen: boolean;
+  stages: Array<{
+    name: string;
+    left: string;
+    right: string;
+  }>;
 }
 
 export interface ContactLayoutData {

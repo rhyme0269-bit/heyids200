@@ -1,6 +1,10 @@
+import Link from "next/link";
 import type { KeyValueListData } from "@/lib/cms-types";
 
 export type ServiceCardItem = KeyValueListData["items"][number];
+
+const CARD_CLASS =
+  "group hover-lift relative p-6 rounded-xl border border-stone-200 bg-white overflow-hidden";
 
 /**
  * Card used for key_value_list items. Shared by the CMS renderer (/services,
@@ -8,10 +12,15 @@ export type ServiceCardItem = KeyValueListData["items"][number];
  * both honour the icon set in the page builder.
  */
 export default function ServiceCard({ item, index }: { item: ServiceCardItem; index: number }) {
+  // A url starting with "/" is a page on this site — route it through next/link
+  // instead of opening a new tab. This is what lets a service point at a detail
+  // page (e.g. a process flow) by filling in the url field alone, no code change.
+  const isInternal = !!item.url && item.url.startsWith("/");
+
   const inner = (
     <>
       <span className="absolute top-4 right-4 text-xs font-mono text-stone-300 group-hover:text-amber-700 transition-colors">
-        {item.url ? "↗" : String(index + 1).padStart(2, "0")}
+        {item.url && !isInternal ? "↗" : String(index + 1).padStart(2, "0")}
       </span>
       <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-50 transition-colors">
         {item.icon ? (
@@ -28,22 +37,26 @@ export default function ServiceCard({ item, index }: { item: ServiceCardItem; in
     </>
   );
 
+  if (isInternal) {
+    return (
+      <Link href={item.url!} className={`${CARD_CLASS} block`}>
+        {inner}
+      </Link>
+    );
+  }
+
   if (item.url) {
     return (
       <a
         href={item.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group hover-lift relative p-6 rounded-xl border border-stone-200 bg-white overflow-hidden block"
+        className={`${CARD_CLASS} block`}
       >
         {inner}
       </a>
     );
   }
 
-  return (
-    <div className="group hover-lift relative p-6 rounded-xl border border-stone-200 bg-white overflow-hidden">
-      {inner}
-    </div>
-  );
+  return <div className={CARD_CLASS}>{inner}</div>;
 }

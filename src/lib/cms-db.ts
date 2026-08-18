@@ -227,6 +227,7 @@ export function getPageBySlug(slug: string): Page | null {
 
 const RESERVED_SLUGS = new Set([
   "home", "about", "services", "fees", "tools", "faq", "contact", "links",
+  "flow-sale",
   "admin", "api", "p", "_next",
 ]);
 
@@ -773,6 +774,66 @@ type SeedPageDef = {
 
 const SERVICE_ICONS = ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"];
 
+// Services that have a detail page of their own, keyed by service title. A path
+// starting with "/" makes the card an internal link, so adding a flow for another
+// service is a matter of creating its page and adding an entry here — or simply
+// filling in the card's url field in the admin, with no code change at all.
+const SERVICE_FLOW_LINKS: Record<string, string> = {
+  "不動產買賣移轉登記": "/flow-sale",
+};
+
+// Buy/sell transfer flow under price-escrow guarantee. Described in the office's
+// own wording and referring to a generic 建經公司 rather than any one provider.
+// Column text is one entry per line; the renderer numbers them.
+const SALE_FLOW = {
+  title: "買賣移轉登記流程",
+  leftLabel: "地政士作業",
+  rightLabel: "買、賣雙方作業",
+  defaultOpen: true,
+  stages: [
+    {
+      name: "簽約",
+      left: "完成簽約作業並核發履約保證書。\n將相關文件送交建經公司。",
+      right: "簽訂履約保證專用之不動產買賣契約書、價金信託履約保證申請書及撥款委託書。",
+    },
+    {
+      name: "用印",
+      left: "通知買方支付用印款。\n協同賣方完成備證及用印手續。",
+      right: "買方將用印款匯入履約保證信託專戶。\n賣方配合備證及用印。",
+    },
+    {
+      name: "核發稅單",
+      left: "申報土地增值稅（一般用地約 7~14 個工作日，自用住宅用地約 14~21 個工作日）。\n申報契稅（約 7~14 個工作日）。",
+      right: "買方如需辦理貸款，請自本階段起同步向銀行申請，詳細作業說明見下一階段。",
+    },
+    {
+      name: "完稅",
+      left: "確認買方已履行應盡義務，並代為保管尾款本票至點交完成。\n將稅單及尾款本票送交建經公司，申請撥付稅款。\n通知買方支付完稅款。",
+      right: "買方需要貸款（自核發稅單階段起同步進行）：申請貸款、銀行鑑價、確認貸款額度、完成對保及開戶手續、銀行設定契約書用印。貸款金額不足時，須將完稅款與尾款差額一併匯入履約保證信託專戶，並簽立尾款擔保本票。\n買方不貸款：須將完稅款與尾款一併匯入履約保證信託專戶。",
+    },
+    {
+      name: "過戶",
+      left: "確認尾款或尾款差額已匯入履約保證信託專戶後，即辦理產權移轉登記。",
+      right: "",
+    },
+    {
+      name: "代償",
+      left: "未辦理代償者，由買方貸款銀行將尾款直接匯入履約保證信託專戶。\n辦理代償者，檢附已完成登記之建物謄本，向建經公司申請配合清償作業。",
+      right: "賣方向原貸款銀行確認清償金額。",
+    },
+    {
+      name: "點交",
+      left: "將房地點交證明書及完成塗銷之謄本送交建經公司。\n由建經公司將履約保證信託專戶餘款匯入賣方指定帳戶。",
+      right: "買賣雙方點交確認無誤後，於房地點交確認單簽章。",
+    },
+    {
+      name: "結案",
+      left: "",
+      right: "賣方確認收受屋款無誤，案件結案。",
+    },
+  ],
+};
+
 function getSeedPages(): SeedPageDef[] {
   return [
     {
@@ -784,7 +845,7 @@ function getSeedPages(): SeedPageDef[] {
         { blockType: "list", data: { title: "事務所特色", style: "check", items: defaultAbout.features }, config: { bgVariant: "gray" } },
         { blockType: "stats_strip", data: { items: [{ value: "26+", label: "專業執業年資" }, { value: "10+", label: "房仲品牌合作" }, { value: "全台", label: "服務範圍涵蓋" }] } },
         { blockType: "image_gallery", data: { title: "事務所環境", images: [{ imageKey: "office_interior", alt: "內部環境" }, { imageKey: "office_exterior", alt: "外觀" }, { imageKey: "office_sign", alt: "招牌" }] } },
-        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "" })) } },
+        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "", url: SERVICE_FLOW_LINKS[s.title] ?? "" })) } },
         { blockType: "cta_section", data: { title: "需要不動產登記服務？", subtitle: "歡迎來電或填寫表單，我們將盡快與您聯繫", primaryLabel: "填寫諮詢表單", primaryHref: "/contact", secondaryLabel: "02-2282-6600", secondaryHref: "tel:02-2282-6600" } },
       ],
     },
@@ -804,7 +865,7 @@ function getSeedPages(): SeedPageDef[] {
       opts: { templateId: "services", navOrder: 2, seedKey: "services" },
       blocks: [
         { blockType: "hero_banner", data: { title: "服務項目", subtitle: "全方位不動產登記服務", bgMode: "default", bgColor: "#44403c", bgImageKey: "services_bg" } },
-        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "" })) } },
+        { blockType: "key_value_list", data: { title: "服務項目", items: defaultServices.map((s, i) => ({ label: s.title, value: s.description, icon: SERVICE_ICONS[i] || "", url: SERVICE_FLOW_LINKS[s.title] ?? "" })) } },
         { blockType: "steps_flow", data: { title: "服務流程", steps: defaultServiceFlow.map(f => ({ name: f.stepName, description: f.stepDescription })) } },
         { blockType: "cta_section", data: { title: "查看收費標準", subtitle: "了解各項服務的詳細收費資訊", primaryLabel: "收費標準", primaryHref: "/fees", secondaryLabel: "聯絡我們", secondaryHref: "/contact" } },
       ],
@@ -816,6 +877,15 @@ function getSeedPages(): SeedPageDef[] {
         { blockType: "hero_banner", data: { title: "收費標準", subtitle: "各項地政服務收費明細", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
         { blockType: "table", data: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })), footerNotes: defaultFeeNotes } },
         { blockType: "cta_section", data: { title: "還有其他問題？", subtitle: "歡迎隨時與我們聯繫，提供免費諮詢", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "", secondaryHref: "" } },
+      ],
+    },
+    {
+      slug: "flow-sale", title: "不動產買賣移轉登記流程", subtitle: "價金信託履約保證作業流程",
+      opts: { navOrder: 90, showInNav: false, seedKey: "flow-sale" },
+      blocks: [
+        { blockType: "hero_banner", data: { title: "不動產買賣移轉登記流程", subtitle: "價金信託履約保證作業流程", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
+        { blockType: "two_column_flow", data: SALE_FLOW },
+        { blockType: "cta_section", data: { title: "對流程有疑問？", subtitle: "歡迎來電或透過 LINE 諮詢，我們會依您的案件情況詳細說明", primaryLabel: "立即諮詢", primaryHref: "/contact", secondaryLabel: "收費標準", secondaryHref: "/fees" } },
       ],
     },
     {
@@ -953,6 +1023,35 @@ export function seedCmsPages(db?: Database.Database) {
       const linksBlocks = getSeedPages().find(p => p.opts.seedKey === "links")!.blocks;
       d.prepare("DELETE FROM blocks WHERE page_id = ?").run(linksPageId);
       insertSeedBlocks(d, linksPageId, linksBlocks);
+    }
+
+    // A client who has edited the services block keeps their version (seed_hash
+    // differs), so the new url would never reach them. Fill it in per item, and
+    // only where the item has no url of its own — an existing link is never
+    // replaced, which also makes this safe to run on every boot.
+    for (const seedKey of ["home", "services"]) {
+      const pageId = existingPages.get(seedKey);
+      if (!pageId) continue;
+      const row = d.prepare(
+        "SELECT id, data FROM blocks WHERE page_id = ? AND block_type = 'key_value_list' LIMIT 1"
+      ).get(pageId) as { id: string; data: string } | undefined;
+      if (!row) continue;
+
+      const parsed = JSON.parse(row.data) as { items?: Array<{ label?: string; url?: string }> };
+      if (!parsed.items?.length) continue;
+
+      let changed = false;
+      for (const item of parsed.items) {
+        const target = item.label ? SERVICE_FLOW_LINKS[item.label] : undefined;
+        if (target && !item.url) {
+          item.url = target;
+          changed = true;
+        }
+      }
+      if (changed) {
+        d.prepare("UPDATE blocks SET data = ?, updated_at = datetime('now') WHERE id = ?")
+          .run(JSON.stringify(parsed), row.id);
+      }
     }
 
     if (needsNavMigration) {

@@ -17,6 +17,7 @@ import StatsStripRenderer from "./renderers/StatsStripRenderer";
 import CustomHtmlRenderer from "./renderers/CustomHtmlRenderer";
 import ProfileCardRenderer from "./renderers/ProfileCardRenderer";
 import TwoColumnListRenderer from "./renderers/TwoColumnListRenderer";
+import TwoColumnFlowRenderer from "./renderers/TwoColumnFlowRenderer";
 import ContactLayoutRenderer from "./renderers/ContactLayoutRenderer";
 
 const RENDERERS: Record<string, React.ComponentType<{ data: Record<string, unknown> }>> = {
@@ -38,6 +39,7 @@ const RENDERERS: Record<string, React.ComponentType<{ data: Record<string, unkno
   custom_html: CustomHtmlRenderer,
   profile_card: ProfileCardRenderer,
   two_column_list: TwoColumnListRenderer,
+  two_column_flow: TwoColumnFlowRenderer,
   contact_layout: ContactLayoutRenderer,
 };
 

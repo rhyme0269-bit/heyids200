@@ -52,6 +52,7 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   custom_html: "自訂 HTML",
   profile_card: "個人簡介",
   two_column_list: "雙欄清單",
+  two_column_flow: "階段流程",
   contact_layout: "聯絡雙欄",
 };
 
@@ -74,6 +75,7 @@ const BLOCK_TYPE_HINTS: Record<BlockType, string> = {
   custom_html: "自訂 HTML，可插入任意程式碼（進階用途）",
   profile_card: "個人簡介卡片，含照片、介紹和引言",
   two_column_list: "左右兩組並排清單，適合資歷與經驗展示",
+  two_column_flow: "分階段的流程說明，每階段可填兩方各自的作業內容，可展開收合",
   contact_layout: "聯絡頁專用雙欄：左側表單、右側資訊與地圖",
 };
 
@@ -1245,6 +1247,60 @@ function BlockEditor({
         </div>
       );
 
+    case "two_column_flow":
+      return (
+        <div className="space-y-4">
+          <Field label="標題" value={(data.title as string) || ""} onChange={(v) => set("title", v)} />
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="左欄標題" value={(data.leftLabel as string) || ""} onChange={(v) => set("leftLabel", v)} />
+            <Field label="右欄標題" value={(data.rightLabel as string) || ""} onChange={(v) => set("rightLabel", v)} />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              checked={data.defaultOpen !== false}
+              onChange={(e) => set("defaultOpen", e.target.checked)}
+              className="rounded border-stone-300"
+            />
+            預設展開所有階段（取消勾選則預設收合）
+          </label>
+          <ArrayEditor
+            label="階段"
+            items={(data.stages as Array<{ name: string; left: string; right: string }>) || []}
+            renderItem={(item, i, update) => (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={item.name}
+                  onChange={(e) => update({ ...item, name: e.target.value })}
+                  placeholder="階段名稱（例如：簽約）"
+                  className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-800"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <textarea
+                    value={item.left}
+                    onChange={(e) => update({ ...item, left: e.target.value })}
+                    placeholder={`${(data.leftLabel as string) || "左欄"}\n一行一項`}
+                    rows={4}
+                    className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  />
+                  <textarea
+                    value={item.right}
+                    onChange={(e) => update({ ...item, right: e.target.value })}
+                    placeholder={`${(data.rightLabel as string) || "右欄"}\n一行一項`}
+                    rows={4}
+                    className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800"
+                  />
+                </div>
+              </div>
+            )}
+            newItem={() => ({ name: "", left: "", right: "" })}
+            onChange={(stages) => set("stages", stages)}
+          />
+          <p className="text-xs text-stone-500">兩欄內容一行一項，會自動編號。留空則顯示「—」。</p>
+        </div>
+      );
+
     case "contact_layout":
       return (
         <div className="space-y-3">
@@ -1358,6 +1414,7 @@ function getDefaultData(blockType: BlockType): Record<string, unknown> {
     case "custom_html": return { html: "" };
     case "profile_card": return { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" };
     case "two_column_list": return { leftTitle: "", leftItems: [], leftStyle: "check", rightTitle: "", rightItems: [], rightStyle: "check" };
+    case "two_column_flow": return { title: "", leftLabel: "地政士作業", rightLabel: "買、賣雙方作業", defaultOpen: true, stages: [] };
     case "contact_layout": return { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" };
     default: return {};
   }
