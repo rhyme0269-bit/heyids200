@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import HeroSection from "@/components/sections/HeroSection";
 import AboutPreview from "@/components/sections/AboutPreview";
 import OfficeGallery from "@/components/sections/OfficeGallery";
+import ProcessSteps from "@/components/sections/ProcessSteps";
 import ServicesPreview from "@/components/sections/ServicesPreview";
 import CtaSection from "@/components/sections/CtaSection";
 
@@ -20,6 +21,7 @@ export default function Home() {
       </div>
       <AboutPreview />
       <OfficeGallery />
+      <ProcessSteps />
       <ServicesPreview />
       <CtaSection />
     </>

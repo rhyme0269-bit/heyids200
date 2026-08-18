@@ -39,6 +39,7 @@ function getDb(): Database.Database {
   seedIfEmpty(_db);
   migrateSettings(_db);
   seedImageLibrary(_db);
+  migrateImageSlots(_db);
   initCmsTables(_db);
   seedCmsPages(_db);
   initCalcTables(_db);
@@ -156,6 +157,44 @@ function migrateSettings(db: Database.Database) {
   const update = db.prepare("UPDATE settings SET value = ? WHERE key = 'lineUrl' AND value = ?");
   for (const old of SUPERSEDED_LINE_URLS) {
     update.run(defaultSiteSettings.lineUrl, old);
+  }
+}
+
+// Image slots added after a database was first seeded, since seedImageLibrary
+// only ever runs on an empty library. Insert-if-missing, so it is a no-op once
+// applied and it never disturbs a slot the office has since edited.
+const LATER_IMAGE_SLOTS: {
+  key: string;
+  group: string;
+  label: string;
+  hint: string;
+  aspectRatio: string;
+}[] = [
+  {
+    key: "line_qr",
+    group: "網站通用",
+    label: "LINE QR Code",
+    hint: "顯示於頁尾，供訪客掃碼加入官方帳號",
+    aspectRatio: "1:1",
+  },
+];
+
+function migrateImageSlots(db: Database.Database) {
+  const findSlot = db.prepare("SELECT COUNT(*) as c FROM image_slots WHERE key = ?");
+  const findGroup = db.prepare("SELECT id FROM image_groups WHERE name = ?");
+  const nextOrder = db.prepare(
+    "SELECT COALESCE(MAX(sort_order) + 1, 0) as n FROM image_slots WHERE group_id = ?"
+  );
+  const insertSlot = db.prepare(
+    "INSERT INTO image_slots (key, group_id, label, hint, sort_order, is_system, aspect_ratio, slot_type) VALUES (?, ?, ?, ?, ?, 1, ?, 'general')"
+  );
+
+  for (const slot of LATER_IMAGE_SLOTS) {
+    if ((findSlot.get(slot.key) as { c: number }).c > 0) continue;
+    const group = findGroup.get(slot.group) as { id: string } | undefined;
+    if (!group) continue;
+    const order = (nextOrder.get(group.id) as { n: number }).n;
+    insertSlot.run(slot.key, group.id, slot.label, slot.hint, order, slot.aspectRatio);
   }
 }
 
@@ -493,6 +532,7 @@ function seedImageLibrary(db: Database.Database) {
 
     insertSlot.run("logo", gGeneral, "Logo", "顯示於網站左上角", 0, "3:4", "general");
     insertSlot.run("scrivener_photo", gGeneral, "代書照片", "顯示於關於我們頁面", 1, "3:4", "general");
+    insertSlot.run("line_qr", gGeneral, "LINE QR Code", "顯示於頁尾，供訪客掃碼加入官方帳號", 2, "1:1", "general");
 
     insertSlot.run("office_interior", gOffice, "內部環境", "事務所內部環境照", 0, "4:3", "general");
     insertSlot.run("office_exterior", gOffice, "外觀", "事務所外觀照", 1, "4:3", "general");

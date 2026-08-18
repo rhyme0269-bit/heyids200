@@ -27,6 +27,8 @@ interface SettingsData {
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
+  businessHours: string;
+  caseCount: string;
   colorPrimary: string;
   colorSecondary: string;
   colorBackground: string;
@@ -85,6 +87,8 @@ const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "address", label: "地址" },
   { key: "scrivenerName", label: "代書姓名" },
   { key: "licenseNumber", label: "證照號碼" },
+  { key: "businessHours", label: "營業時間（可換行）" },
+  { key: "caseCount", label: "累積案件數（僅數字）" },
 ];
 
 /* ============================================================
@@ -191,6 +195,8 @@ export default function AdminClient() {
     scrivenerName: "",
     licenseNumber: "",
     logoSize: "medium",
+    businessHours: "",
+    caseCount: "",
     colorPrimary: defaultBrandColors.primary,
     colorSecondary: defaultBrandColors.secondary,
     colorBackground: defaultBrandColors.background,
@@ -873,7 +879,7 @@ export default function AdminClient() {
                         <label className="mb-1 block text-sm font-medium text-stone-700">
                           {field.label}
                         </label>
-                        {field.key === "googleMapEmbed" ? (
+                        {field.key === "googleMapEmbed" || field.key === "businessHours" ? (
                           <textarea
                             value={settings[field.key]}
                             onChange={(e) =>

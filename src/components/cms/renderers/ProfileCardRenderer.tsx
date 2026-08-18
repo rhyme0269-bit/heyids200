@@ -1,4 +1,4 @@
-import { hasImage } from "@/lib/db";
+import { hasImage, getSettings } from "@/lib/db";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
 
 interface ProfileCardData {
@@ -11,6 +11,7 @@ interface ProfileCardData {
 
 export default function ProfileCardRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as ProfileCardData;
+  const { licenseNumber } = getSettings();
   const src = d.imageKey
     ? hasImage(d.imageKey)
       ? `/api/images/${d.imageKey}`
@@ -33,7 +34,7 @@ export default function ProfileCardRenderer({ data }: { data: Record<string, unk
         )}
       </div>
       <div>
-        <div className="relative bg-stone-200 rounded-2xl h-64 flex items-center justify-center overflow-hidden">
+        <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-[20px] bg-stone-200 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -50,6 +51,11 @@ export default function ProfileCardRenderer({ data }: { data: Record<string, unk
             <p className="font-bold text-stone-800 text-lg">{d.imageName}</p>
             {d.imageSubtitle && (
               <p className="text-stone-500 text-sm">{d.imageSubtitle}</p>
+            )}
+            {licenseNumber && (
+              <p className="mt-2 text-xs leading-relaxed text-stone-500">
+                執照字號 {licenseNumber}
+              </p>
             )}
           </div>
         )}

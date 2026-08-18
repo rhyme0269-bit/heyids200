@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { getAbout, getSettings } from "@/lib/db";
+import CountUp from "@/components/common/CountUp";
 
 export default function AboutPreview() {
   const about = getAbout();
   const settings = getSettings();
+  // Client-supplied figure; falls back to the seeded default if cleared.
+  const caseCount = parseInt(settings.caseCount, 10) || 1500;
 
   return (
     <section className="bg-stone-50">
@@ -49,16 +52,20 @@ export default function AboutPreview() {
               </Link>
             </div>
 
-            {/* Feature Cards — with left accent border */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Feature cards — gold check icon per item (#25). The text stays exactly
+                as the office has it in the admin; no wording is invented here. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {about.features.map((feature, index) => (
                 <div
                   key={index}
-                  className="hover-lift p-5 bg-white rounded-lg border border-stone-200 border-l-[3px] border-l-amber-800"
+                  className="hover-lift flex items-start gap-3 rounded-[20px] border border-stone-200/70 bg-white p-6"
                 >
-                  <span className="text-stone-700 text-sm leading-relaxed">
-                    {feature}
+                  <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-50">
+                    <svg className="h-3.5 w-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                    </svg>
                   </span>
+                  <span className="text-sm leading-relaxed text-stone-700">{feature}</span>
                 </div>
               ))}
             </div>
@@ -66,21 +73,26 @@ export default function AboutPreview() {
         </div>
       </div>
 
-      {/* Stats Strip */}
-      <div className="border-t border-stone-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-0">
-            <div className="text-center sm:border-r sm:border-stone-200 group cursor-default">
-              <div className="text-4xl md:text-5xl font-bold text-stone-800 group-hover:text-amber-800 transition-colors">26<span className="text-amber-700">+</span></div>
-              <div className="text-sm text-stone-500 mt-2 tracking-wide">專業執業年資</div>
+      {/* Stats Strip — larger figures, count-up on scroll, light grey ground (#25) */}
+      <div className="border-t border-stone-200 bg-stone-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-0">
+            <div className="text-center sm:border-r sm:border-stone-200">
+              <div className="text-5xl md:text-6xl font-bold text-stone-800 tracking-tight">
+                26<span className="text-amber-700">+</span>
+              </div>
+              <div className="mt-3 text-sm text-stone-600 tracking-wide">年專業經驗</div>
             </div>
-            <div className="text-center sm:border-r sm:border-stone-200 group cursor-default">
-              <div className="text-4xl md:text-5xl font-bold text-stone-800 group-hover:text-amber-800 transition-colors">10<span className="text-amber-700">+</span></div>
-              <div className="text-sm text-stone-500 mt-2 tracking-wide">房仲品牌合作</div>
+            <div className="text-center sm:border-r sm:border-stone-200">
+              <div className="text-5xl md:text-6xl font-bold text-stone-800 tracking-tight">
+                <CountUp value={caseCount} />
+                <span className="text-amber-700">+</span>
+              </div>
+              <div className="mt-3 text-sm text-stone-600 tracking-wide">累積案件</div>
             </div>
-            <div className="text-center group cursor-default">
-              <div className="text-4xl md:text-5xl font-bold text-stone-800 group-hover:text-amber-800 transition-colors">全台</div>
-              <div className="text-sm text-stone-500 mt-2 tracking-wide">服務範圍涵蓋</div>
+            <div className="text-center">
+              <div className="text-5xl md:text-6xl font-bold text-stone-800 tracking-tight">全台</div>
+              <div className="mt-3 text-sm text-stone-600 tracking-wide">服務範圍</div>
             </div>
           </div>
         </div>

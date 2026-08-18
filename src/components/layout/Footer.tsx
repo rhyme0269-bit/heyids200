@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getSettings } from "@/lib/db";
+import { getSettings, hasImage } from "@/lib/db";
 import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
+import { DEFAULT_IMAGES } from "@/lib/default-images";
 
 const fallbackLinks = [
   { label: "首頁", href: "/", isExternal: false },
@@ -13,6 +14,8 @@ const fallbackLinks = [
 
 export default function Footer() {
   const settings = getSettings();
+  // Uploaded QR wins; otherwise the bundled default supplied by the office.
+  const qrSrc = hasImage("line_qr") ? "/api/images/line_qr" : DEFAULT_IMAGES.line_qr;
   const quickLinks = isCmsInitialized()
     ? getNavItems().map((n) => ({ label: n.title, href: n.href, isExternal: !!n.isExternal }))
     : fallbackLinks;
@@ -149,6 +152,15 @@ export default function Footer() {
                 </span>
               </li>
             </ul>
+
+            {settings.businessHours && (
+              <div className="mt-6">
+                <h3 className="text-stone-200 text-base font-bold mb-2">營業時間</h3>
+                {settings.businessHours.split("\n").map((line, i) => (
+                  <p key={i} className="text-xs leading-relaxed">{line}</p>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 快速連結 */}
@@ -179,8 +191,43 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-6">
+              <h3 className="text-stone-200 text-base font-bold mb-2">LINE 官方帳號</h3>
+              <a
+                href={settings.lineUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block rounded-lg bg-white p-2 transition-transform hover:scale-105"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrSrc}
+                  alt="LINE 官方帳號 QR Code"
+                  width={96}
+                  height={96}
+                  className="h-24 w-24"
+                />
+              </a>
+              <p className="mt-2 text-xs">掃描加入好友</p>
+            </div>
           </div>
         </div>
+
+        {/* Map */}
+        {settings.googleMapEmbed && (
+          <div className="mt-12 overflow-hidden rounded-xl border border-stone-800">
+            <iframe
+              src={settings.googleMapEmbed}
+              title="事務所位置地圖"
+              width="100%"
+              height="260"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="block border-0"
+            />
+          </div>
+        )}
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-stone-800 text-center">

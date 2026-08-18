@@ -15,6 +15,8 @@ export interface SiteSettings {
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
+  businessHours: string;
+  caseCount: string;
   colorPrimary: string;
   colorSecondary: string;
   colorBackground: string;
@@ -73,6 +75,8 @@ export const defaultSiteSettings: SiteSettings = {
   scrivenerName: "胡玉芬",
   licenseNumber: "（108）新北府地士字第003204號（換發）",
   logoSize: "medium",
+  businessHours: "週一~週五 9:00-18:00\n其他時間請先向事務所預約",
+  caseCount: "1500",
   colorPrimary: defaultBrandColors.primary,
   colorSecondary: defaultBrandColors.secondary,
   colorBackground: defaultBrandColors.background,
