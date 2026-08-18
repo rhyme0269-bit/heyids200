@@ -811,7 +811,7 @@ function getSeedPages(): SeedPageDef[] {
     },
     {
       slug: "fees", title: "收費標準", subtitle: "各項地政服務收費明細",
-      opts: { navOrder: 0, showInNav: false, seedKey: "fees" },
+      opts: { navOrder: 3, seedKey: "fees" },
       blocks: [
         { blockType: "hero_banner", data: { title: "收費標準", subtitle: "各項地政服務收費明細", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
         { blockType: "table", data: { title: "收費標準", columns: [{ key: "service", label: "服務項目" }, { key: "fee", label: "收費" }, { key: "payer", label: "付費方" }, { key: "note", label: "備註" }], rows: defaultFeeSchedule.map(f => ({ service: f.service, fee: f.fee, payer: f.payer, note: f.note })), footerNotes: defaultFeeNotes } },
@@ -820,7 +820,7 @@ function getSeedPages(): SeedPageDef[] {
     },
     {
       slug: "faq", title: "常見問題", subtitle: "您想了解的常見問題",
-      opts: { templateId: "faq", navOrder: 4, seedKey: "faq" },
+      opts: { templateId: "faq", navOrder: 5, seedKey: "faq" },
       blocks: [
         { blockType: "hero_banner", data: { title: "常見問題", subtitle: "您想了解的常見問題", bgMode: "default", bgColor: "#44403c", bgImageKey: "faq_bg" } },
         { blockType: "faq_accordion", data: { title: "常見問題", items: defaultFaqs.map(f => ({ question: f.question, answer: f.answer })) } },
@@ -829,7 +829,7 @@ function getSeedPages(): SeedPageDef[] {
     },
     {
       slug: "contact", title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆",
-      opts: { templateId: "contact", navOrder: 6, seedKey: "contact" },
+      opts: { templateId: "contact", navOrder: 7, seedKey: "contact" },
       blocks: [
         { blockType: "hero_banner", data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#44403c", bgImageKey: "contact_bg" } },
         { blockType: "contact_layout", data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed } },
@@ -837,7 +837,7 @@ function getSeedPages(): SeedPageDef[] {
     },
     {
       slug: "tools", title: "小工具", subtitle: "實用的不動產計算工具",
-      opts: { navOrder: 3, seedKey: "tools" },
+      opts: { navOrder: 4, seedKey: "tools" },
       blocks: [
         { blockType: "hero_banner", data: { title: "小工具", subtitle: "實用的不動產計算工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "tools_bg" } },
         { blockType: "custom_html", data: { html: "__TOOLS_PAGE__" } },
@@ -845,7 +845,7 @@ function getSeedPages(): SeedPageDef[] {
     },
     {
       slug: "links", title: "實用連結", subtitle: "常用不動產相關網站與查詢工具",
-      opts: { navOrder: 5, seedKey: "links" },
+      opts: { navOrder: 6, seedKey: "links" },
       blocks: [
         { blockType: "hero_banner", data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#44403c", bgImageKey: "" } },
         { blockType: "key_value_list", data: { title: "政府機關", items: [
@@ -901,6 +901,10 @@ function updateSeedBlocks(
   }
 }
 
+// Bumping this key re-applies the seed nav settings once on every existing
+// database. Only do that when the intent really is to override manual ordering.
+const NAV_ORDER_MIGRATION_KEY = "cms_nav_order_v2";
+
 export function seedCmsPages(db?: Database.Database) {
   const d = db ?? getDb();
 
@@ -916,6 +920,15 @@ export function seedCmsPages(db?: Database.Database) {
   const needsFeeMigration = !existingPages.has("fees") && existingPages.has("services");
   const linksPageId = existingPages.get("links");
   const needsLinksMigration = linksPageId ? (d.prepare("SELECT COUNT(*) as cnt FROM blocks WHERE page_id = ?").get(linksPageId) as { cnt: number }).cnt === 2 : false;
+
+  // Seeding only ever refreshes blocks, never page-level nav settings, so a
+  // database created before a nav change keeps the old values forever — which is
+  // why the faq/links navOrder collision fixed in 279e3ac never actually reached
+  // any running deployment. Re-apply the seed nav settings once, recorded with a
+  // marker so a later manual reorder in the admin is not overwritten on boot.
+  const needsNavMigration =
+    existingPages.size > 0 &&
+    (d.prepare("SELECT COUNT(*) as cnt FROM settings WHERE key = ?").get(NAV_ORDER_MIGRATION_KEY) as { cnt: number }).cnt === 0;
 
   d.transaction(() => {
     for (const page of seedPages) {
@@ -941,6 +954,21 @@ export function seedCmsPages(db?: Database.Database) {
       d.prepare("DELETE FROM blocks WHERE page_id = ?").run(linksPageId);
       insertSeedBlocks(d, linksPageId, linksBlocks);
     }
+
+    if (needsNavMigration) {
+      const setNav = d.prepare(
+        "UPDATE pages SET nav_order = ?, show_in_nav = ? WHERE seed_key = ?"
+      );
+      for (const page of seedPages) {
+        setNav.run(page.opts.navOrder, page.opts.showInNav === false ? 0 : 1, page.opts.seedKey);
+      }
+    }
+    // Record the marker even on a fresh database, where the pages were just
+    // inserted with these values and the migration is a no-op.
+    d.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run(
+      NAV_ORDER_MIGRATION_KEY,
+      "done"
+    );
   })();
 }
 
