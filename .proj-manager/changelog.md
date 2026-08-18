@@ -1,5 +1,43 @@
 # Changelog
 
+## [feat: SEO 強化（#25 第三階段）] - 2026-08-18T11:00:00Z
+
+### 變更類型
+
+SEO（Issue #25 第三階段）+ 連帶修正既有問題
+
+### 關鍵字與描述
+
+原關鍵字為「地政士」「代書」「蘆洲」等單一詞，改為使用者實際輸入的複合詞：新北地政士、台北地政士、新北代書、台北代書、蘆洲地政士、三重地政士，以及各項業務詞。
+
+網站描述改以自然語句陳述服務範圍（「服務範圍涵蓋新北市蘆洲、三重、台北市及全台各地」），刻意避免關鍵字堆疊 —— 客戶已於 #25 確認服務範圍為全台灣，故此描述與實際相符。
+
+### 結構化資料
+
+- `@type` 改為 `["LegalService", "LocalBusiness"]`。LegalService 本就是 LocalBusiness 的子類型，但規格明確要求兩者，故改為顯式標示
+- 新增 `areaServed`：臺灣 + 新北市、臺北市、蘆洲區、三重區
+- FAQPage 與 Open Graph 原本已有，未變更
+
+### 連帶修正的既有問題
+
+1. **`url` 寫死為 `https://www.oneness200.com`** —— 不論實際部署於何處都回報此網址，向搜尋引擎宣告了錯誤的網站位置。改為依 `NEXT_PUBLIC_SITE_URL` 帶入（已於預覽站驗證輸出 `https://rhyme0269-bit.github.io/heyids200`）
+2. **`image` 為空字串、`sameAs` 為空陣列** —— 對 Schema 而言是無效值。改為無內容時不輸出；`sameAs` 帶入 LINE 官方帳號
+3. **`robots.txt` 排除 `/studio/`**（Sanity 時代殘留，早已不存在）**卻未排除 `/admin`** —— 後台登入頁可被收錄。已對調
+
+### 驗證
+
+- `tsc --noEmit` 零錯誤
+- Docker：10 條路由 200；schema 含兩種類型、5 筆 areaServed、LINE sameAs；`image` 欄位確認不輸出；FAQPage 仍為 7 題；`robots.txt` 已排除 `/admin`；sitemap 列出 9 頁（含新流程頁）
+- 線上預覽站：schema 的 `url` 正確反映部署網址，關鍵字與 areaServed 皆確認
+
+### 已知事項（已回報客戶，待其決定）
+
+預覽網站（github.io）目前公開可被收錄。正式站上線後兩站內容相同，可能在關鍵字上互相競爭、分散排名。建議上線時關閉預覽站或加上不允許收錄設定。未自行變更。
+
+另：預覽站的靜態擷取不包含 `robots.txt` 與 `sitemap.xml`（workflow 僅擷取 sitemap 列出的頁面與靜態資產），正式的 Docker 部署則正常提供兩者。
+
+---
+
 ## [feat: 配色可後台自訂 + #25 第二階段內容區塊] - 2026-08-18T10:00:00Z
 
 ### 變更類型
