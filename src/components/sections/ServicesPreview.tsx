@@ -1,8 +1,30 @@
 import Link from "next/link";
+import { getPageBySlug, getBlocksForPage, isCmsInitialized } from "@/lib/cms-db";
 import { getServices } from "@/lib/db";
+import type { KeyValueListData } from "@/lib/cms-types";
+import ServiceCard, { type ServiceCardItem } from "@/components/common/ServiceCard";
+
+/**
+ * Read the services straight off the CMS services page, so whatever is edited in
+ * the page builder — including the icons — shows up here too. The legacy
+ * `services` table is only a fallback: it has no icon column and the admin UI no
+ * longer exposes it, so editing it is not possible any more.
+ */
+function getServiceItems(): ServiceCardItem[] {
+  if (isCmsInitialized()) {
+    const page = getPageBySlug("services");
+    if (page) {
+      const block = getBlocksForPage(page.id).find((b) => b.blockType === "key_value_list");
+      const items = block ? ((block.data as unknown as KeyValueListData).items ?? []) : [];
+      if (items.length > 0) return items;
+    }
+  }
+
+  return getServices().map((s) => ({ label: s.title, value: s.description }));
+}
 
 export default function ServicesPreview() {
-  const services = getServices();
+  const services = getServiceItems();
 
   return (
     <section className="py-20 md:py-28 bg-white">
@@ -23,29 +45,7 @@ export default function ServicesPreview() {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service, index) => (
-            <div
-              key={service._id}
-              className="group hover-lift relative p-6 rounded-xl border border-stone-200 bg-white overflow-hidden"
-            >
-              {/* Number label */}
-              <span className="absolute top-4 right-4 text-xs font-mono text-stone-300 group-hover:text-amber-700 transition-colors">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-
-              {/* Icon */}
-              <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-50 transition-colors">
-                <svg className="w-5 h-5 text-stone-400 group-hover:text-amber-800 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-              </div>
-
-              {/* Content */}
-              <h3 className="text-lg font-semibold text-stone-800 mb-2">{service.title}</h3>
-              <p className="text-stone-500 text-sm leading-relaxed">{service.description}</p>
-
-              {/* Bottom accent line — visible on hover */}
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-            </div>
+            <ServiceCard key={index} item={service} index={index} />
           ))}
         </div>
 
