@@ -7,7 +7,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/studio/", "/api/"],
+      // /studio/ was the Sanity editor and no longer exists. /admin is the
+      // current back office and should not be indexed.
+      disallow: ["/admin", "/api/"],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };
