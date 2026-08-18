@@ -1,5 +1,38 @@
 # Changelog
 
+## [fix: 首頁服務項目改讀 CMS，圖示終於顯示] - 2026-08-18T00:00:00Z
+
+### 變更類型
+
+Bug 修正（Issue #17 真正的根因）
+
+### 變更摘要
+
+Issue #17 客戶回報的是**首頁**的服務項目圖示沒顯示（2026-08-01 留言原話：「已經在後台手動設定過 icon 並儲存，但前台的首頁頁面並沒有顯示」），先前歷次修復與驗證截圖都對著 `/services` 頁面，因此問題從未真正解決。
+
+首頁的 `ServicesPreview.tsx` 讀的是 legacy `services` 表，且每張卡片畫的是**寫死的同一個 SVG**，根本沒有 icon 欄位。後台「頁面管理」編輯的 icon 存在 CMS 的 `key_value_list` 區塊 — 兩套完全不同的資料來源，改再多次也不會反映到首頁。
+
+CMS 遷移當時把 `/services` 頁面轉成區塊，卻漏掉首頁這個區塊，使它變成孤兒：資料來自 legacy 表，而後台已經沒有「服務項目」tab 可以編輯那張表。
+
+### 改動
+
+- **新增 `src/components/common/ServiceCard.tsx`**：把卡片標記抽成共用元件。首頁與 CMS renderer 原本是兩份逐字相同的複製，抽出後不會再各自漂移
+- **`KeyValueListRenderer.tsx`**：改用共用 `ServiceCard`
+- **`ServicesPreview.tsx`**：改讀 services 頁面的 `key_value_list` 區塊，legacy `getServices()` 僅保留為舊資料庫的 fallback
+
+### 驗證
+
+- 首頁與 `/services` 顯示相同的 9 個 emoji
+- 透過後台 API 把第一項 icon 改為 🚀 → **首頁與 `/services` 同步變更**，改回 🏠 亦同步（修復前首頁不可能變動）
+- `/links` 卡片不受影響（同樣走 `key_value_list`），外部連結 `↗` 標記正常
+- `tsc --noEmit` 零錯誤；Docker 部署 9 條路由全部 200
+
+### 備註
+
+Legacy `services` 表目前已無任何後台編輯介面，僅剩此處 fallback 在用。日後可考慮連同 `getServices()` 一併移除。
+
+---
+
 ## [chore: CMS builder 合併回 main + 預覽站修復] - 2026-08-14T08:00:00Z
 
 ### 變更類型
