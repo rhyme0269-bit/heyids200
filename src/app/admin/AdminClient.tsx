@@ -8,6 +8,7 @@ import { DEFAULT_IMAGES } from "@/lib/default-images";
 import PageBuilder from "./PageBuilder";
 import ManualContent from "./ManualContent";
 import CalcEditor from "./CalcEditor";
+import { isValidHex, defaultBrandColors } from "@/lib/theme";
 
 /* ============================================================
    Types
@@ -26,6 +27,11 @@ interface SettingsData {
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
+  colorPrimary: string;
+  colorSecondary: string;
+  colorBackground: string;
+  colorText: string;
+  colorSubText: string;
 }
 
 
@@ -60,6 +66,14 @@ interface ImageSlot {
   aspectRatio: string;
   slotType: string;
 }
+
+const BRAND_COLOR_FIELDS: { key: keyof SettingsData; label: string }[] = [
+  { key: "colorPrimary", label: "主色（按鈕、連結、標題強調）" },
+  { key: "colorSecondary", label: "次要色（金色線條與點綴）" },
+  { key: "colorBackground", label: "背景色" },
+  { key: "colorText", label: "主要文字" },
+  { key: "colorSubText", label: "次要文字" },
+];
 
 const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "name", label: "名稱" },
@@ -177,6 +191,11 @@ export default function AdminClient() {
     scrivenerName: "",
     licenseNumber: "",
     logoSize: "medium",
+    colorPrimary: defaultBrandColors.primary,
+    colorSecondary: defaultBrandColors.secondary,
+    colorBackground: defaultBrandColors.background,
+    colorText: defaultBrandColors.text,
+    colorSubText: defaultBrandColors.subText,
   });
 
   const [imageGroups, setImageGroups] = useState<ImageGroup[]>([]);
@@ -898,6 +917,55 @@ export default function AdminClient() {
                       ))}
                     </div>
                     <p className="mt-1 text-xs text-stone-400">調整網站左上角 Logo 圖片的顯示大小</p>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-stone-200">
+                    <label className="mb-1 block text-sm font-medium text-stone-700">網站配色</label>
+                    <p className="mb-3 text-xs text-stone-400">
+                      調整後儲存並重新載入頁面即可看到效果。中間色階會依這五個顏色自動推算，不需逐一設定。
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {BRAND_COLOR_FIELDS.map((field) => (
+                        <div key={field.key} className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={isValidHex(settings[field.key]) ? settings[field.key] : "#000000"}
+                            onChange={(e) => setSettings((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            className="h-9 w-12 flex-shrink-0 cursor-pointer rounded border border-stone-200 bg-white p-0.5"
+                            aria-label={field.label}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <label className="block text-xs font-medium text-stone-600">{field.label}</label>
+                            <input
+                              type="text"
+                              value={settings[field.key]}
+                              onChange={(e) => setSettings((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                              placeholder="#000000"
+                              className={`w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-amber-800 ${
+                                isValidHex(settings[field.key]) ? "border-stone-200" : "border-red-400"
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-stone-400">色碼格式為 # 加六位英數字，例如 #4A3428。格式錯誤的欄位會以紅框標示，儲存時將沿用預設值。</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          colorPrimary: defaultBrandColors.primary,
+                          colorSecondary: defaultBrandColors.secondary,
+                          colorBackground: defaultBrandColors.background,
+                          colorText: defaultBrandColors.text,
+                          colorSubText: defaultBrandColors.subText,
+                        }))
+                      }
+                      className="mt-3 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-100"
+                    >
+                      還原預設配色
+                    </button>
                   </div>
 
                 </div>

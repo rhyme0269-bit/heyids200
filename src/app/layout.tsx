@@ -9,6 +9,7 @@ import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
 import { getSettings } from "@/lib/db";
 import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
+import { buildThemeCss, brandColorsFromSettings } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -76,6 +77,12 @@ export default function RootLayout({
 
   return (
     <html lang="zh-TW" className={`${geistSans.variable} ${emoji.variable} h-full antialiased`}>
+      <head>
+        {/* Brand palette from site settings. Tailwind's colour utilities resolve
+            to var(--color-*), so overriding those variables re-skins every page
+            without touching class names. */}
+        <style>{buildThemeCss(brandColorsFromSettings(settings))}</style>
+      </head>
       <body className="min-h-full flex flex-col">
         <StructuredData data={generateLocalBusinessSchema(settings)} />
         <PreviewBanner />

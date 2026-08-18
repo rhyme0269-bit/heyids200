@@ -1,3 +1,5 @@
+import { defaultBrandColors } from "./theme";
+
 // ===== Types =====
 
 export interface SiteSettings {
@@ -13,6 +15,11 @@ export interface SiteSettings {
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
+  colorPrimary: string;
+  colorSecondary: string;
+  colorBackground: string;
+  colorText: string;
+  colorSubText: string;
 }
 
 export interface About {
@@ -66,6 +73,11 @@ export const defaultSiteSettings: SiteSettings = {
   scrivenerName: "胡玉芬",
   licenseNumber: "（108）新北府地士字第003204號（換發）",
   logoSize: "medium",
+  colorPrimary: defaultBrandColors.primary,
+  colorSecondary: defaultBrandColors.secondary,
+  colorBackground: defaultBrandColors.background,
+  colorText: defaultBrandColors.text,
+  colorSubText: defaultBrandColors.subText,
 };
 
 // ===== About =====
