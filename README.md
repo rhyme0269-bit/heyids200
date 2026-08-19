@@ -124,10 +124,11 @@ docker compose up -d --build
 
 | 方案 | 適合情況 | 費用參考 | 說明 |
 |------|---------|---------|------|
-| **VPS 虛擬主機 + Docker**（推薦） | 想要費用低、完全掌控 | 約每月 200–400 元 | 國外：DigitalOcean、Linode、Vultr、Hetzner<br>國內：中華電信 HiCloud、遠振、Gcloud |
+| **VPS 虛擬主機 + Docker**（推薦） | 想要費用低、日後好轉移 | 約每月 200–400 元 | 國內：中華電信 HiCloud、遠振<br>國外：DigitalOcean、Linode、Vultr、Hetzner、AWS Lightsail |
 | **容器平台** | 不想管伺服器維護 | 約每月 200–800 元 | Render、Railway、Fly.io。**務必選有「持久化磁碟 / Volume」的方案**，否則資料會遺失 |
-| **大型雲端主機** | 公司已有帳號 | 依用量 | AWS Lightsail／EC2、Google Compute Engine、Azure VM |
 | 事務所自己的電腦 | 不建議 | — | 需要固定 IP、24 小時開機。停電、當機或網路中斷，網站就會離線 |
+
+> AWS EC2、Google Compute Engine、Azure VM 這類大型雲端服務技術上也可以，但計費方式複雜、管理介面繁瑣，對這種規模的網站是過度配置，不建議。若想用 AWS，選 Lightsail 即可，它就是計價單純的 VPS。
 
 **建議規格**：1～2 GB 記憶體、20 GB 硬碟即可，這個網站很輕量。
 
