@@ -230,10 +230,44 @@ async function main() {
 
     const fileCount = countFiles(OUT);
     log(`\n[6/6] 完成：${pages.length} 個頁面、${fileCount} 個檔案`);
-    log(`\n輸出位置：${OUT}\n`);
+    log(`\n輸出位置：${OUT}`);
+
+    printBackupReminder();
   } finally {
     server.kill();
   }
+}
+
+/**
+ * 網站內容只存在這台電腦上，備份由使用者自行負責，這裡每次發布後提醒一次。
+ * 一併顯示檔案日期與大小，方便對照備份的是不是最新的。
+ */
+function printBackupReminder() {
+  if (!fs.existsSync(DB_PATH)) return;
+
+  const stat = fs.statSync(DB_PATH);
+  const size = (stat.size / 1024 / 1024).toFixed(1);
+  const date = stat.mtime.toLocaleDateString("zh-TW");
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const isWindows = process.platform === "win32";
+
+  log("\n────────────────────────────────────────");
+  log("⚠️  請記得備份網站內容");
+  log("────────────────────────────────────────");
+  log(`您在後台編輯的所有文字與圖片，都存在這個檔案裡：`);
+  log(`  data/oneness.db（${size} MB，最後修改 ${date}）`);
+  log("");
+  log("這台電腦若損壞或遺失，未備份的內容將無法復原。");
+  log("建議複製一份到雲端硬碟或隨身碟：");
+  log("");
+  log(
+    isWindows
+      ? `  copy data\\oneness.db "D:\\備份\\oneness-${stamp}.db"`
+      : `  cp data/oneness.db ~/備份/oneness-${stamp}.db`
+  );
+  log("");
+  log("此檔案包含後台密碼，請勿公開分享或上傳到公開的網路空間。");
+  log("────────────────────────────────────────\n");
 }
 
 function countFiles(dir) {
