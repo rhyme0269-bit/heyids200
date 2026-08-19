@@ -1,5 +1,60 @@
 # Changelog
 
+## [feat: 改為「本機編輯 + 發布靜態站」架構] - 2026-08-19T11:00:00Z
+
+### 變更類型
+
+部署架構變更
+
+### 背景
+
+客戶已租借網域，且未來由客戶自行管理服務。評估後採用「本機用 Docker 執行後台編輯 → `npm run publish` 產生靜態站 → 發布到 GitHub Pages」，不需租用主機，且 GitHub Pages 的自訂網域憑證由 GitHub 自動續約。
+
+### 分支架構
+
+| 分支 | 用途 |
+|---|---|
+| `main` | 客戶使用的穩定版 |
+| `dev` | 我們開發 |
+| `gh-pages` | 發布產出，由 `npm run publish` 自動更新 |
+
+### 三個必須一起處理的問題
+
+單純分支分離**無法**達成目的，以下三項缺一不可：
+
+**1. CI 會覆蓋客戶網站**
+`deploy-preview.yml` 觸發於 push main 並以 **seed 預設資料**部署 Pages。main 改為客戶分支後，每次 merge 都會把客戶實際內容換成預設值。已移除該 workflow，改為 `build-check.yml`：型別檢查 + 建置 + 執行發布腳本驗證流程，但**完全不碰 Pages**。
+
+**2. 後台與發布腳本讀的是不同資料庫** ⚠️ 最嚴重
+Docker 使用具名 volume `app-data:/app/data`，而 `publish.mjs` 讀 `./data/oneness.db` —— 兩個不同的檔案。客戶在後台編輯後發布，送出去的會是另一份內容，**且不會報錯**。已改為 bind mount `./data:/app/data`，順帶讓備份變成「複製資料夾」，與腳本提醒一致。
+
+既有部署需先把 volume 內容複製到 `./data`。Linux 上還需確保檔案可被容器使用者寫入 —— 實測時因檔案屬 uid 1002 且權限 644，容器出現 `SQLITE_READONLY`。
+
+**3. 客戶需安裝 Node.js**
+`npm run publish` 會呼叫 `npm run build`。README 原本只要求 Docker + Git，已補上 Node.js。
+
+### 發布腳本
+
+`publish.mjs` 新增自動推送：在 `_site` 建立全新 git 儲存庫後強制推送到 `gh-pages`（產出可重新產生，不需保留歷史）。`SKIP_PUSH=1` 只產生不發布，CI 即使用此模式。推送失敗會給出可讀的原因，而非 git 錯誤訊息。
+
+### README 全面校正
+
+架構變更後多處自相矛盾，已一併修正：Docker volume 說明、備份指令（改為複製資料夾）、已移除的預覽站、GitHub Pages 的描述。網域章節拆為「方式 A：GitHub Pages（目前採用）」與「方式 B：自架主機」，前者含 GitHub Pages 的四組 A 記錄、CNAME、Enforce HTTPS 與「憑證自動續約」說明。
+
+### 驗證
+
+- 在 Docker 後台將「累積案件」改為 1688 → 發布產出即為 **1,688**，證實後台與發布腳本讀同一份資料庫
+- 推送流程以測試分支實測通過（已刪除）
+- 圖片匯出：資料庫圖片 → `img/<key>.<ext>`，HTML 與前台 JS 皆無 `/api/images` 殘留
+- 計算器在靜態站實測可運作（800萬/2%/30年 → 每月 29,570 元，與攤還公式相符）
+- 全站 10 條路由 200；CI 於 main 與 dev 皆通過
+
+### ⚠️ 待處理（需 repo 擁有者操作）
+
+GitHub Pages 的來源目前仍是 `workflow`（指向 main），而該 workflow 已移除。**必須由 repo 擁有者到 Settings → Pages 將 Source 改為 `Deploy from a branch` → `gh-pages`**，發布才會生效。我們的 token 只有 push 權限，無法代為修改（API 回傳 404）。
+
+---
+
 ## [feat: SEO 強化（#25 第三階段）] - 2026-08-18T11:00:00Z
 
 ### 變更類型
