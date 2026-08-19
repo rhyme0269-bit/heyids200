@@ -1,10 +1,37 @@
 # 合一地政士事務所官方網站
 
-## 快速預覽
+## 運作方式
 
-**https://rhyme0269-bit.github.io/heyids200**
+網站分成兩部分：
 
-每次更新程式碼會自動同步。預覽版為靜態頁面，後台及表單功能需正式部署才能使用。
+| | 說明 |
+|---|---|
+| **本機**（您的電腦） | 用 Docker 執行網站，透過後台編輯內容。內容存在 `data/` 資料夾 |
+| **正式網站** | 執行 `npm run publish`，把本機內容產生成靜態網頁並發布到 GitHub Pages |
+
+也就是「在自己電腦上編輯 → 按一次發布 → 網站更新」，不需要另外租用主機。
+
+### 分支說明
+
+| 分支 | 用途 |
+|------|------|
+| `main` | **您使用的版本**。穩定、可直接部署 |
+| `dev` | 開發中的版本，請勿使用 |
+| `gh-pages` | 發布產生的網頁，由 `npm run publish` 自動更新，請勿手動修改 |
+
+---
+
+## 更新網站內容（日常操作）
+
+```bash
+docker compose up -d          # 1. 啟動網站
+                              # 2. 到 http://localhost:8081/admin 編輯內容
+npm run publish               # 3. 發布，約 1～2 分鐘後線上就會更新
+```
+
+第一次發布前，請先確認 `.env` 的 `NEXT_PUBLIC_SITE_URL` 已填入正式網址。
+
+> 若只想產生檔案、先不要發布上線：`SKIP_PUSH=1 npm run publish`
 
 ---
 
@@ -14,6 +41,7 @@
 
 - **Docker Desktop**：https://www.docker.com/products/docker-desktop/
 - **Git**：https://git-scm.com/download/win （Mac 內建，終端機輸入 `git --version` 即可）
+- **Node.js**：https://nodejs.org/ （選 LTS 版，一路下一步即可。發布網站時需要）
 
 ### 2. 下載程式碼
 
@@ -83,7 +111,7 @@ git pull origin main
 docker compose up -d --build
 ```
 
-後台已編輯的資料存在 Docker volume 裡，更新程式碼**不會覆蓋**。
+後台已編輯的資料存在 `data/` 資料夾，更新程式碼**不會覆蓋**。
 
 ---
 
@@ -104,9 +132,12 @@ docker compose up -d --build
 
 ### 先了解這個網站的特性
 
-這個網站**不是純靜態網頁**。後台編輯的所有文字、以及上傳的圖片，都存在伺服器上的一個資料庫檔案裡（Docker volume `heyids200_app-data`）。
+> 本專案目前採用的是「本機編輯 + 發布靜態網站」，**不需要租用主機**，詳見上方「運作方式」。
+> 以下說明的是另一種選擇：把含後台的完整網站放上主機，讓後台可以從網路直接使用。
 
-因此挑選部署平台時，必須滿足兩個條件：
+含後台的完整網站**不是純靜態網頁**。後台編輯的所有文字與上傳的圖片，都存在 `data/` 資料夾裡的資料庫檔案。
+
+因此若要把完整網站放上主機，該主機必須滿足兩個條件：
 
 - 能**長時間執行一個伺服器程式**（不是每次請求才啟動）
 - 有**永久保存的硬碟空間**（資料不會在重新部署後被清空）
@@ -116,7 +147,7 @@ docker compose up -d --build
 | 平台 | 為什麼不行 |
 |------|-----------|
 | **Vercel、Netlify** | 這是 Next.js 最常見的部署平台，但它們的硬碟是暫時的。**後台編輯的內容和上傳的圖片會在每次重新部署後消失**。除非改寫成使用外部資料庫，否則不能用 |
-| **GitHub Pages** | 只能放靜態頁面（就是目前的預覽網址），沒有後台、聯絡表單也無法運作 |
+| **GitHub Pages** | 只能放靜態頁面。**本專案正是用它放正式網站**，但後台是在您電腦上執行，並非放在網路上 |
 
 > Vercel 是 Next.js 官方平台，很容易被推薦，但這個網站的後台會因此失效，請特別留意。
 
@@ -151,7 +182,7 @@ docker compose up -d --build
 
 ### 另一種選擇：靜態網站（完全免費）
 
-目前的預覽網址就是靜態網站。若能接受以下限制，也可以當正式站使用：
+**這就是本專案目前採用的方式。** 其限制如下：
 
 | | 狀態 |
 |---|------|
@@ -161,33 +192,69 @@ docker compose up -d --build
 | **後台管理** | ❌ **完全無法使用**。任何文字或圖片異動都需要重新產生並部署網站 |
 | 後台上傳的圖片 | ❌ 走 `/api/images/`，靜態站無此路徑；需改放進 `public/` |
 
-#### 從本機內容產生靜態網站
+這正是本專案目前採用的方式，詳見上方「更新網站內容」。`npm run publish` 會讀取本機 `data/oneness.db`（您在後台編輯的實際內容），把後台上傳的圖片一併從資料庫匯出成檔案並改寫網址，因此圖片在靜態站也能正常顯示。
 
-已提供 `npm run publish`，會讀取本機 `data/oneness.db`（也就是您在後台編輯的實際內容），產生完整靜態網站到 `_site/`：
+> **資料備份由您自行負責。** 網站所有內容只存在本機的 `data/` 資料夾，電腦損壞即無法復原，請定期複製到雲端硬碟或隨身碟（發布指令每次執行後都會提醒）。該資料夾含後台密碼，**請勿放入公開的 repo 或網路空間**。
 
-```bash
-# 使用 GitHub Pages 預設網址
-npm run publish
-
-# 使用自訂網域（會自動產生 CNAME）
-SITE_URL=https://example.com.tw npm run publish
-```
-
-腳本會一併把後台上傳的圖片從資料庫匯出成檔案並改寫網址，因此圖片在靜態站也能正常顯示。
-
-**使用流程**：在本機啟動網站 → 後台編輯內容 → 執行 `npm run publish` → 將 `_site/` 發布到 GitHub Pages。
-
-> **資料備份由您自行負責。** 網站所有內容只存在本機的 `data/oneness.db`，電腦損壞即無法復原，請定期複製到雲端硬碟或隨身碟（腳本每次執行後都會提醒）。該檔案含後台密碼，**請勿放入公開的 repo 或網路空間**。
-
-適合內容幾乎不再變動的情況；若會不定期調整服務項目、收費或照片，建議選擇有後台的方案。
+若日後改為需要線上後台（例如多人同時編輯、或希望手機上也能改），再改用上方的 VPS 方案即可，程式不需改寫。
 
 ---
 
 ## 使用自己的網域
 
-假設您租的網域是 `example.com.tw`，請依序完成以下四步。
+設定方式依部署方式而不同，請看對應的段落。
 
-### 步驟 1：把網域指向伺服器
+### 方式 A：GitHub Pages（本專案目前採用）
+
+假設您租的網域是 `example.com.tw`。
+
+**步驟 1：修改 `.env`**
+
+```env
+NEXT_PUBLIC_SITE_URL=https://example.com.tw
+```
+
+**步驟 2：在網域商後台設定 DNS**
+
+登入網域商（Gandi、GoDaddy、PChome 網路家庭、中華電信等）的管理介面，新增以下記錄：
+
+| 類型 | 名稱 | 值 |
+|------|------|-----|
+| A | `@` | `185.199.108.153` |
+| A | `@` | `185.199.109.153` |
+| A | `@` | `185.199.110.153` |
+| A | `@` | `185.199.111.153` |
+| CNAME | `www` | `rhyme0269-bit.github.io` |
+
+（這四組是 GitHub Pages 的固定位址，四筆都要新增。）
+
+**步驟 3：發布網站**
+
+```bash
+npm run publish
+```
+
+腳本會自動產生 GitHub Pages 綁定網域所需的 `CNAME` 檔。
+
+**步驟 4：在 GitHub 開啟 HTTPS**
+
+到 GitHub 的儲存庫頁面 → **Settings** → **Pages**：
+
+1. 確認 **Source** 設為 `Deploy from a branch`，分支選 `gh-pages`
+2. **Custom domain** 填入 `example.com.tw`，按 Save
+3. 等待憑證簽發（通常幾分鐘），勾選 **Enforce HTTPS**
+
+完成後開啟 `https://example.com.tw`，網址列會出現鎖頭圖示。
+
+> **憑證由 GitHub 自動簽發與更新，不需要手動處理，也不會過期。**
+
+---
+
+### 方式 B：自架主機（VPS）
+
+僅在改用「含後台的完整網站放上主機」時才需要。假設網域是 `example.com.tw`，請依序完成以下四步。
+
+#### 步驟 1：把網域指向伺服器
 
 登入網域商（例如 Gandi、GoDaddy、PChome 網路家庭、中華電信）的管理後台，新增兩筆 **A 記錄**：
 
@@ -204,7 +271,7 @@ nslookup example.com.tw
 
 顯示的 IP 與伺服器相同就代表生效了。
 
-### 步驟 2：修改設定檔
+#### 步驟 2：修改設定檔
 
 編輯 `.env`：
 
@@ -220,7 +287,7 @@ DOMAIN=example.com.tw
 NEXT_PUBLIC_SITE_URL=https://example.com.tw
 ```
 
-### 步驟 3：重新建置（重要）
+#### 步驟 3：重新建置（重要）
 
 ```bash
 docker compose up -d --build
@@ -230,7 +297,7 @@ docker compose up -d --build
 
 此時用 `http://example.com.tw` 應該已經可以看到網站（還是 http，尚未加密）。
 
-### 步驟 4：啟用 HTTPS 加密
+#### 步驟 4：啟用 HTTPS 加密
 
 先申請免費憑證（Let's Encrypt）。在伺服器上執行：
 
@@ -283,37 +350,30 @@ docker compose up -d --build
 
 > **憑證每 90 天到期**。到期前執行 `sudo certbot renew`，重新複製上面兩個 `.pem` 檔，再 `docker compose restart nginx` 即可。建議設定行事曆提醒，或請工程師設定自動更新。
 
-### 網域設定完成後
+#### 網域設定完成後
 
 建議一併處理：
 
-- **預覽網址**（`rhyme0269-bit.github.io/heyids200`）與正式網站內容相同，兩者會在 Google 上互相競爭排名。正式上線後建議關閉預覽，或請工程師設定為不允許搜尋引擎收錄
 - 到 [Google Search Console](https://search.google.com/search-console) 提交網站與 `https://example.com.tw/sitemap.xml`，加快被搜尋到的速度
 
 ---
 
 ## 資料備份
 
-後台編輯的所有內容與圖片都存在 Docker volume 裡。**更換伺服器或重灌前務必先備份**。
+網站的所有內容與圖片都存在 **`data/` 資料夾**裡。這台電腦若損壞或遺失，未備份的內容將無法復原。
 
-**備份**（會在目前目錄產生一個壓縮檔）：
-
-```bash
-docker run --rm \
-  -v heyids200_app-data:/data \
-  -v "$PWD":/backup \
-  alpine tar czf /backup/backup-$(date +%Y%m%d).tar.gz -C /data .
-```
-
-**還原**：
+**備份**：直接把整個 `data` 資料夾複製到雲端硬碟或隨身碟即可。
 
 ```bash
-docker run --rm \
-  -v heyids200_app-data:/data \
-  -v "$PWD":/backup \
-  alpine sh -c "rm -rf /data/* && tar xzf /backup/backup-20260101.tar.gz -C /data"
+# Windows
+xcopy /E /I data "D:\備份\heyids200-data-20260101"
+
+# Mac / Linux
+cp -r data ~/備份/heyids200-data-20260101
 ```
 
-還原後執行 `docker compose restart` 即可。
+**還原**：把備份的資料夾複製回專案目錄取代 `data`，再執行 `docker compose restart`。
 
-> `docker compose down` 不會刪除資料，但 `docker compose down -v` 的 `-v` **會把資料全部刪除**，請勿使用。
+> - 執行 `npm run publish` 時會自動提醒您備份。
+> - 此資料夾含後台密碼，**請勿放入公開的 repo 或任何公開網路空間**。
+> - 建議每次做較大幅度的內容調整後備份一次。

@@ -22,6 +22,7 @@ const ROOT = process.cwd();
 const OUT = path.join(ROOT, "_site");
 const DB_PATH = path.join(ROOT, "data", "oneness.db");
 const PORT = Number(process.env.PUBLISH_PORT || 4321);
+const BRANCH = process.env.PUBLISH_BRANCH || "gh-pages";
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 
 // 自訂網域。留空則產生給 GitHub Pages 預設網址用的版本。
@@ -229,13 +230,66 @@ async function main() {
     fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
 
     const fileCount = countFiles(OUT);
-    log(`\n[6/6] 完成：${pages.length} 個頁面、${fileCount} 個檔案`);
-    log(`\n輸出位置：${OUT}`);
+    log(`\n[6/6] 產生完成：${pages.length} 個頁面、${fileCount} 個檔案`);
+
+    if (process.env.SKIP_PUSH === "1") {
+      log(`\n輸出位置：${OUT}（SKIP_PUSH=1，未發布）`);
+    } else {
+      publishToGitHub();
+    }
 
     printBackupReminder();
   } finally {
     server.kill();
   }
+}
+
+/**
+ * 把產出推送到 gh-pages 分支。
+ *
+ * 每次都在 _site 裡建立一個全新的 git 儲存庫再強制推送 —— 產出是可重新產生的，
+ * 不需要保留歷史，這樣也不會讓儲存庫因為累積產出而變大。
+ */
+function publishToGitHub() {
+  const remote = run("git", ["remote", "get-url", "origin"]);
+  if (!remote) {
+    log("\n找不到 git 遠端位置，已略過發布。產出位於 _site/，可自行上傳。");
+    return;
+  }
+
+  log(`\n[發布] 推送到 ${BRANCH} 分支…`);
+
+  const git = (args) =>
+    spawnSync("git", ["-C", OUT, ...args], { stdio: "pipe", encoding: "utf8" });
+
+  git(["init", "-q", "-b", BRANCH]);
+  git(["add", "-A"]);
+
+  const stamp = new Date().toLocaleString("zh-TW");
+  const commit = git(["commit", "-q", "-m", `更新網站內容 ${stamp}`]);
+  if (commit.status !== 0 && !/nothing to commit/i.test(commit.stderr + commit.stdout)) {
+    log(`  ✗ 無法建立版本：${(commit.stderr || commit.stdout).trim()}`);
+    return;
+  }
+
+  const push = git(["push", "--force", remote, `${BRANCH}:${BRANCH}`]);
+  if (push.status !== 0) {
+    const err = (push.stderr || push.stdout).trim();
+    log("\n  ✗ 發布失敗");
+    log(`  ${err.split("\n").slice(-3).join("\n  ")}`);
+    log("\n  常見原因：尚未登入 GitHub，或沒有這個儲存庫的權限。");
+    log("  網站內容已產生在 _site/，排除問題後可重新執行本指令。");
+    return;
+  }
+
+  log("  ✓ 已發布");
+  log(`\n網站更新完成，約 1～2 分鐘後生效：`);
+  log(`  ${SITE_URL || "https://<您的 GitHub Pages 網址>"}\n`);
+}
+
+function run(cmd, args) {
+  const r = spawnSync(cmd, args, { cwd: ROOT, encoding: "utf8" });
+  return r.status === 0 ? r.stdout.trim() : "";
 }
 
 /**

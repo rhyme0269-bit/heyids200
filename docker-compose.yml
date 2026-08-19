@@ -9,7 +9,10 @@ services:
     expose:
       - "3000"
     volumes:
-      - app-data:/app/data
+      # 直接掛載本機 data 資料夾，而非具名 volume：
+      # 後台編輯的內容會落在 ./data/oneness.db，npm run publish 才讀得到，
+      # 備份也只要複製這個資料夾即可。
+      - ./data:/app/data
     environment:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
@@ -29,5 +32,3 @@ services:
     depends_on:
       - app
 
-volumes:
-  app-data:

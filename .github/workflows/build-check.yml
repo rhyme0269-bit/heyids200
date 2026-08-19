@@ -1,0 +1,47 @@
+name: Build Check
+
+# 正式網站由事務所在本機執行 npm run publish 產生並發布（內容來自本機資料庫）。
+# 這個 workflow 只驗證程式碼建置得起來，「不會」部署到 GitHub Pages ——
+# CI 沒有事務所的資料庫，若在此部署會用預設資料覆蓋掉正式網站的實際內容。
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://example.com
+          ADMIN_USERNAME: ci
+          ADMIN_PASSWORD: ci
+
+      - name: Verify the static publish still works
+        # 事務所實際使用的就是這支腳本，順便確認它沒有被改壞。
+        # CI 沒有資料庫，因此產出的是預設內容，僅用於驗證流程可跑完。
+        run: SKIP_PUSH=1 npm run publish
