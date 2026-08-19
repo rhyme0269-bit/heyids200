@@ -7,7 +7,7 @@ import FloatingLine from "@/components/common/FloatingLine";
 import PreviewBanner from "@/components/common/PreviewBanner";
 import StructuredData from "@/components/common/StructuredData";
 import { generateLocalBusinessSchema } from "@/lib/structured-data";
-import { getSettings } from "@/lib/db";
+import { getSettings, hasImage } from "@/lib/db";
 import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
 import { buildThemeCss, brandColorsFromSettings } from "@/lib/theme";
 import "./globals.css";
@@ -90,7 +90,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <StructuredData data={generateLocalBusinessSchema(settings)} />
         <PreviewBanner />
-        <Header navItems={navItems} siteName={settings.name} phone={settings.phone} logoSize={settings.logoSize} />
+        <Header navItems={navItems} siteName={settings.name} phone={settings.phone} logoSize={settings.logoSize} logoSrc={hasImage("logo") ? "/api/images/logo" : null} />
         <main className="flex-1">{children}</main>
         <Footer />
         <FloatingLine href={settings.lineUrl} />

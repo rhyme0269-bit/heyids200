@@ -42,7 +42,7 @@ const NAV_LINK_CLASS =
   "after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 " +
   "after:bg-gold after:transition-all after:duration-300 hover:after:w-[calc(100%-1.5rem)]";
 
-export default function Header({ navItems, siteName, phone, logoSize }: { navItems: NavItem[]; siteName?: string; phone?: string; logoSize?: string }) {
+export default function Header({ navItems, siteName, phone, logoSize, logoSrc }: { navItems: NavItem[]; siteName?: string; phone?: string; logoSize?: string; logoSrc?: string | null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const logoClass = LOGO_SIZES[logoSize || "medium"] || LOGO_SIZES.medium;
@@ -73,15 +73,20 @@ export default function Header({ navItems, siteName, phone, logoSize }: { navIte
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={logoRef}
-              src="/api/images/logo"
-              alt={siteName || "合一地政士事務所"}
-              className={`${logoClass} w-auto hidden`}
-              onError={(e) => { (e.target as HTMLImageElement).classList.add("hidden"); }}
-              onLoad={(e) => { (e.target as HTMLImageElement).classList.remove("hidden"); }}
-            />
+            {/* Resolved on the server and passed in, so the URL is not baked into
+                this client bundle — the static publish rewrites image URLs in the
+                HTML, which cannot reach a literal inside a JS chunk. */}
+            {logoSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                ref={logoRef}
+                src={logoSrc}
+                alt={siteName || "合一地政士事務所"}
+                className={`${logoClass} w-auto hidden`}
+                onError={(e) => { (e.target as HTMLImageElement).classList.add("hidden"); }}
+                onLoad={(e) => { (e.target as HTMLImageElement).classList.remove("hidden"); }}
+              />
+            )}
             <span className="text-xl font-bold text-stone-800">
               {siteName || "合一地政士事務所"}
             </span>
