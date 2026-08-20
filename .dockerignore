@@ -6,3 +6,7 @@ docs
 .env
 .env.local
 *.md
+# 發布產出與建置暫存 —— 不需進入映像，會拖慢建置並增加映像大小
+_site
+tsconfig.tsbuildinfo
+screenshots
