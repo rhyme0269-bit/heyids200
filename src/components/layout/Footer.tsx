@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSettings, hasImage } from "@/lib/db";
 import { getNavItems, isCmsInitialized } from "@/lib/cms-db";
 import { DEFAULT_IMAGES } from "@/lib/default-images";
+import InstagramLink from "@/components/common/InstagramLink";
 
 const fallbackLinks = [
   { label: "首頁", href: "/", isExternal: false },
@@ -151,6 +152,15 @@ export default function Footer() {
                   </a>
                 </span>
               </li>
+              {settings.instagramUrl && (
+                <li className="flex items-start">
+                  <InstagramLink
+                    href={settings.instagramUrl}
+                    showLabel
+                    className="inline-flex items-center gap-2.5 text-stone-300 transition-colors hover:text-amber-200"
+                  />
+                </li>
+              )}
             </ul>
 
             {settings.businessHours && (
