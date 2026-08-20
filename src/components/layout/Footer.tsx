@@ -211,7 +211,7 @@ export default function Footer() {
                 className="inline-block rounded-lg bg-white p-2 transition-transform hover:scale-105"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <img loading="lazy" decoding="async"
                   src={qrSrc}
                   alt="LINE 官方帳號 QR Code"
                   width={80}

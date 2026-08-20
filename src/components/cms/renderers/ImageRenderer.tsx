@@ -16,7 +16,7 @@ export default function ImageRenderer({ data }: { data: Record<string, unknown> 
     <figure>
       <div className="relative bg-stone-200 rounded-2xl overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={d.alt || ""} className="w-full h-auto object-cover" />
+        <img loading="lazy" decoding="async" src={src} alt={d.alt || ""} className="w-full h-auto object-cover" />
       </div>
       {d.caption && (
         <figcaption className="text-center mt-3 text-stone-500 text-sm">{d.caption}</figcaption>

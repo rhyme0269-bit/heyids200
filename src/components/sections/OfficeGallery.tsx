@@ -38,7 +38,7 @@ export default function OfficeGallery() {
               className="group relative overflow-hidden rounded-xl aspect-[4/3]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <img loading="lazy" decoding="async"
                 src={photo.src!}
                 alt={photo.alt}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

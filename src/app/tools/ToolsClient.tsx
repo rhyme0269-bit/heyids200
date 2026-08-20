@@ -19,10 +19,13 @@ function InputFieldUI({
   input,
   value,
   onChange,
+  fieldId,
 }: {
   input: CalcInput;
   value: string;
   onChange: (v: string) => void;
+  /** Scoped to the calculator, since input ids repeat across calculators. */
+  fieldId: string;
 }) {
   if (input.type === "checkbox") {
     return (
@@ -41,8 +44,11 @@ function InputFieldUI({
   if (input.type === "select" && input.options) {
     return (
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-stone-700">{input.label}</label>
+        <label htmlFor={fieldId} className="text-sm font-medium text-stone-700">
+          {input.label}
+        </label>
         <select
+          id={fieldId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={FIELD_CLASS}
@@ -59,8 +65,11 @@ function InputFieldUI({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-stone-700">{input.label}</label>
+      <label htmlFor={fieldId} className="text-sm font-medium text-stone-700">
+        {input.label}
+      </label>
       <input
+        id={fieldId}
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -196,6 +205,7 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
             <InputFieldUI
               key={input.id}
               input={input}
+              fieldId={`calc-${calc.id}-${input.id}`}
               value={values[input.id] ?? ""}
               onChange={(v) => setValues((prev) => ({ ...prev, [input.id]: v }))}
             />

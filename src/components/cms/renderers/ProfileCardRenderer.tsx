@@ -37,7 +37,7 @@ export default function ProfileCardRenderer({ data }: { data: Record<string, unk
         <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-[20px] bg-stone-200 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <img loading="lazy" decoding="async"
               src={src}
               alt={d.imageName || ""}
               className="absolute inset-0 h-full w-full object-cover"
