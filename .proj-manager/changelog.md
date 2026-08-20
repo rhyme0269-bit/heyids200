@@ -1,5 +1,47 @@
 # Changelog
 
+## [fix: 巢狀專案副本導致建置失敗（#34）] - 2026-08-20T07:00:00Z
+
+### 變更類型
+
+Bug 修正（建置環境）
+
+### 客戶回報
+
+在 `docker compose up -d --build` 時 `Failed to type check`，發生於切換分支之後。
+
+### 診斷過程
+
+**第一個假設被自己的實驗推翻**：懷疑 `tsconfig.tsbuildinfo` 帶著另一分支的 TypeScript 增量狀態進入 builder（符合「切版本後才壞」的現象）。直接測試 —— 將該檔換成完全損壞的內容再建置，**仍然成功**，故排除。
+
+**真正原因**在錯誤路徑中：`./heyids200/heyids200/src/app/layout.tsx` —— 目錄名重複，表示客戶的專案資料夾內有一份**巢狀專案副本**，且其中檔案為新舊版本混雜（`layout.tsx` 傳 `logoSrc`、`Header.tsx` 未接受此 prop），本身即無法通過型別檢查。
+
+`tsconfig.json` 的 `include` 為 `**/*.ts` / `**/*.tsx`（**自專案根遞迴**），`exclude` 僅 `node_modules`，因此該副本被納入建置。切換分支不會觸及該資料夾，故錯誤看似由切版本造成，實則無關。
+
+**已重現確認**：建立巢狀副本並將其中 `Header` 換為舊版 → `tsc` 立即報錯；套用修正後同一副本被忽略，`tsc` 與 Docker 建置皆通過。測試後已清除。
+
+### 修正
+
+`tsconfig.json` 的 `include` 限定於 `src/`，並明確列出 `next-env.d.ts` 與 `next.config.ts`；`exclude` 加入 `_site`。
+
+任何位於 `src/` 之外的副本、備份資料夾或解壓的舊版本，均不再影響建置 —— 不僅解決本次，亦預防同類問題。
+
+### 分支處理
+
+修正同時進入 `dev` 與 **`main`**（客戶使用的分支，否則其 `git pull` 後仍為損壞狀態）。
+
+推送 `main` 時發現客戶已另推兩個 CNAME commit，故採 **rebase** 將修正疊於其上，確認 `CNAME`（`heyids.com.tw`）完整保留，未覆蓋客戶工作。
+
+### 連帶修正
+
+`.dockerignore` 未排除 `_site`、`screenshots`、`tsconfig.tsbuildinfo`，約 1.4MB 產出物被送入 build context（`_site` 為加入發布腳本時的疏漏）。修正後 context 傳輸量降至 14.3kB。此為衛生問題，非本次錯誤之解方。
+
+### 一併告知客戶
+
+其當時位於 `feature/cms-builder`，該分支已合併並自遠端移除，故 git 顯示「ahead of origin by 24 commits」等異常訊息。已於 #34 說明並請其改用 `main`；本機該分支建議先保留，待確認無未保存內容後再清理。
+
+---
+
 ## [refine: #25 第二階段精修 P0 + 收費表格手機版] - 2026-08-20T01:00:00Z
 
 ### 變更類型
