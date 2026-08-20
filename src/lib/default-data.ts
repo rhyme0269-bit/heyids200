@@ -9,6 +9,7 @@ export interface SiteSettings {
   email: string;
   lineId: string;
   lineUrl: string;
+  instagramUrl: string;
   address: string;
   googleMapUrl: string;
   googleMapEmbed: string;
@@ -68,6 +69,8 @@ export const defaultSiteSettings: SiteSettings = {
   email: "heyids200@gmail.com",
   lineId: "@240mvtlq",
   lineUrl: "https://lin.ee/pgsUFs6",
+  // 留空則不顯示；事務所在後台填入後才會出現在頁尾與聯絡資訊
+  instagramUrl: "",
   address: "新北市蘆洲區長安街200號",
   googleMapUrl: "https://maps.app.goo.gl/TnpryxjWD7y53Mbx7?g_st=ic",
   googleMapEmbed:

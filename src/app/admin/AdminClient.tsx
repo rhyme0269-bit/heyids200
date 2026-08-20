@@ -21,6 +21,7 @@ interface SettingsData {
   email: string;
   lineId: string;
   lineUrl: string;
+  instagramUrl: string;
   address: string;
   googleMapUrl: string;
   googleMapEmbed: string;
@@ -84,6 +85,7 @@ const SETTINGS_FIELDS: { key: keyof SettingsData; label: string }[] = [
   { key: "email", label: "電子郵件" },
   { key: "lineId", label: "LINE ID" },
   { key: "lineUrl", label: "LINE 連結" },
+  { key: "instagramUrl", label: "Instagram 連結（留空則不顯示）" },
   { key: "address", label: "地址" },
   { key: "scrivenerName", label: "代書姓名" },
   { key: "licenseNumber", label: "證照號碼" },
@@ -189,6 +191,7 @@ export default function AdminClient() {
     email: "",
     lineId: "",
     lineUrl: "",
+    instagramUrl: "",
     address: "",
     googleMapUrl: "",
     googleMapEmbed: "",

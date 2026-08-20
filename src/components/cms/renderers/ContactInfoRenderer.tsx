@@ -1,5 +1,6 @@
 import { getSettings } from "@/lib/db";
 import type { ContactInfoData } from "@/lib/cms-types";
+import InstagramLink from "@/components/common/InstagramLink";
 
 export default function ContactInfoRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as ContactInfoData;
@@ -56,6 +57,23 @@ export default function ContactInfoRenderer({ data }: { data: Record<string, unk
               ) : (
                 <p className="text-stone-600">ID：{settings.lineId}</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {settings.instagramUrl && (
+          <div className="flex items-start">
+            <InstagramLink href={settings.instagramUrl} className="text-amber-800 mt-0.5 mr-4 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-stone-800">Instagram</p>
+              <a
+                href={settings.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-stone-600 hover:text-amber-800"
+              >
+                最新消息與案例分享
+              </a>
             </div>
           </div>
         )}
