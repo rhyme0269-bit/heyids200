@@ -50,10 +50,13 @@ export default function ProfileCardRenderer({ data }: { data: Record<string, unk
           <div className="text-center mt-4">
             <p className="font-bold text-stone-800 text-lg">{d.imageName}</p>
             {d.imageSubtitle && (
-              <p className="text-stone-500 text-sm">{d.imageSubtitle}</p>
+              <p className="text-stone-600 text-sm">{d.imageSubtitle}</p>
             )}
-            {licenseNumber && (
-              <p className="mt-2 text-xs leading-relaxed text-stone-500">
+            {/* The subtitle is free text and already carries the licence number in
+                the seeded content, so only add the labelled line when it is not
+                there — otherwise the number appeared twice. */}
+            {licenseNumber && !d.imageSubtitle?.includes(licenseNumber) && (
+              <p className="mt-2 text-xs leading-relaxed text-stone-600">
                 執照字號 {licenseNumber}
               </p>
             )}

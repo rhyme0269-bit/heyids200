@@ -92,8 +92,11 @@ export function buildScales(colors: BrandColors) {
       100: toHex(mix(bg, sub, 0.1)),
       200: toHex(mix(bg, sub, 0.22)),
       300: toHex(mix(bg, sub, 0.42)),
-      400: toHex(mix(bg, sub, 0.66)),
-      500: toHex(mix(bg, sub, 0.86)),
+      // Shifted darker than a linear ramp would give: these two steps carry small
+      // labels and captions, and the office asked for sub text not to be so light
+      // it becomes hard to read (#25).
+      400: toHex(mix(bg, sub, 0.78)),
+      500: toHex(mix(bg, sub, 0.95)),
       600: toHex(sub),
       700: toHex(mix(sub, text, 0.55)),
       800: toHex(text),
