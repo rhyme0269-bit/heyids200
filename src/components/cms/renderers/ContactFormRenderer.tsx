@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/db";
 import type { ContactFormData } from "@/lib/cms-types";
 import ContactForm from "@/components/common/ContactForm";
 import PreviewGuard from "@/components/common/PreviewGuard";
@@ -19,7 +20,7 @@ export default function ContactFormRenderer({ data }: { data: Record<string, unk
         />
       ) : (
         <PreviewGuard fallbackMessage="聯絡表單需正式部署後才能使用">
-          <ContactForm />
+          <ContactForm endpoint={getSettings().contactEndpoint} />
         </PreviewGuard>
       )}
     </div>
