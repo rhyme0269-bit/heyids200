@@ -58,14 +58,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Motion scale (#25). The office asked for 180–250ms on interface feedback and
+ * up to 500ms on entrances — deliberately restrained, "少一點動畫，多一點信任".
+ * Named tokens so the timings stay consistent instead of each component picking
+ * its own duration.
+ */
+:root {
+  --motion-fast: 180ms;
+  --motion-base: 220ms;
+  --motion-slow: 300ms;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Noto Sans TC", Arial, Helvetica, sans-serif;
+  /*
+   * Chinese body text was set slightly small and light. Nudged up a step with a
+   * looser line height, and字重 500 for CJK, which needs more weight than Latin
+   * to read at the same apparent density.
+   */
+  font-size: 1.0625rem; /* 17px */
+  line-height: 1.8;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings carry their own weight; keep them from inheriting the body bump. */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.35;
 }
 
 /* Custom animations */
@@ -105,14 +137,19 @@ body {
 }
 
 /* Hover lift effect */
-/* Card surface: soft resting shadow, lifts 8px on hover over 0.3s (#25). */
+/*
+ * Card surface. The first pass lifted 8px with a 0.08 shadow; the office found
+ * that too strong for a scrivener's office — "高級，不是漂浮" — so the lift is
+ * now 3px and the shadow is tinted with the brand text colour rather than pure
+ * black, which reads as softer against the warm background.
+ */
 .hover-lift {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 6px 24px rgba(45, 42, 38, 0.06);
+  transition: transform var(--motion-slow) ease, box-shadow var(--motion-slow) ease;
 }
 .hover-lift:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(45, 42, 38, 0.1);
 }
 @media (prefers-reduced-motion: reduce) {
   .hover-lift:hover {

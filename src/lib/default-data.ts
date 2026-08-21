@@ -10,6 +10,7 @@ export interface SiteSettings {
   lineId: string;
   lineUrl: string;
   instagramUrl: string;
+  contactEndpoint: string;
   address: string;
   googleMapUrl: string;
   googleMapEmbed: string;
@@ -72,6 +73,9 @@ export const defaultSiteSettings: SiteSettings = {
   // 事務所提供的帳號（#30）。原連結帶有 QR 分享的追蹤參數，已去除。
   // 後台「基本資訊」可修改；留空則頁尾與聯絡資訊都不顯示。
   instagramUrl: "https://www.instagram.com/heyids200",
+  // 聯絡表單的收件位置（Google Apps Script 網址）。
+  // 留空時改用站內 /api/contact —— 靜態網站沒有該路徑，因此正式站必須填入。
+  contactEndpoint: "",
   address: "新北市蘆洲區長安街200號",
   googleMapUrl: "https://maps.app.goo.gl/TnpryxjWD7y53Mbx7?g_st=ic",
   googleMapEmbed:

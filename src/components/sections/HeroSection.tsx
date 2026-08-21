@@ -24,7 +24,7 @@ export default async function HeroSection() {
       {showImage && imageSrc && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="eager" fetchPriority="high" decoding="async"
             src={imageSrc}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"

@@ -11,7 +11,13 @@ interface FormData {
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
-export default function ContactForm() {
+/**
+ * 聯絡表單。
+ *
+ * `endpoint` 為外部收件網址（Google Apps Script），由後台設定傳入。靜態網站沒有
+ * 站內 API 可用，因此正式站必須設定；留空時退回站內 /api/contact，供本機編輯時測試。
+ */
+export default function ContactForm({ endpoint }: { endpoint?: string }) {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -33,25 +39,47 @@ export default function ContactForm() {
     setStatus("submitting");
     setErrorMessage("");
 
+    const external = !!endpoint;
+
     try {
-      const res = await fetch("/api/contact", {
+      /*
+       * Content-Type is text/plain for the external endpoint on purpose. That
+       * keeps it a "simple" request, so the browser sends no CORS preflight —
+       * Apps Script does not answer preflight, and a JSON content type would
+       * fail before the request ever arrived.
+       */
+      const res = await fetch(endpoint || "/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": external ? "text/plain;charset=utf-8" : "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const result = await res.json();
+      /*
+       * Only report success when the endpoint actually said so. If the response
+       * cannot be read — opaque, blocked, or not JSON — that is an error, not a
+       * success: telling someone their enquiry was sent when it may not have
+       * been is worse than telling them to call.
+       */
+      let result: { success?: boolean; message?: string } | null = null;
+      try {
+        result = await res.json();
+      } catch {
+        result = null;
+      }
 
-      if (res.ok && result.success) {
+      if (res.ok && result?.success) {
         setStatus("success");
         setFormData({ name: "", phone: "", email: "", message: "" });
       } else {
         setStatus("error");
-        setErrorMessage(result.message || "送出失敗，請稍後再試。");
+        setErrorMessage(
+          result?.message ||
+            "送出失敗，請改用電話或 LINE 與我們聯繫，以免您的訊息未送達。"
+        );
       }
     } catch {
       setStatus("error");
-      setErrorMessage("網路錯誤，請檢查網路連線後再試。");
+      setErrorMessage("送出失敗，請確認網路連線，或改用電話或 LINE 與我們聯繫。");
     }
   };
 

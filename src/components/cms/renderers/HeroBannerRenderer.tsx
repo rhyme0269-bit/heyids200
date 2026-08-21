@@ -31,7 +31,7 @@ export default function HeroBannerRenderer({ data }: { data: Record<string, unkn
     return (
       <section className="relative bg-stone-900 py-20 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc!} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img loading="eager" fetchPriority="high" decoding="async" src={imageSrc!} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-stone-900/60" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold text-white mb-4">{d.title}</h1>

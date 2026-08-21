@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import type { Calculator, CalcInput, CalcResult } from "@/lib/calc-types";
+import Link from "next/link";
 import { evaluate, evaluateAll } from "@/lib/calc-engine";
+
+// One field style for every input and select (#25 十九), 48px tall with a
+// consistent focus ring so the calculators stop looking hand-assembled.
+const FIELD_CLASS =
+  "h-12 rounded-lg border border-stone-300 bg-white px-3 text-stone-800 " +
+  "focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600/20";
 
 function fmt(n: number): string {
   return Math.round(n).toLocaleString("zh-TW");
@@ -12,10 +19,13 @@ function InputFieldUI({
   input,
   value,
   onChange,
+  fieldId,
 }: {
   input: CalcInput;
   value: string;
   onChange: (v: string) => void;
+  /** Scoped to the calculator, since input ids repeat across calculators. */
+  fieldId: string;
 }) {
   if (input.type === "checkbox") {
     return (
@@ -34,11 +44,14 @@ function InputFieldUI({
   if (input.type === "select" && input.options) {
     return (
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-stone-700">{input.label}</label>
+        <label htmlFor={fieldId} className="text-sm font-medium text-stone-700">
+          {input.label}
+        </label>
         <select
+          id={fieldId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-800 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600/20"
+          className={FIELD_CLASS}
         >
           {input.options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -52,15 +65,18 @@ function InputFieldUI({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-stone-700">{input.label}</label>
+      <label htmlFor={fieldId} className="text-sm font-medium text-stone-700">
+        {input.label}
+      </label>
       <input
+        id={fieldId}
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={input.placeholder}
         step={input.step}
         min={input.min}
-        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-800 placeholder:text-stone-400 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600/20"
+        className={`${FIELD_CLASS} placeholder:text-stone-400`}
       />
     </div>
   );
@@ -125,10 +141,8 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
   const { definition } = calc;
   const { inputs, formulas, results, total, notes, links } = definition;
 
-  if (links && links.length > 0 && inputs.length === 0) {
-    return <LinkCard calc={calc} />;
-  }
-
+  // Hooks must run before any early return, or React sees a different hook count
+  // when a calculator changes between link-only and having inputs.
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const input of inputs) {
@@ -138,6 +152,9 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
   });
 
   const [computed, setComputed] = useState<Record<string, number> | null>(null);
+
+  const isLinkCard = !!links && links.length > 0 && inputs.length === 0;
+  if (isLinkCard) return <LinkCard calc={calc} />;
 
   const handleCalc = () => {
     const numericValues: Record<string, number> = {};
@@ -188,6 +205,7 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
             <InputFieldUI
               key={input.id}
               input={input}
+              fieldId={`calc-${calc.id}-${input.id}`}
               value={values[input.id] ?? ""}
               onChange={(v) => setValues((prev) => ({ ...prev, [input.id]: v }))}
             />
@@ -196,12 +214,12 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
         <button
           type="button"
           onClick={handleCalc}
-          className="mt-2 w-full cursor-pointer rounded-lg bg-amber-800 px-4 py-2.5 font-semibold text-white transition hover:bg-amber-900 active:scale-[0.98]"
+          className="mt-2 h-[52px] w-full cursor-pointer rounded-xl bg-amber-800 px-4 font-semibold text-white transition-colors duration-200 hover:bg-amber-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800 active:scale-[0.99]"
         >
           開始試算
         </button>
         {computed && (
-          <div className="mt-2 rounded-lg bg-stone-50 p-4">
+          <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
             {results.map((r) =>
               shouldShow(r, computed) ? (
                 <ResultRow key={r.id} label={r.label} value={renderResultValue(r, computed)} />
@@ -218,6 +236,26 @@ function DynamicCalculator({ calc }: { calc: Calculator }) {
                 <NoteText key={i} text={note.text} />
               ) : null
             )}
+            {/* Sits under the figures rather than over them — the office asked for
+                no popup and nothing covering the result (#25 十九). */}
+            <div className="mt-3 border-t border-amber-200 pt-3">
+              <Link
+                href="/contact"
+                className="group inline-flex items-center text-sm font-medium text-amber-800 transition-colors duration-200 hover:text-amber-900"
+              >
+                對試算結果有疑問？立即諮詢地政士
+                <svg
+                  className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
           </div>
         )}
       </div>

@@ -41,7 +41,7 @@ export default async function PageHero({
     return (
       <section className="relative bg-stone-900 py-20 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img loading="eager" fetchPriority="high" decoding="async"
           src={imageSrc}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
@@ -60,7 +60,7 @@ export default async function PageHero({
     return (
       <section className="relative bg-stone-900 py-20 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img loading="eager" fetchPriority="high" decoding="async"
           src={imageSrc}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"

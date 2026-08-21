@@ -22,15 +22,15 @@ export default function Footer() {
     : fallbackLinks;
 
   return (
-    <footer className="bg-stone-950 text-stone-400">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <footer className="bg-stone-950 text-stone-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* 事務所資訊 */}
           <div>
-            <h3 className="text-stone-200 text-base font-bold mb-4">
+            <h3 className="text-stone-200 text-base font-bold mb-3">
               {settings.name}
             </h3>
-            <p className="text-stone-500 text-sm leading-relaxed mb-4">
+            <p className="text-stone-400 text-sm leading-relaxed mb-3">
               逾 26 年專業經驗，提供不動產買賣過戶、繼承登記、贈與登記、抵押權設定、節稅規劃等全方位服務。
             </p>
             <p className="text-stone-500 text-xs">
@@ -43,10 +43,10 @@ export default function Footer() {
 
           {/* 聯絡資訊 */}
           <div>
-            <h3 className="text-stone-200 text-base font-bold mb-4">
+            <h3 className="text-stone-200 text-base font-bold mb-3">
               聯絡資訊
             </h3>
-            <ul className="space-y-3 text-xs">
+            <ul className="space-y-2.5 text-xs">
               <li className="flex items-start">
                 <svg
                   className="w-4 h-4 text-stone-600 mt-0.5 mr-2.5 flex-shrink-0"
@@ -164,7 +164,7 @@ export default function Footer() {
             </ul>
 
             {settings.businessHours && (
-              <div className="mt-6">
+              <div className="mt-5">
                 <h3 className="text-stone-200 text-base font-bold mb-2">營業時間</h3>
                 {settings.businessHours.split("\n").map((line, i) => (
                   <p key={i} className="text-xs leading-relaxed">{line}</p>
@@ -175,10 +175,10 @@ export default function Footer() {
 
           {/* 快速連結 */}
           <div>
-            <h3 className="text-stone-200 text-base font-bold mb-4">
+            <h3 className="text-stone-200 text-base font-bold mb-3">
               快速連結
             </h3>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-2">
               {quickLinks.map((link) => (
                 <li key={link.href}>
                   {link.isExternal ? (
@@ -202,7 +202,7 @@ export default function Footer() {
               ))}
             </ul>
 
-            <div className="mt-6">
+            <div className="mt-5">
               <h3 className="text-stone-200 text-base font-bold mb-2">LINE 官方帳號</h3>
               <a
                 href={settings.lineUrl || "#"}
@@ -211,12 +211,12 @@ export default function Footer() {
                 className="inline-block rounded-lg bg-white p-2 transition-transform hover:scale-105"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <img loading="lazy" decoding="async"
                   src={qrSrc}
                   alt="LINE 官方帳號 QR Code"
-                  width={96}
-                  height={96}
-                  className="h-24 w-24"
+                  width={80}
+                  height={80}
+                  className="h-20 w-20"
                 />
               </a>
               <p className="mt-2 text-xs">掃描加入好友</p>
@@ -226,12 +226,12 @@ export default function Footer() {
 
         {/* Map */}
         {settings.googleMapEmbed && (
-          <div className="mt-12 overflow-hidden rounded-xl border border-stone-800">
+          <div className="mt-8 overflow-hidden rounded-xl border border-stone-800">
             <iframe
               src={settings.googleMapEmbed}
               title="事務所位置地圖"
               width="100%"
-              height="260"
+              height="170"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="block border-0"
@@ -240,7 +240,7 @@ export default function Footer() {
         )}
 
         {/* Copyright */}
-        <div className="mt-12 pt-8 border-t border-stone-800 text-center">
+        <div className="mt-8 pt-6 border-t border-stone-800 text-center">
           <p className="text-stone-600 text-xs">
             &copy; {new Date().getFullYear()} {settings.name}. All rights reserved.
           </p>
