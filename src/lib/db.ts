@@ -153,10 +153,30 @@ function initTables(db: Database.Database) {
 // alone. Self-limiting: once replaced the condition no longer matches.
 const SUPERSEDED_LINE_URLS = ["https://line.me/R/ti/p/@240mvtlq"];
 
+// Settings added after a database was seeded already exist as empty rows, because
+// seedIfEmpty writes every default. An empty row shadows the default in
+// getSettings(), so shipping a new default value alone does not reach an existing
+// install — it needs filling in once. Keyed by a marker so clearing the value
+// later is respected rather than overwritten on the next boot.
+const FILL_ONCE: { key: keyof typeof defaultSiteSettings; marker: string }[] = [
+  { key: "instagramUrl", marker: "fill_instagram_url_v1" },
+];
+
 function migrateSettings(db: Database.Database) {
   const update = db.prepare("UPDATE settings SET value = ? WHERE key = 'lineUrl' AND value = ?");
   for (const old of SUPERSEDED_LINE_URLS) {
     update.run(defaultSiteSettings.lineUrl, old);
+  }
+
+  const seen = db.prepare("SELECT COUNT(*) as c FROM settings WHERE key = ?");
+  const mark = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, 'done')");
+  const fill = db.prepare("UPDATE settings SET value = ? WHERE key = ? AND (value = '' OR value IS NULL)");
+
+  for (const { key, marker } of FILL_ONCE) {
+    if ((seen.get(marker) as { c: number }).c > 0) continue;
+    const value = defaultSiteSettings[key];
+    if (value) fill.run(value, key);
+    mark.run(marker);
   }
 }
 
