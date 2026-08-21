@@ -69,8 +69,9 @@ export const defaultSiteSettings: SiteSettings = {
   email: "heyids200@gmail.com",
   lineId: "@240mvtlq",
   lineUrl: "https://lin.ee/pgsUFs6",
-  // 留空則不顯示；事務所在後台填入後才會出現在頁尾與聯絡資訊
-  instagramUrl: "",
+  // 事務所提供的帳號（#30）。原連結帶有 QR 分享的追蹤參數，已去除。
+  // 後台「基本資訊」可修改；留空則頁尾與聯絡資訊都不顯示。
+  instagramUrl: "https://www.instagram.com/heyids200",
   address: "新北市蘆洲區長安街200號",
   googleMapUrl: "https://maps.app.goo.gl/TnpryxjWD7y53Mbx7?g_st=ic",
   googleMapEmbed:
