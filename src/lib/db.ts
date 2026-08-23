@@ -45,6 +45,10 @@ function getDb(): Database.Database {
   initCalcTables(_db);
   seedCalculators(_db);
 
+  // Ensure the configured admin user exists.
+  // If it does not exist, remove all old users and create it.
+  seedAdminUser(_db);
+
   return _db;
 }
 
@@ -303,27 +307,44 @@ function seedIfEmpty(db: Database.Database) {
     });
   });
   seedFeeNotes();
-
-  // Seed default admin user from env
-  seedAdminUser(db);
 }
 
 function seedAdminUser(db: Database.Database) {
-  const count = db.prepare("SELECT COUNT(*) as c FROM admin_users").get() as { c: number };
-  if (count.c > 0) return;
-
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
+
+  // .env 沒有設定完整的管理員帳號資訊，不做任何變更
   if (!username || !password) {
-    console.warn("WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created.");
+    console.warn(
+      "WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created."
+    );
     return;
   }
+
+  // 檢查 .env 指定的使用者是否已存在
+  const existingUser = db
+    .prepare("SELECT id FROM admin_users WHERE username = ?")
+    .get(username) as { id: number } | undefined;
+
+  // 已存在就完全不動，避免每次啟動都重新產生密碼
+  if (existingUser) {
+    return;
+  }
+
+  // .env 指定的使用者不存在：
+  // 清除所有舊管理員及其登入 Session
+  db.prepare("DELETE FROM sessions").run();
+  db.prepare("DELETE FROM admin_users").run();
+
+  // 建立新的管理員帳號
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
 
   db.prepare(
     "INSERT INTO admin_users (username, password_hash, salt) VALUES (?, ?, ?)"
   ).run(username, hash, salt);
+
+  console.log(`Admin account initialized: ${username}`);
 }
 
 // ===== Auth Functions =====
