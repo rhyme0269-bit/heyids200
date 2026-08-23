@@ -225,7 +225,7 @@ export default function Footer() {
         </div>
 
         {/* Map */}
-        {settings.googleMapEmbed && (
+        {/* {settings.googleMapEmbed && (
           <div className="mt-8 overflow-hidden rounded-xl border border-stone-800">
             <iframe
               src={settings.googleMapEmbed}
@@ -237,7 +237,7 @@ export default function Footer() {
               className="block border-0"
             />
           </div>
-        )}
+        )} */}
 
         {/* Copyright */}
         <div className="mt-8 pt-6 border-t border-stone-800 text-center">
