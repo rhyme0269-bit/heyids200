@@ -772,7 +772,57 @@ type SeedPageDef = {
   blocks: SeedBlock[];
 };
 
-const SERVICE_ICONS = ["🏠","🌳","🤲","🔐","🧾","⚖️","🏛","📈","💬"];
+// #32 的線條圖示代號，順序對應 defaultServices。ServiceIcon 認得這些代號；
+// 若欄位存的是舊 emoji 仍會原樣顯示，所以資料轉換期間不會有圖示消失。
+const SERVICE_ICONS = [
+  "transfer",     // 不動產買賣移轉登記
+  "inheritance",  // 繼承登記
+  "gift",         // 贈與登記
+  "mortgage",     // 抵押權設定／塗銷
+  "tax",          // 房地合一稅
+  "partition",    // 共有物分割
+  "trust",        // 信託登記
+  "planning",     // 節稅規劃
+  "consult",      // 不動產相關諮詢
+];
+
+/**
+ * 舊 emoji → 新圖示代號，**按頁面分開**。
+ *
+ * The seeded emoji are already written into every install's block data, so new
+ * seed values alone reach nobody — the blocks exist and their seed_hash differs
+ * once edited. The migration below converts in place instead.
+ *
+ * Scoped per page because the same emoji meant different things: 🏠 is the
+ * buy/sell transfer service on /services but the price-registry lookup on /links,
+ * so one flat table would give the registry a house icon. Self-limiting — once
+ * converted the value is a key and no longer matches an emoji.
+ */
+const ICON_MIGRATION: Record<string, Record<string, string>> = {
+  services: {
+    "🏠": "transfer",
+    "🌳": "inheritance",
+    "🤲": "gift",
+    "🔐": "mortgage",
+    "🧾": "tax",
+    "⚖️": "partition",
+    "🏛": "trust",
+    "📈": "planning",
+    "💬": "consult",
+  },
+  links: {
+    "🏠": "registry",
+    "📋": "tax",
+    "🔍": "search",
+    "🏛️": "government",
+    "🏗️": "escrow",
+    "🤝": "escrow",
+    "💧": "utility",
+    "⚡": "power",
+  },
+};
+// 首頁的服務區塊與 /services 是同一份內容
+ICON_MIGRATION.home = ICON_MIGRATION.services;
 
 // Services that have a detail page of their own, keyed by service title. A path
 // starting with "/" makes the card an internal link, so adding a flow for another
@@ -919,18 +969,18 @@ function getSeedPages(): SeedPageDef[] {
       blocks: [
         { blockType: "hero_banner", data: { title: "實用連結", subtitle: "常用不動產相關網站與查詢工具", bgMode: "default", bgColor: "#4a3428", bgImageKey: "" } },
         { blockType: "key_value_list", data: { title: "政府機關", items: [
-          { label: "內政部實價登錄查詢", value: "查詢不動產成交案件的實際價格資訊", icon: "🏠", url: "https://lvr.land.moi.gov.tw/" },
-          { label: "申請地價稅自用住宅用地稅率", value: "財政部線上申辦地價稅自用住宅優惠稅率", icon: "📋", url: "https://www.etax.nat.gov.tw/etwmain/etw109w/cases/services/OLF013008/0" },
-          { label: "地政士資料查詢", value: "內政部地政司地政士資格及開業資訊查詢", icon: "🔍", url: "https://resim.moi.gov.tw/Home/AgentIndex" },
-          { label: "中華民國內政部地政司", value: "地政法規、公告及各項地政業務資訊", icon: "🏛️", url: "https://www.land.moi.gov.tw/" },
+          { label: "內政部實價登錄查詢", value: "查詢不動產成交案件的實際價格資訊", icon: "registry", url: "https://lvr.land.moi.gov.tw/" },
+          { label: "申請地價稅自用住宅用地稅率", value: "財政部線上申辦地價稅自用住宅優惠稅率", icon: "tax", url: "https://www.etax.nat.gov.tw/etwmain/etw109w/cases/services/OLF013008/0" },
+          { label: "地政士資料查詢", value: "內政部地政司地政士資格及開業資訊查詢", icon: "search", url: "https://resim.moi.gov.tw/Home/AgentIndex" },
+          { label: "中華民國內政部地政司", value: "地政法規、公告及各項地政業務資訊", icon: "government", url: "https://www.land.moi.gov.tw/" },
         ] } },
         { blockType: "key_value_list", data: { title: "建經公司", items: [
-          { label: "第一建經", value: "不動產交易安全履約保證服務", icon: "🏗️", url: "https://www.first1.com.tw/" },
-          { label: "合泰建經", value: "成屋履約保證、預售屋價金信託", icon: "🤝", url: "https://www.hou-tai.com.tw/inquiries.aspx" },
+          { label: "第一建經", value: "不動產交易安全履約保證服務", icon: "escrow", url: "https://www.first1.com.tw/" },
+          { label: "合泰建經", value: "成屋履約保證、預售屋價金信託", icon: "escrow", url: "https://www.hou-tai.com.tw/inquiries.aspx" },
         ] } },
         { blockType: "key_value_list", data: { title: "過戶服務", items: [
-          { label: "台水過戶", value: "台灣自來水公司用戶線上過戶申請", icon: "💧", url: "https://www.water.gov.tw/ch/ECounter/FeeCheck?NodeId=752&type=9&UseCertificate=0" },
-          { label: "台電過戶", value: "台灣電力公司用電過戶線上申辦", icon: "⚡", url: "https://service.taipower.com.tw/wapp/newnas/nawp2j1Rwd.aspx?r=417643208" },
+          { label: "台水過戶", value: "台灣自來水公司用戶線上過戶申請", icon: "utility", url: "https://www.water.gov.tw/ch/ECounter/FeeCheck?NodeId=752&type=9&UseCertificate=0" },
+          { label: "台電過戶", value: "台灣電力公司用電過戶線上申辦", icon: "power", url: "https://service.taipower.com.tw/wapp/newnas/nawp2j1Rwd.aspx?r=417643208" },
         ] } },
       ],
     },
@@ -1051,6 +1101,38 @@ export function seedCmsPages(db?: Database.Database) {
       if (changed) {
         d.prepare("UPDATE blocks SET data = ?, updated_at = datetime('now') WHERE id = ?")
           .run(JSON.stringify(parsed), row.id);
+      }
+    }
+
+    // Emoji → 線條圖示代號（#32）。Same shape as the url backfill above: per item,
+    // only where the value is one of the emoji we seeded, so an icon the office
+    // picked itself is left alone. Safe to run on every boot — a converted value
+    // is a key and no longer matches.
+    for (const seedKey of ["home", "services", "links"]) {
+      const pageId = existingPages.get(seedKey);
+      const table = ICON_MIGRATION[seedKey];
+      if (!pageId || !table) continue;
+
+      const rows = d.prepare(
+        "SELECT id, data FROM blocks WHERE page_id = ? AND block_type = 'key_value_list'"
+      ).all(pageId) as { id: string; data: string }[];
+
+      for (const row of rows) {
+        const parsed = JSON.parse(row.data) as { items?: Array<{ icon?: string }> };
+        if (!parsed.items?.length) continue;
+
+        let changed = false;
+        for (const item of parsed.items) {
+          const mapped = item.icon ? table[item.icon] : undefined;
+          if (mapped) {
+            item.icon = mapped;
+            changed = true;
+          }
+        }
+        if (changed) {
+          d.prepare("UPDATE blocks SET data = ?, updated_at = datetime('now') WHERE id = ?")
+            .run(JSON.stringify(parsed), row.id);
+        }
       }
     }
 

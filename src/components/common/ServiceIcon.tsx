@@ -20,7 +20,10 @@ export type ServiceIconKey =
   | "consult"
   | "government"
   | "escrow"
-  | "utility";
+  | "utility"
+  | "power"
+  | "search"
+  | "registry";
 
 const P = { fill: "none", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
@@ -116,10 +119,31 @@ const PATHS: Record<ServiceIconKey, React.ReactNode> = {
       <path {...P} d="M8.5 12l2.5 2.5 4.5-5" />
     </>
   ),
-  // 水電過戶
+  // 自來水過戶：水滴
   utility: (
     <>
       <path {...P} d="M12 3.5s6 5.8 6 9.8a6 6 0 0 1-12 0c0-4 6-9.8 6-9.8z" />
+    </>
+  ),
+  // 電力過戶：閃電。與 utility 分開，否則台電也會配到水滴
+  power: (
+    <>
+      <path {...P} d="M13.5 3 6.5 13.5H11l-.5 7.5 7-11H13z" />
+    </>
+  ),
+  // 資料查詢：放大鏡
+  search: (
+    <>
+      <circle {...P} cx="10.5" cy="10.5" r="6.5" />
+      <path {...P} d="M15.5 15.5 20.5 20.5" />
+    </>
+  ),
+  // 實價登錄：登錄簿
+  registry: (
+    <>
+      <rect {...P} x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path {...P} d="M9 3.5v17" />
+      <path {...P} d="M12.5 9h5M12.5 14h5" />
     </>
   ),
 };
@@ -138,7 +162,10 @@ export const SERVICE_ICON_LABELS: Record<ServiceIconKey, string> = {
   consult: "諮詢",
   government: "政府機關",
   escrow: "履約保證",
-  utility: "水電過戶",
+  utility: "自來水",
+  power: "電力",
+  search: "資料查詢",
+  registry: "實價登錄",
 };
 
 export function isServiceIconKey(v: string): v is ServiceIconKey {
@@ -149,7 +176,17 @@ export function isServiceIconKey(v: string): v is ServiceIconKey {
  * 圖示欄位可能是新的圖示代號，也可能是既有的 emoji。前者畫 SVG，
  * 後者原樣輸出，這樣資料轉換期間兩種都能正常顯示。
  */
-export default function ServiceIcon({ icon, className }: { icon?: string; className?: string }) {
+export default function ServiceIcon({
+  icon,
+  className,
+  emojiClassName,
+}: {
+  icon?: string;
+  /** 套在 SVG 上的類別，通常是幾何尺寸，例如 h-6 w-6 */
+  className?: string;
+  /** emoji 是文字而非圖形，需要字級而非寬高，故與 className 分開 */
+  emojiClassName?: string;
+}) {
   if (!icon) return null;
 
   if (isServiceIconKey(icon)) {
@@ -166,5 +203,7 @@ export default function ServiceIcon({ icon, className }: { icon?: string; classN
     );
   }
 
-  return <span className={`emoji-icon ${className ?? "text-xl"}`}>{icon}</span>;
+  // Sizing an emoji with the SVG's h-6 w-6 would box a glyph by geometry and clip
+  // it, so the text branch takes its own class and never inherits className.
+  return <span className={`emoji-icon ${emojiClassName ?? "text-xl"}`}>{icon}</span>;
 }
