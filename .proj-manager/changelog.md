@@ -102,6 +102,31 @@ Bug 修正（兩件，皆為既有設計缺陷）
 
 ---
 
+### 與事務所端修正的整合
+
+推送時發現事務所端已自行處理，兩個 commit：
+
+| commit | 內容 | 取捨 |
+|---|---|---|
+| `105e31d` | 將頁尾地圖註解隱藏 | **取代**。註解只擋症狀，寫死經緯度的根因仍在，且聯絡頁同類問題尚未被發現 |
+| `3d8ba92` | `seedAdminUser` 移至 `getDb()`，改以 username 是否存在判斷 | **部分採用** |
+
+`3d8ba92` 的判斷條件是「`.env` 的 username 是否已存在，存在就完全不動」。因此**只改密碼、帳號名稱不變時，變更被靜靜忽略** —— 與原 bug 同一失敗模式，而保留 `admin` 只換密碼正是最可能的操作。
+
+已編譯 `3d8ba92` 實測確認：
+
+```
+階段 B 只改密碼、帳號仍為 admin
+  FAIL  admin/admin123    → 登入成功（預期失敗）
+  FAIL  admin/NewPass-Only → 登入失敗（預期成功）
+階段 C 帳號也改
+  PASS  office/Xin-2026   → 登入成功
+```
+
+改以帳號＋密碼指紋判斷後三種情境全通過。同時**採用該版較穩的一點**：明確 `DELETE FROM sessions`，不倚賴外鍵 cascade。
+
+合併另造成 `seedAdminUser` 被呼叫兩次（雙方各加一處），已移除重複。
+
 ### 環境備註
 
 本機 `docker compose build` 於 `apk add python3 make g++` 失敗（連不到 Alpine repo，沙箱網路限制），故改以本機 `next dev` 與編譯後模組驗證。`npm run build` 通過。
