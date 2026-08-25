@@ -224,20 +224,13 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Map */}
-        {settings.googleMapEmbed && (
-          <div className="mt-8 overflow-hidden rounded-xl border border-stone-800">
-            <iframe
-              src={settings.googleMapEmbed}
-              title="事務所位置地圖"
-              width="100%"
-              height="170"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="block border-0"
-            />
-          </div>
-        )}
+        {/*
+          No map here. One was added as a contact affordance but the office had not
+          asked for it, and the address above is already a link that opens Google
+          Maps — so the iframe only repeated it, on every page, while adding footer
+          height that #25 had just cut back. The map belongs on the contact page,
+          which has one (#38).
+        */}
 
         {/* Copyright */}
         <div className="mt-8 pt-6 border-t border-stone-800 text-center">

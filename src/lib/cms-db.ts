@@ -761,7 +761,7 @@ function seedTemplates(d: Database.Database) {
   ]));
   insertTpl.run("contact", "聯絡我們", "聯絡頁面模板", JSON.stringify([
     { blockType: "hero_banner", defaultData: { title: "", subtitle: "", bgMode: "default", bgColor: "#4a3428", bgImageKey: null } },
-    { blockType: "contact_layout", defaultData: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" } },
+    { blockType: "contact_layout", defaultData: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapEmbedUrl: "" } },
   ]));
 }
 
@@ -902,7 +902,7 @@ function getSeedPages(): SeedPageDef[] {
       opts: { templateId: "contact", navOrder: 7, seedKey: "contact" },
       blocks: [
         { blockType: "hero_banner", data: { title: "聯絡我們", subtitle: "歡迎來電、來訊或填寫表單，我們將盡快回覆", bgMode: "default", bgColor: "#4a3428", bgImageKey: "contact_bg" } },
-        { blockType: "contact_layout", data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: defaultSiteSettings.address, mapEmbedUrl: defaultSiteSettings.googleMapEmbed } },
+        { blockType: "contact_layout", data: { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapEmbedUrl: "" } },
       ],
     },
     {

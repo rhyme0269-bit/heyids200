@@ -1307,8 +1307,8 @@ function BlockEditor({
           <Field label="表單標題" value={(data.formTitle as string) || ""} onChange={(v) => set("formTitle", v)} />
           <Field label="Google 表單網址（選填，填入後改用 Google 表單）" value={(data.googleFormUrl as string) || ""} onChange={(v) => set("googleFormUrl", v)} />
           <Field label="聯絡資訊標題" value={(data.infoTitle as string) || ""} onChange={(v) => set("infoTitle", v)} />
-          <Field label="地圖地址" value={(data.mapAddress as string) || ""} onChange={(v) => set("mapAddress", v)} />
-          <Field label="地圖嵌入 URL（選填）" value={(data.mapEmbedUrl as string) || ""} onChange={(v) => set("mapEmbedUrl", v)} />
+          {/* 地圖跟著「基本資訊 → 地址」走，所以這裡不再有地址欄位（#38） */}
+          <Field label="地圖嵌入 URL（選填，留空則自動依地址顯示）" value={(data.mapEmbedUrl as string) || ""} onChange={(v) => set("mapEmbedUrl", v)} />
         </div>
       );
 
@@ -1415,7 +1415,7 @@ function getDefaultData(blockType: BlockType): Record<string, unknown> {
     case "profile_card": return { introduction: "", quote: "", imageKey: "", imageName: "", imageSubtitle: "" };
     case "two_column_list": return { leftTitle: "", leftItems: [], leftStyle: "check", rightTitle: "", rightItems: [], rightStyle: "check" };
     case "two_column_flow": return { title: "", leftLabel: "地政士作業", rightLabel: "買、賣雙方作業", defaultOpen: true, stages: [] };
-    case "contact_layout": return { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapAddress: "", mapEmbedUrl: "" };
+    case "contact_layout": return { formTitle: "諮詢表單", infoTitle: "聯絡資訊", mapEmbedUrl: "" };
     default: return {};
   }
 }

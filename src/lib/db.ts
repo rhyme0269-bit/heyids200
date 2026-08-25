@@ -37,6 +37,9 @@ function getDb(): Database.Database {
 
   initTables(_db);
   seedIfEmpty(_db);
+  // Runs on every boot, not just a fresh database: the whole point is to pick up
+  // a .env the office edited after first start (#39).
+  seedAdminUser(_db);
   migrateSettings(_db);
   seedImageLibrary(_db);
   migrateImageSlots(_db);
@@ -303,27 +306,64 @@ function seedIfEmpty(db: Database.Database) {
     });
   });
   seedFeeNotes();
-
-  // Seed default admin user from env
-  seedAdminUser(db);
 }
 
+/**
+ * Reconciles the admin account with the environment (#39).
+ *
+ * This used to return early whenever an account already existed. Starting the
+ * stack without a .env falls back to admin/admin123 in docker-compose, so that
+ * throwaway account got written to the database on first boot — and then editing
+ * .env changed nothing, because a row was present. The office believed it had
+ * replaced the default credentials while the default ones still worked.
+ *
+ * The environment is therefore the source of truth: when it names a different
+ * account than the one on record, the record is rewritten. There is no way to
+ * change the password from the admin UI, so nothing the office set by hand can be
+ * clobbered by this. The fingerprint keeps it to an actual write only when the
+ * credentials really changed, so restarts stay cheap and sessions survive them.
+ */
 function seedAdminUser(db: Database.Database) {
-  const count = db.prepare("SELECT COUNT(*) as c FROM admin_users").get() as { c: number };
-  if (count.c > 0) return;
-
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
   if (!username || !password) {
     console.warn("WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created.");
     return;
   }
+
+  const fingerprint = crypto
+    .createHash("sha256")
+    .update(`${username} ${password}`)
+    .digest("hex");
+
+  const stored = db
+    .prepare("SELECT value FROM settings WHERE key = 'admin_credentials_fingerprint'")
+    .get() as { value: string } | undefined;
+
+  const count = db.prepare("SELECT COUNT(*) as c FROM admin_users").get() as { c: number };
+  if (stored?.value === fingerprint && count.c > 0) return;
+
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
 
-  db.prepare(
-    "INSERT INTO admin_users (username, password_hash, salt) VALUES (?, ?, ?)"
-  ).run(username, hash, salt);
+  const apply = db.transaction(() => {
+    // Single-operator site: one account, replaced wholesale rather than merged.
+    // Dropping the rows also invalidates existing sessions by cascade, which is
+    // what you want when the credentials have just been rotated.
+    db.prepare("DELETE FROM admin_users").run();
+    db.prepare(
+      "INSERT INTO admin_users (username, password_hash, salt) VALUES (?, ?, ?)"
+    ).run(username, hash, salt);
+    db.prepare(
+      "INSERT INTO settings (key, value) VALUES ('admin_credentials_fingerprint', ?) " +
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    ).run(fingerprint);
+  });
+  apply();
+
+  if (count.c > 0) {
+    console.warn(`Admin credentials updated from environment (user: ${username}).`);
+  }
 }
 
 // ===== Auth Functions =====

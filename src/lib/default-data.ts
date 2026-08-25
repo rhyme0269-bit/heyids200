@@ -12,8 +12,6 @@ export interface SiteSettings {
   instagramUrl: string;
   contactEndpoint: string;
   address: string;
-  googleMapUrl: string;
-  googleMapEmbed: string;
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
@@ -77,9 +75,6 @@ export const defaultSiteSettings: SiteSettings = {
   // 留空時改用站內 /api/contact —— 靜態網站沒有該路徑，因此正式站必須填入。
   contactEndpoint: "",
   address: "新北市蘆洲區長安街200號",
-  googleMapUrl: "https://maps.app.goo.gl/TnpryxjWD7y53Mbx7?g_st=ic",
-  googleMapEmbed:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.5!2d121.473!3d25.085!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z5ZCI5LiA5Zyw5pS_5aOr5LqL5YuZ5omA!5e0!3m2!1szh-TW!2stw!4v1",
   scrivenerName: "胡玉芬",
   licenseNumber: "（108）新北府地士字第003204號（換發）",
   logoSize: "medium",

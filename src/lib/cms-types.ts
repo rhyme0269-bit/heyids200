@@ -202,7 +202,6 @@ export interface TwoColumnFlowData {
 export interface ContactLayoutData {
   formTitle: string;
   infoTitle: string;
-  mapAddress: string;
   mapEmbedUrl: string;
 }
 

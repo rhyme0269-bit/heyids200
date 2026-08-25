@@ -7,13 +7,16 @@ import MapEmbedRenderer from "./MapEmbedRenderer";
 interface ContactLayoutData {
   formTitle: string;
   infoTitle: string;
-  mapAddress: string;
   mapEmbedUrl: string;
   googleFormUrl?: string;
 }
 
 export default function ContactLayoutRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as ContactLayoutData;
+  // The office has one address and it lives in 基本資訊. This block used to keep
+  // its own copy, which the seed filled in and nobody thought to update, so
+  // changing the address in the admin left the map pointing at the old one (#38).
+  const { address } = getSettings();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -37,7 +40,7 @@ export default function ContactLayoutRenderer({ data }: { data: Record<string, u
       <div>
         <ContactInfoRenderer data={{ title: d.infoTitle || "聯絡資訊" }} />
         <div className="mt-8">
-          <MapEmbedRenderer data={{ title: "", address: d.mapAddress || "", embedUrl: d.mapEmbedUrl || "" }} />
+          <MapEmbedRenderer data={{ title: "", address, embedUrl: d.mapEmbedUrl || "" }} />
         </div>
       </div>
     </div>

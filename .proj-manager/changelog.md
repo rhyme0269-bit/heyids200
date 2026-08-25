@@ -1,5 +1,111 @@
 # Changelog
 
+## [fix: 頁尾地圖與地址脫鉤（#38）、.env 帳密未生效（#39）] - 2026-08-25T09:00:00Z
+
+### 變更類型
+
+Bug 修正（兩件，皆為既有設計缺陷）
+
+---
+
+## #38 頁尾突然冒出地圖，且沒有連動到地址
+
+### 客戶回報
+
+附截圖，頁尾出現一張未曾設定的地圖，且與後台地址無關。客戶已自行暫時隱藏。
+
+### 根因（兩個症狀同一來源）
+
+`default-data.ts` 的 `googleMapEmbed` 帶有一組**寫死的預設嵌入網址**，內含固定經緯度 `!2d121.473!3d25.085`。
+
+- **「突然冒出」**：該預設值非空，`#25 P2` 加入的頁尾判斷式 `settings.googleMapEmbed &&` 因此永遠成立 —— 客戶沒設定過卻自己出現。
+- **「沒連動地址」**：座標寫死，改 `address` 不會動。
+
+加重因素：`googleMapEmbed` 與 `googleMapUrl` **都不在後台欄位清單**（`AdminClient.tsx` 的 `SETTING_FIELDS`），客戶連清除都做不到。
+
+`MapEmbedRenderer` 其實早有正確寫法（`embedUrl || maps?q=address`），但那個寫死的 `embedUrl` 一直蓋掉 address 這條路。
+
+### 第二個同類缺陷（客戶尚未發現）
+
+`contact_layout` 區塊另存一份 `mapAddress`，由 seed 填入事務所地址 —— **地址有兩處來源**。客戶改「基本資訊 → 地址」時不會想到要改區塊裡那份，所以聯絡頁地圖同樣不會連動。
+
+### 修正
+
+- 新增 `src/lib/maps.ts`：`mapEmbedSrc(address, embedUrl)` 統一推導；`isRetiredEmbed()` 將那組退役網址視為不存在，因此**客戶資料庫裡已存的舊值無需改寫 JSON 即自動失效**。
+- 頁尾地圖移除。地址在頁尾本來就是開啟 Google Maps 的連結，iframe 只是重複，且每頁都載入第三方框架、又把 #25 才壓下來的頁尾高度加回去。地圖留在該有的位置：聯絡頁。
+- `contact_layout` 不再保有自己的地址，一律讀「基本資訊 → 地址」；後台移除「地圖地址」欄位，`mapEmbedUrl` 保留為選填覆寫（標示「留空則自動依地址顯示」）。
+- 移除 `googleMapEmbed`、`googleMapUrl` 兩個死設定（已無人讀取，且從未出現在後台）。
+
+### 驗證
+
+| 項目 | 結果 |
+|---|---|
+| 全站 iframe 數（`/`,`/about`,`/services`,`/tools`,`/faq`） | 皆 0 |
+| 聯絡頁 iframe 數 | 1（自己的地圖） |
+| 舊寫死座標 `2d121.473` 全站出現次數 | 0 |
+| 地址改為「臺北市中正區重慶南路一段122號」後地圖網址 | 同步變更（已還原設定） |
+| `mapEmbedSrc` 單元檢查 5 種情境（退役網址／自訂網址／僅地址／全空／空白字元） | 5/5 通過 |
+| 9 頁 HTTP 狀態 | 全部 200 |
+
+佐證：`screenshots/footer-map-removed.jpg`
+
+---
+
+## #39 本機已改後台帳密，登入仍是預設帳密
+
+### 客戶回報
+
+`.env` 內已改 `ADMIN_USERNAME`／`ADMIN_PASSWORD`，登入時仍須使用預設帳密。客戶已自行關閉此 issue，但**根因未解**。
+
+### 根因
+
+`seedAdminUser()` 第一行即 `if (count.c > 0) return;` —— 只在 `admin_users` 為空時建立帳號。且該函式被呼叫於 `seedIfEmpty()` **內部**，即僅全新資料庫才執行。
+
+客戶首次啟動時沒有 `.env`，`docker-compose.yml` 套用 fallback `${ADMIN_USERNAME:-admin}` / `${ADMIN_PASSWORD:-admin123}`，該組帳號因此寫入資料庫；之後建立 `.env` 改帳密，這段完全不會執行。
+
+**連帶安全問題**：`admin` / `admin123` 至今仍為有效憑證。任何曾在無 `.env` 情況下啟動過的安裝都相同。客戶以為已更換，實際沒有。
+
+### 修正
+
+環境變數改為帳密的唯一來源：
+
+- 呼叫點自 `seedIfEmpty()` 移至 `getDb()` 的初始化序列 —— **每次啟動都執行**，這才是修正生效的前提。
+- 以 `sha256(username + password)` 指紋存於 `settings.admin_credentials_fingerprint`；不同即重建帳號，相同則不寫入，重啟成本與既有 session 不受影響。
+- 帳密輪替時 `DELETE FROM admin_users` 連帶使舊 session 失效（`sessions` 有 `ON DELETE CASCADE`，且 `foreign_keys = ON`，已確認）。
+- 後台無變更密碼功能（僅登入），故此設計不會覆蓋客戶手動設定的密碼。
+
+### 驗證
+
+以編譯後的真實 `db.ts` 跑兩階段（獨立 process，因 `_db` 為模組層快取），工作目錄指向暫存區，未觸及專案資料庫。
+
+**修正前（git HEAD）**：
+
+```
+階段 A 無 .env 啟動        PASS  admin/admin123 → 登入成功
+階段 B 改為 office/新密碼  FAIL  admin/admin123 → 登入成功（預期失敗）
+                          FAIL  office/新密碼   → 登入失敗（預期成功）
+```
+
+**修正後**：
+
+```
+階段 A 無 .env 啟動        PASS  admin/admin123 → 登入成功
+階段 B 改為 office/新密碼  PASS  admin/admin123 → 登入失敗
+                          PASS  office/新密碼   → 登入成功
+```
+
+客戶症狀已完整重現，修正後行為正確。
+
+### 待客戶執行
+
+修正只讓 `.env` 生效，**不會憑空改掉密碼**。客戶仍須在 `.env` 設定自己的帳密並重啟；在那之前 `admin`／`admin123` 依然有效。
+
+---
+
+### 環境備註
+
+本機 `docker compose build` 於 `apk add python3 make g++` 失敗（連不到 Alpine repo，沙箱網路限制），故改以本機 `next dev` 與編譯後模組驗證。`npm run build` 通過。
+
 ## [fix: 巢狀專案副本導致建置失敗（#34）] - 2026-08-20T07:00:00Z
 
 ### 變更類型

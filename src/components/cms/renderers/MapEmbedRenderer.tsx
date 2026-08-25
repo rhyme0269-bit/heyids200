@@ -1,12 +1,11 @@
 import type { MapEmbedData } from "@/lib/cms-types";
+import { mapEmbedSrc } from "@/lib/maps";
 
 export default function MapEmbedRenderer({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as MapEmbedData;
-  const address = d.address || d.embedUrl;
+  const src = mapEmbedSrc(d.address, d.embedUrl);
 
-  if (!address) return null;
-
-  const src = d.embedUrl || `https://maps.google.com/maps?q=${encodeURIComponent(d.address)}&output=embed&hl=zh-TW`;
+  if (!src) return null;
 
   return (
     <div>

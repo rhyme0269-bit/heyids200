@@ -24,8 +24,6 @@ interface SettingsData {
   instagramUrl: string;
   contactEndpoint: string;
   address: string;
-  googleMapUrl: string;
-  googleMapEmbed: string;
   scrivenerName: string;
   licenseNumber: string;
   logoSize: string;
@@ -196,8 +194,6 @@ export default function AdminClient() {
     instagramUrl: "",
     contactEndpoint: "",
     address: "",
-    googleMapUrl: "",
-    googleMapEmbed: "",
     scrivenerName: "",
     licenseNumber: "",
     logoSize: "medium",
@@ -885,7 +881,7 @@ export default function AdminClient() {
                         <label className="mb-1 block text-sm font-medium text-stone-700">
                           {field.label}
                         </label>
-                        {field.key === "googleMapEmbed" || field.key === "businessHours" ? (
+                        {field.key === "businessHours" ? (
                           <textarea
                             value={settings[field.key]}
                             onChange={(e) =>
