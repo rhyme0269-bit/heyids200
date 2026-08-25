@@ -326,14 +326,22 @@ function seedIfEmpty(db: Database.Database) {
 function seedAdminUser(db: Database.Database) {
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
+
+  // .env 沒有設定完整的管理員帳號資訊，不做任何變更
   if (!username || !password) {
-    console.warn("WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created.");
+    console.warn(
+      "WARNING: ADMIN_USERNAME/ADMIN_PASSWORD not set. Admin account not created."
+    );
     return;
   }
 
+  // 事務所端另外做了一版（3d8ba92），改以「.env 的 username 是否已存在」判斷。
+  // 那樣在只改密碼、不改帳號名稱時會查到既有帳號而直接返回，密碼變更被靜靜忽略。
+  // 這裡改以帳號＋密碼的指紋判斷，兩者任一變動都會生效；同時保留該版的顧慮
+  // ——「避免每次啟動都重新產生密碼」，指紋相同即不寫入。
   const fingerprint = crypto
     .createHash("sha256")
-    .update(`${username} ${password}`)
+    .update(`${username} ${password}`)
     .digest("hex");
 
   const stored = db
@@ -348,8 +356,10 @@ function seedAdminUser(db: Database.Database) {
 
   const apply = db.transaction(() => {
     // Single-operator site: one account, replaced wholesale rather than merged.
-    // Dropping the rows also invalidates existing sessions by cascade, which is
-    // what you want when the credentials have just been rotated.
+    // Sessions are dropped explicitly rather than left to the foreign key, as
+    // 3d8ba92 did — rotating credentials should end existing logins even if
+    // `foreign_keys` is ever off.
+    db.prepare("DELETE FROM sessions").run();
     db.prepare("DELETE FROM admin_users").run();
     db.prepare(
       "INSERT INTO admin_users (username, password_hash, salt) VALUES (?, ?, ?)"
