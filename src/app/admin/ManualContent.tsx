@@ -76,7 +76,29 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
                 <li><TabLink tab="calculators" label="小工具" onNavigate={onNavigate} /> — 管理前台的試算計算器</li>
                 <li><strong>使用手冊</strong> — 就是你現在看的這裡</li>
               </ul>
-              <TipBox>大部分修改都會即時反映在網站前台。但背景圖模式和排序的修改需要點擊「儲存」才會生效。</TipBox>
+              <TipBox type="warning">後台的修改會即時反映在<strong>你自己電腦上</strong>的預覽網站，但<strong>不會自動更新到網路上</strong>。要讓外面的人看到，必須執行發布指令 —— 請看下一節「修改如何上線」。</TipBox>
+            </>
+          ),
+        },
+        {
+          id: "overview-publish",
+          title: "修改如何上線",
+          content: (
+            <>
+              <p>這個網站分成兩個部分，這是最重要的觀念：</p>
+              <ul>
+                <li><strong>你的電腦</strong> — 後台在這裡執行，你編輯的內容存在電腦裡的 <code>data</code> 資料夾</li>
+                <li><strong>網路上的網站</strong> — 訪客看到的版本，只有在你執行發布指令時才會更新</li>
+              </ul>
+              <p>所以流程一律是<strong>先編輯、再發布</strong>：</p>
+              <StepBox steps={[
+                "在後台修改內容，按<strong>「儲存」</strong>",
+                "打開自己電腦上的網站確認結果正確（例如 <code>http://localhost:8081</code>）",
+                "在專案資料夾執行 <code>npm run publish</code>",
+                "等 1～2 分鐘，網路上的網站就會更新",
+              ]} />
+              <TipBox type="warning">只按「儲存」不執行發布，<strong>網路上的網站不會有任何變化</strong>。這是最常見的誤會 —— 如果你改了東西卻發現線上網站沒變，先確認是不是還沒發布。</TipBox>
+              <TipBox>後台只在你的電腦上執行，不會公開在網路上，所以不需要主機費用，訪客也連不到後台。</TipBox>
             </>
           ),
         },
@@ -85,7 +107,15 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
           title: "登入方式",
           content: (
             <>
-              <p>在網址後方加上 <code>/admin</code> 即可進入後台登入頁面。使用管理員帳號密碼登入後，登入狀態維持 24 小時。</p>
+              <p>在網址後方加上 <code>/admin</code> 即可進入後台登入頁面（例如 <code>http://localhost:8081/admin</code>）。登入狀態維持 24 小時。</p>
+              <p>帳號密碼<strong>不是在後台設定的</strong>，而是寫在專案資料夾裡的 <code>.env</code> 檔案：</p>
+              <StepBox steps={[
+                "用記事本打開專案資料夾裡的 <code>.env</code> 檔案",
+                "修改 <code>ADMIN_USERNAME</code> 與 <code>ADMIN_PASSWORD</code> 兩行",
+                "存檔後執行 <code>docker compose up -d --build</code> 重新啟動",
+                "重啟後就會改用新的帳號密碼，舊的登入狀態會失效，需要重新登入",
+              ]} />
+              <TipBox type="warning">如果沒有建立 <code>.env</code> 檔案就啟動過，系統會使用預設的 <code>admin</code> / <code>admin123</code>，<strong>而且那組密碼會一直有效</strong>。請務必建立 <code>.env</code> 並改成自己的帳密。</TipBox>
               <TipBox type="warning">請勿將帳號密碼分享給無關人員，也不要在公用電腦上勾選「記住密碼」。</TipBox>
             </>
           ),
@@ -133,16 +163,17 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
           title: "如何為服務加圖示",
           content: (
             <>
-              <p>服務項目頁面使用「項目列表」區塊來顯示各項服務。你可以幫每個服務加上 emoji 圖示，讓頁面更好辨識：</p>
+              <p>服務項目頁面使用「項目列表」區塊來顯示各項服務。每個項目都可以加上圖示：</p>
               <StepBox steps={[
                 "到<strong>頁面管理</strong> → 找到「服務項目」頁面 → 點擊<strong>「編輯」</strong>",
                 "找到「項目列表」區塊（就是列出各項服務的那個區塊）",
-                "每個項目的標題左邊有一個 emoji 輸入欄，點擊它",
-                "輸入一個 emoji 表情符號（例如 🏠），或從手機鍵盤選擇",
-                "所有項目都填好後，點擊頁面頂部的<strong>「儲存頁面」</strong>按鈕",
+                "每個項目的標題左邊有一個圖示按鈕，點擊它會展開選單",
+                "最上方的<strong>「事務所圖示（建議）」</strong>是專為本站設計的線條圖示，每個都有中文名稱，直接點選即可",
+                "所有項目都選好後，點擊頁面頂部的<strong>「儲存頁面」</strong>按鈕",
               ]} />
-              <TipBox type="warning">修改完圖示後一定要按<strong>「儲存頁面」</strong>才會生效！如果沒有按儲存就離開，修改會遺失。</TipBox>
-              <TipBox type="info">建議的 emoji 對應：🏠 不動產買賣、🌳 繼承登記、🤲 贈與登記、🔐 抵押權、🧾 房地合一稅、⚖️ 共有物分割、🏛 信託登記、📈 節稅規劃、💬 諮詢</TipBox>
+              <TipBox>「事務所圖示」共 15 個：買賣移轉、繼承、贈與、抵押權、稅務單據、共有物分割、信託、節稅規劃、諮詢、政府機關、履約保證、自來水、電力、資料查詢、實價登錄。它們風格統一，也會跟著網站配色自動變色。</TipBox>
+              <TipBox type="info">選單下方仍保留<strong>表情符號</strong>可以選。兩種都能用，但混用會讓版面風格不一致，建議整頁統一使用「事務所圖示」。</TipBox>
+              <TipBox type="warning">修改完圖示後一定要按<strong>「儲存頁面」</strong>才會生效！如果沒有按儲存就離開，修改會遺失。存完別忘了執行 <code>npm run publish</code> 才會更新到網路上。</TipBox>
             </>
           ),
         },
@@ -201,11 +232,53 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
           ),
         },
         {
-          id: "pages-google-form",
-          title: "使用 Google 表單",
+          id: "pages-contact-form",
+          title: "聯絡表單要怎麼收到訪客的訊息",
           content: (
             <>
-              <p>如果你已經有 Google 表單，可以直接嵌入到聯絡頁面中取代內建表單：</p>
+              <p>聯絡表單有<strong>兩種做法</strong>，同時只會有一種生效：</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm my-3">
+                  <thead>
+                    <tr className="border-b border-stone-200">
+                      <th className="py-2 pr-4 text-left font-semibold">做法</th>
+                      <th className="py-2 pr-4 text-left font-semibold">訪客看到的畫面</th>
+                      <th className="py-2 text-left font-semibold">要設定哪裡</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    <tr>
+                      <td className="py-2 pr-4"><strong>內建表單</strong></td>
+                      <td className="py-2 pr-4">本站設計的樣式，不需登入 Google</td>
+                      <td className="py-2">基本資訊 → 聯絡表單收件網址</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">嵌入 Google 表單</td>
+                      <td className="py-2 pr-4">Google 自己的表單樣式</td>
+                      <td className="py-2">聯絡頁區塊 → Google 表單網址</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p><strong>網路上的網站沒有後端可以收信</strong>，所以內建表單必須指定一個外部收件網址（Google Apps Script），否則訪客送出時會失敗。設定方式：</p>
+              <StepBox steps={[
+                "確認<strong>頁面管理 → 聯絡我們 → 聯絡雙欄</strong>區塊的「Google 表單網址」欄位是<strong>空的</strong>",
+                "到 <strong>基本資訊</strong> → 找到「聯絡表單收件網址（Google Apps Script）」",
+                "貼上 Apps Script 的部署網址，儲存",
+                "執行 <code>npm run publish</code>",
+                "打開線上的聯絡頁，實際送出一筆測試，確認試算表與信箱都有收到",
+              ]} />
+              <TipBox type="warning">第 1 步不能跳過。只要「Google 表單網址」還有值，它就會<strong>優先</strong>，內建表單完全不會出現，你在基本資訊填的收件網址也不會被使用 —— 而且畫面上沒有任何提示。</TipBox>
+              <TipBox type="info">Apps Script 的建立與部署步驟另有文件說明（<code>docs/聯絡表單設定.md</code>）。部署時「誰可以存取」必須選<strong>「所有人」</strong>，否則訪客送不出去。</TipBox>
+            </>
+          ),
+        },
+        {
+          id: "pages-google-form",
+          title: "改用 Google 表單",
+          content: (
+            <>
+              <p>如果你想改用 Google 表單，可以直接嵌入到聯絡頁面中取代內建表單：</p>
               <StepBox steps={[
                 "到<strong>頁面管理</strong> → 找到「聯絡我們」頁面 → 點擊<strong>「編輯」</strong>",
                 "找到「聯絡雙欄」或「聯絡表單」區塊",
@@ -213,7 +286,8 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
                 "貼上你的 Google 表單網址（例如 <code>https://docs.google.com/forms/d/e/.../viewform?embedded=true</code>）",
                 "儲存後前台就會顯示 Google 表單取代內建的聯絡表單",
               ]} />
-              <TipBox>如果把 Google 表單網址欄位清空，就會恢復使用內建表單。建議使用 Google 表單的「嵌入」版本網址（網址末尾加 <code>?embedded=true</code>）效果更好。</TipBox>
+              <TipBox>把這個欄位清空，就會恢復使用內建表單。建議使用「嵌入」版本網址（末尾加 <code>?embedded=true</code>）效果較好。</TipBox>
+              <TipBox type="warning">Google 表單如果勾選了「收集電子郵件地址」，訪客<strong>必須先登入 Google 帳號</strong>才能填寫，一般訪客會直接放棄。若要避免這個限制，請改用內建表單（見上一節）。</TipBox>
             </>
           ),
         },
@@ -227,9 +301,16 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
                 "到<strong>頁面管理</strong> → 找到「實用連結」頁面 → 點擊<strong>「編輯」</strong>",
                 "找到「項目列表」區塊，每個項目下方有一個<strong>「連結網址」</strong>欄位",
                 "填入完整網址（例如 <code>https://lvr.land.moi.gov.tw/</code>）",
-                "有連結的項目在前台會變成可點擊的卡片，右上角顯示 ↗ 箭頭",
+                "有連結的項目在前台會變成可點擊的卡片",
               ]} />
-              <TipBox type="info">連結網址是選填的。沒填連結的項目會顯示為普通卡片（帶序號）。這個功能可以在任何使用「項目列表」的頁面使用，不限於實用連結頁面。</TipBox>
+              <p>可以點擊的卡片在前台會有這些差異，訪客不用把滑鼠移過去就看得出來：</p>
+              <ul>
+                <li>邊框比較深、圖示底色是琥珀色</li>
+                <li>卡片下方多一行<strong>「前往網站 ↗」</strong>（外部網址）或<strong>「查看詳細 →」</strong>（本站頁面）</li>
+                <li>外部網址的卡片右上角顯示 ↗；其餘顯示項目序號</li>
+              </ul>
+              <TipBox type="info">連結網址是選填的。沒填連結的項目會顯示為普通卡片（帶序號、不會有滑過浮起的效果）。這個功能可以在任何使用「項目列表」的頁面使用，不限於實用連結頁面。</TipBox>
+              <TipBox>網址填 <code>/</code> 開頭（例如 <code>/flow-sale</code>）代表本站頁面，會在同一個視窗開啟；填 <code>https://</code> 開頭則會另開新視窗。</TipBox>
             </>
           ),
         },
@@ -253,7 +334,7 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
                     <tr><td className="py-2 pr-4 font-medium">內文段落</td><td className="py-2">一般的文字內容</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">圖片 / 圖片集</td><td className="py-2">放單張圖或多張圖的區域</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">列表</td><td className="py-2">條列式內容（圓點、編號、勾選、標籤）</td></tr>
-                    <tr><td className="py-2 pr-4 font-medium">項目列表</td><td className="py-2">帶標題和說明的項目卡片，可加 emoji 圖示</td></tr>
+                    <tr><td className="py-2 pr-4 font-medium">項目列表</td><td className="py-2">帶標題和說明的項目卡片，可加圖示與連結</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">表格</td><td className="py-2">有欄位標題的表格，適合收費標準等</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">常見問題</td><td className="py-2">點擊問題展開答案的 FAQ 區塊（答案支援連結語法）</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">步驟流程</td><td className="py-2">有順序的流程圖，適合服務流程說明</td></tr>
@@ -264,7 +345,7 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
                     <tr><td className="py-2 pr-4 font-medium">數據條</td><td className="py-2">數字指標展示（如「10+ 年經驗」）</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">個人簡介</td><td className="py-2">照片 + 介紹 + 引言的人物卡片</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">雙欄清單</td><td className="py-2">左右兩組並排的內容</td></tr>
-                    <tr><td className="py-2 pr-4 font-medium">聯絡雙欄</td><td className="py-2">左邊表單 + 右邊聯絡資訊和地圖</td></tr>
+                    <tr><td className="py-2 pr-4 font-medium">聯絡雙欄</td><td className="py-2">左邊表單 + 右邊聯絡資訊和地圖。地圖跟著「基本資訊 → 地址」自動顯示</td></tr>
                     <tr><td className="py-2 pr-4 font-medium">自訂 HTML</td><td className="py-2">進階用途，可以貼入自訂程式碼</td></tr>
                   </tbody>
                 </table>
@@ -358,7 +439,7 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
             <>
               <p>點擊計算器旁的「編輯」進入編輯器，可以修改：</p>
               <ul>
-                <li><strong>圖示</strong> — 點擊左上角的 emoji 區域，會彈出選擇面板</li>
+                <li><strong>圖示</strong> — 點擊左上角的圖示按鈕，會彈出選擇面板（含事務所圖示與表情符號）</li>
                 <li><strong>名稱和說明</strong> — 計算器的標題和描述文字</li>
                 <li><strong>輸入欄位</strong> — 訪客需要填入的資料（數字、下拉選單、勾選框）</li>
                 <li><strong>計算公式</strong> — 用 JSON 格式定義運算邏輯</li>
@@ -419,12 +500,39 @@ function buildSections(onNavigate?: (tab: TabKey) => void): Section[] {
               <ul>
                 <li><strong>名稱</strong> — 顯示在網站標題、頁首和頁尾</li>
                 <li><strong>電話 / 手機</strong> — 顯示在聯絡資訊區和頁尾</li>
-                <li><strong>電子郵件</strong> — 訪客聯絡表單的收件地址</li>
+                <li><strong>電子郵件</strong> — 顯示給訪客看的聯絡信箱</li>
                 <li><strong>LINE ID / 連結</strong> — LINE 官方帳號資訊</li>
-                <li><strong>地址</strong> — 事務所地址，會顯示在聯絡頁面</li>
+                <li><strong>Instagram 連結</strong> — 留空則前台不顯示 Instagram</li>
+                <li><strong>聯絡表單收件網址</strong> — 訪客送出表單後的收件位置，詳見「聯絡表單要怎麼收到訪客的訊息」</li>
+                <li><strong>地址</strong> — 事務所地址。聯絡頁的地圖會<strong>跟著這個地址自動顯示</strong>，不需另外設定座標</li>
                 <li><strong>代書姓名 / 證照號碼</strong> — 顯示在關於我們頁面</li>
+                <li><strong>營業時間</strong> — 可以換行，一行一項，顯示在頁尾</li>
+                <li><strong>累積案件數</strong> — 只填數字，首頁兩處的數字會一起變（後面的「+」是畫面自動加的）</li>
+                <li><strong>網站配色</strong> — 見下一節</li>
               </ul>
               <p>修改後點擊「儲存」。這些資訊會自動帶入所有使用「聯絡資訊」區塊的頁面，不用一個一個改。</p>
+              <TipBox type="warning">「電子郵件」只是顯示給訪客看的，<strong>不是</strong>表單的收件設定。訪客送出的表單會送到「聯絡表單收件網址」指定的位置。</TipBox>
+              <TipBox>改完記得執行 <code>npm run publish</code>，網路上的網站才會更新。</TipBox>
+            </>
+          ),
+        },
+        {
+          id: "settings-theme",
+          title: "修改網站配色",
+          content: (
+            <>
+              <p>「<TabLink tab="settings" label="基本資訊" onNavigate={onNavigate} />」頁面下方的<strong>「網站配色」</strong>可以調整整站顏色，共五個：</p>
+              <ul>
+                <li><strong>主色</strong> — 按鈕、連結、標題強調</li>
+                <li><strong>次要色</strong> — 金色線條與點綴</li>
+                <li><strong>背景色</strong> — 頁面底色</li>
+                <li><strong>主要文字</strong> — 內文顏色</li>
+                <li><strong>次要文字</strong> — 說明文字、圖片說明等較淡的文字</li>
+              </ul>
+              <p>每個顏色可以用色塊直接挑，或填入 <code>#</code> 開頭的六位色碼。中間的深淺色階會依這五個顏色自動推算，不需要逐一設定。</p>
+              <TipBox>調整後<strong>儲存並重新載入頁面</strong>才會看到效果。</TipBox>
+              <TipBox type="warning">背景色與主要文字的<strong>深淺差距要夠大</strong>，否則文字會看不清楚。建議背景維持淺色、文字維持深色，只做小幅調整。</TipBox>
+              <TipBox type="info">填錯格式時會自動沿用原本的顏色，不會把網站弄壞，可以放心試。</TipBox>
             </>
           ),
         },
@@ -586,9 +694,34 @@ docker compose up -d --build`}</code></pre>
                       <td className="py-2">瀏覽器 F12 → Console 看紅色錯誤</td>
                     </tr>
                     <tr>
-                      <td className="py-2 pr-4">儲存後內容沒更新</td>
+                      <td className="py-2 pr-4"><strong>線上網站沒有更新</strong></td>
+                      <td className="py-2 pr-4"><strong>還沒執行發布</strong>（最常見）</td>
+                      <td className="py-2">執行 <code>npm run publish</code>，等 1～2 分鐘</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">自己電腦上儲存後內容沒更新</td>
                       <td className="py-2 pr-4">API 回傳 500、快取問題</td>
                       <td className="py-2">F12 → Network 看請求狀態碼；強制重整 <code>Ctrl+Shift+R</code></td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">聯絡頁沒有出現內建表單</td>
+                      <td className="py-2 pr-4">「Google 表單網址」欄位還有值，它會優先</td>
+                      <td className="py-2">頁面管理 → 聯絡我們 → 聯絡雙欄 → 清空該欄位</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">訪客說表單送不出去</td>
+                      <td className="py-2 pr-4">收件網址沒設定，或 Apps Script 權限不是「所有人」</td>
+                      <td className="py-2">基本資訊 → 聯絡表單收件網址；重新部署腳本並改權限</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">改了 <code>.env</code> 帳密卻登不進去</td>
+                      <td className="py-2 pr-4">改完沒有重新啟動</td>
+                      <td className="py-2">執行 <code>docker compose up -d --build</code> 後再登入</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">找不到後台網址 / 連不上</td>
+                      <td className="py-2 pr-4">沒有 <code>.env</code> 時連接埠會是 80</td>
+                      <td className="py-2"><code>docker compose ps</code> 看 PORTS 欄實際的連接埠</td>
                     </tr>
                     <tr>
                       <td className="py-2 pr-4">圖片上傳失敗</td>
@@ -623,17 +756,21 @@ docker compose up -d --build`}</code></pre>
 }
 
 const QUICK_LINKS: { emoji: string; label: string; target: string; desc: string }[] = [
+  { emoji: "🚀", label: "修改如何上線", target: "overview-publish", desc: "存檔後還要發布才會更新" },
   { emoji: "📝", label: "編輯頁面內容", target: "pages-edit", desc: "修改文字、圖片、區塊" },
+  { emoji: "✉️", label: "聯絡表單收件", target: "pages-contact-form", desc: "讓訪客的諮詢寄達" },
   { emoji: "🔗", label: "新增導覽連結", target: "pages-nav", desc: "在網站上方選單加連結" },
-  { emoji: "🎨", label: "加服務圖示", target: "pages-icons", desc: "幫服務項目加 emoji" },
+  { emoji: "🎨", label: "加服務圖示", target: "pages-icons", desc: "從圖示庫挑選並套用" },
+  { emoji: "🖌", label: "改網站配色", target: "settings-theme", desc: "調整全站五個主要顏色" },
   { emoji: "📄", label: "建立新頁面", target: "pages-create", desc: "新增一個全新的頁面" },
   { emoji: "🖼️", label: "上傳圖片", target: "images-upload", desc: "更換網站上的照片" },
   { emoji: "🎯", label: "改背景圖", target: "images-hero", desc: "設定頁面頂部背景" },
   { emoji: "📞", label: "改聯絡資訊", target: "settings-edit", desc: "更新電話、地址等" },
+  { emoji: "🔑", label: "改後台帳密", target: "overview-login", desc: "在 .env 修改後重新啟動" },
   { emoji: "🧮", label: "管理計算器", target: "calc-overview", desc: "編輯前台試算工具" },
   { emoji: "❓", label: "FAQ 加連結", target: "pages-faq-links", desc: "在 FAQ 答案中加入連結" },
   { emoji: "↕️", label: "計算器排序", target: "calc-reorder", desc: "調整計算器顯示順序" },
-  { emoji: "📋", label: "Google 表單", target: "pages-google-form", desc: "嵌入 Google 表單到聯絡頁" },
+  { emoji: "📋", label: "Google 表單", target: "pages-google-form", desc: "改用 Google 表單（需登入）" },
   { emoji: "🔗", label: "實用連結", target: "pages-links", desc: "管理外部連結卡片" },
   { emoji: "🛠", label: "故障排查", target: "ts-overview", desc: "網站出問題時怎麼處理" },
 ];
@@ -649,12 +786,15 @@ interface TimelineStep {
 const TIMELINE_STEPS: TimelineStep[] = [
   { icon: "📞", title: "更新基本資訊", desc: "確認事務所名稱、電話、地址、LINE 等聯絡資訊是否正確。", target: "settings-edit", tab: "settings" },
   { icon: "🖼️", title: "上傳圖片", desc: "更換 Logo、代書照片、事務所環境照和頁面背景圖。", target: "images-upload", tab: "images" },
-  { icon: "📝", title: "編輯頁面內容", desc: "修改各頁面的文字、區塊內容，為服務項目加上 emoji 圖示。", target: "pages-edit", tab: "pages" },
+  { icon: "📝", title: "編輯頁面內容", desc: "修改各頁面的文字與區塊內容，為服務項目挑選圖示。", target: "pages-edit", tab: "pages" },
+  { icon: "✉️", title: "設定表單收件", desc: "讓訪客的諮詢能寄達。正式上線前必做。", target: "pages-contact-form", tab: "pages" },
   { icon: "🧮", title: "確認計算器", desc: "檢查試算工具的公式和顯示是否正確，調整顯示順序。", target: "calc-overview", tab: "calculators" },
-  { icon: "🌐", title: "預覽確認", desc: "開啟前台瀏覽所有頁面，確認內容和圖片都正確顯示。" },
+  { icon: "🌐", title: "預覽確認", desc: "開啟自己電腦上的前台瀏覽所有頁面，確認內容和圖片都正確。" },
+  { icon: "🚀", title: "發布上線", desc: "執行 npm run publish，網路上的網站才會更新。", target: "overview-publish" },
 ];
 
 const NOTICES = [
+  "後台儲存只會改到自己電腦上的內容，要執行 npm run publish 網路上的網站才會更新。",
   "修改頁面內容後，記得點擊「儲存頁面」按鈕才會生效。",
   "系統預設的頁面和計算器無法刪除，但可以自由編輯內容。",
   "圖片上傳限制 5MB，建議使用 JPG 或 WebP 格式。",
@@ -669,7 +809,7 @@ function WelcomeBanner() {
           <h1 className="text-xl font-bold mb-1">後台使用手冊</h1>
           <p className="text-sm text-white/80">合一地政士事務所 — 網站管理操作指南</p>
         </div>
-        <span className="text-xs bg-white/20 rounded-full px-3 py-1">v2.0</span>
+        <span className="text-xs bg-white/20 rounded-full px-3 py-1">v2.1</span>
       </div>
     </div>
   );
