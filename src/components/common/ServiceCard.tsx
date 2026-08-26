@@ -38,14 +38,17 @@ function CardBody({
 
   return (
     <>
+      {/*
+        The corner stays the item number — the office asked for it back once the
+        foot of the card carried the action label, since two arrows on one card
+        said the same thing twice. Only the outbound mark is kept, and that one
+        predates #41: it distinguishes "leaves the site" rather than "is a link".
+      */}
       <span
-        className={
-          "absolute top-4 right-4 text-xs font-mono " +
-          (clickable ? "text-amber-700" : "text-stone-300")
-        }
+        className="absolute top-4 right-4 text-xs font-mono text-stone-300 group-hover:text-amber-700 transition-colors"
         aria-hidden="true"
       >
-        {kind === "external" ? "↗" : kind === "internal" ? "→" : String(index + 1).padStart(2, "0")}
+        {kind === "external" ? "↗" : String(index + 1).padStart(2, "0")}
       </span>
 
       <div
